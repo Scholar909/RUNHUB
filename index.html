@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Account Task</title>
+  <link rel="stylesheet" href="receive-g.css">
+</head>
+<body>
+
+<div class="task">
+  <h2>Register Account Using tge Specified Data Below</h2>
+  <p>Leave Last Name Empty when registering the account, only first name</p>
+  <br>
+
+  <button id="receiveBtn">Receive Task</button>
+
+  <div id="taskDetails" style="display:none;">
+    <p><b>First Name:</b> <span id="fn"></span></p>
+    <p><b>Last Name:</b> <span id="ln"></span></p>
+    <p><b>Email:</b> <span id="em"></span></p>
+    <p><b>Password:</b> <span id="pw"></span></p>
+    <p><b>Recovery Email:</b> <span id="rc"></span></p>
+
+    <div class="warn">
+      Ensure to use the correct account details else you will not be paid.
+      <br>
+      These details are here for 24hrs so you can go and come back.
+    </div>
+  </div>
+</div>
+
+<script type="module" src="receive-g.js"></script>
+</body>
+</html>

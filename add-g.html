@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Add Accounts</title>
+  <link rel="stylesheet" href="add-g.css">
+</head>
+<body>
+
+<div class="box">
+  <h2>Add Account Data</h2>
+
+  <input id="fn" placeholder="First Name">
+  <input id="ln" placeholder="Last Name: Empty">
+  <input id="em" placeholder="Email">
+  <input id="pw" placeholder="Password">
+  <input id="rc" placeholder="Recovery Email">
+
+  <button onclick="addData()">Save</button>
+  <p id="status"></p>
+
+  <hr>
+
+  <h3>Saved Accounts</h3>
+  <div id="accountsGrid" class="grid"></div>
+
+</div>
+
+<script type="module" src="add-g.js?=v3"></script>
+</body>
+</html>
