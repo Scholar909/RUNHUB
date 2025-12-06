@@ -7,7 +7,8 @@ import {
   getDocs,
   updateDoc,
   doc,
-  serverTimestamp
+  serverTimestamp,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -30,6 +31,7 @@ if (!deviceId) {
   localStorage.setItem("deviceId", deviceId);
 }
 
+/* DOM Elements */
 const receiveBtn = document.getElementById("receiveBtn");
 const taskDetails = document.getElementById("taskDetails");
 
@@ -44,42 +46,62 @@ function show(d) {
   receiveBtn.style.display = "none";
 }
 
-/* ASSIGN TASK */
+/* ASSIGN TASK WITH TRANSACTION */
 async function assignTask() {
-  // Check if this device already has a task
-  const q1 = query(collection(db, "accounts"), where("assignedTo", "==", deviceId));
-  const snap1 = await getDocs(q1);
+  try {
+    // Check if this device already has a task
+    const q1 = query(collection(db, "accounts"), where("assignedTo", "==", deviceId));
+    const snap1 = await getDocs(q1);
 
-  if (!snap1.empty) {
-    const data = snap1.docs[0].data();
-    const assignedAt = snap1.docs[0].data().assignedAt?.toDate();
-    const now = new Date();
+    if (!snap1.empty) {
+      const data = snap1.docs[0].data();
+      const assignedAt = snap1.docs[0].data().assignedAt?.toDate();
+      const now = new Date();
 
-    // Check if 24h has passed
-    if (assignedAt && (now - assignedAt) < 24*60*60*1000) {
-      show(data);
+      // Check if 24h has passed
+      if (assignedAt && (now - assignedAt) < 24*60*60*1000) {
+        show(data);
+        return;
+      }
+      // Else, allow reassigning after 24h
+    }
+
+    // Get unassigned tasks
+    const q2 = query(collection(db, "accounts"), where("assignedTo", "==", null));
+    const snap2 = await getDocs(q2);
+
+    if (snap2.empty) {
+      alert("No available tasks.");
       return;
     }
-    // Else, allow reassigning after 24h
+
+    const randomDoc = snap2.docs[Math.floor(Math.random() * snap2.docs.length)];
+    const randomDocRef = doc(db, "accounts", randomDoc.id);
+
+    // Transaction to safely claim the task
+    await runTransaction(db, async (transaction) => {
+      const docSnap = await transaction.get(randomDocRef);
+      const data = docSnap.data();
+
+      if (data.assignedTo !== null) {
+        // Someone else grabbed it at the same time
+        throw "Task already claimed. Please try again.";
+      }
+
+      transaction.update(randomDocRef, {
+        assignedTo: deviceId,
+        assignedAt: serverTimestamp()
+      });
+    });
+
+    // Show the assigned task
+    show(randomDoc.data());
+
+  } catch (err) {
+    console.error("Transaction failed:", err);
+    alert(err);
   }
-
-  // Get unassigned tasks
-  const q2 = query(collection(db, "accounts"), where("assignedTo", "==", null));
-  const snap2 = await getDocs(q2);
-
-  if (snap2.empty) {
-    alert("No available tasks.");
-    return;
-  }
-
-  const randomDoc = snap2.docs[Math.floor(Math.random() * snap2.docs.length)];
-
-  await updateDoc(doc(db, "accounts", randomDoc.id), {
-    assignedTo: deviceId,
-    assignedAt: serverTimestamp()
-  });
-
-  show(randomDoc.data());
 }
 
+/* EVENT LISTENER */
 receiveBtn.addEventListener("click", assignTask);
