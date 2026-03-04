@@ -15,24 +15,23 @@ function initMap() {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    // Hide loading overlay so footer/nav are usable
-    document.getElementById('loadingOverlay').style.display = 'none';
+    // Hide loading overlay first
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.style.display = 'none';
 
-    // Try to get admin location to center map and unlock live pins
+    // Force Leaflet to recalc the container size
+    map.invalidateSize();
+
+    // Center map using geolocation
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                map.setView([lat, lng], 16);
-
-                // Now live merchant pins can appear
-                syncMerchants(true); // pass true = admin location is ON
+                map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                syncMerchants(true);
             },
             (err) => {
                 console.warn("Admin location not available:", err);
-                // Location off → don't show merchant pins yet
-                syncMerchants(false); // pass false = admin location is OFF
+                syncMerchants(false);
             }
         );
     } else {
@@ -40,7 +39,7 @@ function initMap() {
         syncMerchants(false);
     }
 
-    // Static locations can sync regardless
+    // Always sync static locations
     syncStaticLocations();
 }
 
