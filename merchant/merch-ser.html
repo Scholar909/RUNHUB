@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Support | RUN Delivery Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/merch-ser.css?=v3">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> HELP CENTER
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Merchant Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="orders.html">Active Orders</a></li>
+        <li><a href="history.html">History</a></li>
+        <li><a href="session.html">Set Session</a></li>
+        <li><a href="profile.html">Profile</a></li>
+        <li><a href="merch-ser.html">Customer Service</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="section-header">
+                <h1>Merchant <span class="highlight">Support</span></h1>
+                <p class="hero-description">Need help with settlements, account locks, or order disputes? Contact admin below.</p>
+            </header>
+
+            <div class="support-grid">
+                <div class="trust-card support-card">
+                    <div class="card-info">
+                        <div class="card-tag">ADMIN CHAT</div>
+                        <h3>Merchant Desk</h3>
+                        <p>Direct line for payout issues or immediate account assistance.</p>
+                    </div>
+                    <a href="https://wa.me/2349168873680" class="btn btn-outline">Connect</a>
+                </div>
+
+                <div class="trust-card support-card">
+                    <div class="card-info">
+                        <div class="card-tag">RULES</div>
+                        <h3>Merchant Guide</h3>
+                        <p>Review the ₦50/order fee rules and account lock policies.</p>
+                    </div>
+                    <button class="btn btn-outline"><a href="pol-50.html">Policy</a></button>
+                </div>
+            </div>
+
+            <section class="report-section">
+                <div class="trust-card report-card">
+                    <div class="card-tag" style="color: var(--error);">FILE A DISPUTE</div>
+                    
+                    <div class="form-group">
+                        <label>Dispute Reference (Auto-Generated)</label>
+                        <input type="text" id="auto-ref" placeholder="Generating..." disabled>
+                    </div>
+            
+                    <div class="form-group">
+                        <label>Issue Category</label>
+                        <select class="custom-select" id="issue-category">
+                            <option>Payment Dispute</option>
+                            <option>Customer No-Show</option>
+                            <option>App Bug/Error</option>
+                            <option>Account Lock Appeal</option>
+                        </select>
+                    </div>
+            
+                    <div class="form-group">
+                        <label>Detailed Explanation</label>
+                        <textarea id="issue-explanation" placeholder="Tell us exactly what happened..."></textarea>
+                    </div>
+            
+                    <button class="btn btn-filled w-100" onclick="submitDispute()">Submit to Admin</button>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="orders.html" class="nav-icon-box"><i class="fi-page-edit"></i></a>
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="merch-ser.html" class="nav-icon-box active"><i class="fi-comments"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/firebase-config.js?=v10" type="module"></script>
+    <script src="js/location.js=v21" type="module"></script>
+    <script src="js/merch-ser.js?=v10" type="module"></script>
+</body>
+</html>

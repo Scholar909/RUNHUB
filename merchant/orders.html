@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Orders | RUN Delivery Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/orders.css?=v4">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> LIVE ORDERS
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Merchant Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="orders.html">Active Orders</a></li>
+        <li><a href="history.html">History</a></li>
+        <li><a href="session.html">Set Session</a></li>
+        <li><a href="profile.html">Profile</a></li>
+        <li><a href="merch-ser.html">Customer Service</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="hero-section">
+                <h1>Active <span class="highlight">Orders</span></h1>
+                <p class="hero-description">Manage your current requests. Approve orders to notify customers or decline to initiate a refund.</p>
+            </header>
+
+            <div class="orders-feed">
+                <div class="trust-card order-card" id="order-1">
+                    <div class="order-top">
+                        <div class="card-tag">AWAITING APPROVAL</div>
+                        <span class="order-time">Just Now</span>
+                    </div>
+                    
+                    <div class="customer-info">
+                        <h3>John Doe</h3>
+                        <p>@johndoe_delivery • PG Hall, Room 302</p>
+                    </div>
+
+                    <div class="order-items">
+                        <label>Order Detail</label>
+                        <ul>
+                            <li>1x Food Pack (Standard)</li>
+                            <li>2x Jollof Rice (Beef)</li>
+                        </ul>
+                    </div>
+
+                    <div class="payment-summary">
+                        <div class="total-row">
+                            <span>Total Paid:</span>
+                            <span class="accent">₦2,750.00</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-filled flex-1" onclick="approveOrder(1)">Approve</button>
+                        <button class="btn btn-outline flex-1" onclick="showDeclineModal('John Doe', '0123456789', 'Access Bank', '₦2,750')">Decline</button>
+                    </div>
+                </div>
+
+                <div class="trust-card order-card" id="order-2">
+                    <div class="order-top">
+                        <div class="card-tag">AWAITING APPROVAL</div>
+                        <span class="order-time">5 mins ago</span>
+                    </div>
+                    
+                    <div class="customer-info">
+                        <h3>Sarah Smith</h3>
+                        <p>@sarah_s • Engineering Hostel, Room 105</p>
+                    </div>
+
+                    <div class="order-items">
+                        <label>Order Detail</label>
+                        <ul>
+                            <li>1x White Rice & Beans</li>
+                            <li>1x Plantain Side</li>
+                        </ul>
+                    </div>
+
+                    <div class="payment-summary">
+                        <div class="total-row">
+                            <span>Total Paid:</span>
+                            <span class="accent">₦1,550.00</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-filled flex-1" onclick="approveOrder(2)">Approve</button>
+                        <button class="btn btn-outline flex-1" onclick="showDeclineModal('Sarah Smith', '9876543210', 'GTBank', '₦1,550')">Decline</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div id="declineModal" class="modal-overlay">
+            <div class="trust-card modal-content">
+                <div class="card-tag" style="color: var(--error);">REFUND ACTION REQUIRED</div>
+                <h3>Manual Refund</h3>
+                <p class="modal-instruction">The customer's bank details are shown below. You must refund them manually before declining.</p>
+                
+                <div class="bank-details-box">
+                    <div class="detail-item">
+                        <label>Account Name</label>
+                        <p id="refundName">---</p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Account Number</label>
+                        <p id="refundNumber">---</p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Bank</label>
+                        <p id="refundBank">---</p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Refund Amount</label>
+                        <p id="refundAmount" class="accent">---</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-filled w-100 mb-10" onclick="confirmRefund()">I have Refunded</button>
+                <button class="btn btn-outline w-100" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+
+        <footer class="bottom-nav">
+            <a href="orders.html" class="nav-icon-box active"><i class="fi-page-edit"></i></a>
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="merch-ser.html" class="nav-icon-box"><i class="fi-comments"></i></a>
+        </footer>
+    </div>
+    
+    <script src="js/firebase-config.js?=v10" type="module"></script>
+    <script src="js/location.js=v11" type="module"></script>
+    <script src="js/orders.js?=v10" type="module"></script>
+</body>
+</html>

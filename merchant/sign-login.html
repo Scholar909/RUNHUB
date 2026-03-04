@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Portal | RUN Delivery Hub</title>
+    <link rel="stylesheet" href="/css/login.css?=v2">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <a href="index.html" class="logo">RUN<span class="accent">HUB</span></a>
+            <div class="status-indicator">
+                <span class="dot red" id="gps-dot"></span> 
+                <span id="gps-text">LOCATION REQUIRED</span>
+            </div>
+        </nav>
+
+        <main class="auth-container">
+            <div class="tab-switcher">
+                <button class="tab-btn active">Login</button>
+                <button onclick="alert('Merchant registration is physical with Admin only. If you want to register as a merchant, please contact the Admin on WhatsApp at 09168873680 for further details.')" class="tab-btn locked">Sign Up</button>
+            </div>
+
+            <div class="tab-view active">
+                <p class="notice">Enter your credentials.</p>
+                <form id="merchant-login">
+                    <input type="text" class="glass-input" placeholder="Merchant Email" required>
+                    <input type="password" class="glass-input" placeholder="Secure Password" required>
+                    <button type="submit" id="auth-btn" class="btn btn-filled w-100 disabled" disabled>Authorize & Go Online</button>
+                </form>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; <span id="year"></span> RUN Delivery Hub. Secure Merchant Access.</p>
+        </footer>
+    </div>
+    <script src="js/login.js?=v17" type="module"></script>
+    <script src="js/location.js?=v17" type="module"></script>
+    <script src="js/firebase-config.js?=v10" type="module"></script>
+</body>
+</html>

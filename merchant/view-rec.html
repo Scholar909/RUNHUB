@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Receipt | RUNHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/view-rec.css?=v3">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <button class="back-link" onclick="history.back()"><i class="fi-arrow-left"></i> Back</button>
+        </nav>
+
+        <div id="navDrawer" class="nav-drawer">
+            <div class="drawer-header">
+                <h3>Menu</h3>
+                <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+            </div>
+            <ul class="drawer-links" id="dynamicNav">
+                </ul>
+        </div>
+
+        <main class="content-body">
+            <div class="receipt-container" id="receiptContent">
+                <header class="receipt-header">
+                    <div id="statusBadge" class="status-badge">LOADING...</div>
+                    <p class="receipt-id" id="recId">#000000</p>
+                    <h2 id="custUser">@username</h2>
+                    <p class="merchant-name" id="custName">Customer: Loading...</p>
+                </header>
+
+                <div class="divider-dashed"></div>
+
+                <section class="itemized-list" id="itemList">
+                    </section>
+
+                <div class="divider-dashed"></div>
+
+                <section class="receipt-summary">
+                    <div class="price-row">
+                        <span>Items Subtotal</span>
+                        <span id="subtotal">₦0</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Delivery Fee</span>
+                        <span id="delivery">₦0</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Packaging</span>
+                        <span id="packaging">₦0</span>
+                    </div>
+                    <div class="price-row highlight" id="adminFeeRow">
+                        <span>Admin Fee (Deducted)</span>
+                        <span>-₦50</span>
+                    </div>
+                    <div class="total-row">
+                        <span id="totalLabel">YOUR EARNING</span>
+                        <span class="accent" id="grandTotal">₦0</span>
+                    </div>
+                </section>
+
+                <div class="divider-dashed"></div>
+
+                <section class="order-timeline" id="timeline">
+                    <h3>Transaction Logs</h3>
+                    </section>
+            </div>
+
+            <div id="merchantActionArea" style="display: none; margin-bottom: 15px;">
+                <button class="btn btn-filled w-100" style="background: var(--success); color: white;" onclick="markOrderDelivered()">
+                    <i class="fi-check"></i> Mark as Completed
+                </button>
+            </div>
+
+            <button class="btn btn-outline w-100" onclick="window.print()">
+                <i class="fi-print"></i> Save Transaction PDF
+            </button>
+        </main>
+    </div>
+
+    <script src="js/firebase-config.js?=v10" type="module"></script>
+    <script src="js/location.js?=v11" type="module"></script>
+    <script src="js/view-rec.js?=v10" type="module"></script>
+</body>
+</html>

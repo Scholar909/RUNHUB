@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Session | RUNHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/session.css?=v7">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> ONLINE
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Merchant Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="orders.html">Active Orders</a></li>
+        <li><a href="history.html">History</a></li>
+        <li><a href="session.html">Set Session</a></li>
+        <li><a href="profile.html">Profile</a></li>
+        <li><a href="merch-ser.html">Customer Service</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="hero-section">
+                <h1>Set <span class="highlight">Session</span></h1>
+                <p class="hero-description">Manage your saved delivery routes. Only one session can be active at a time.</p>
+            </header>
+
+            <section id="sessionListView">
+                <div class="session-grid">
+                    <div class="trust-card session-card">
+                        <div class="card-options">
+                            <i class="fi-list-bullet"></i>
+                            <div class="options-dropdown">
+                                <button onclick="showForm('edit')">Edit</button>
+                                <button class="text-error">Delete</button>
+                            </div>
+                        </div>
+                        <div class="card-tag">LUNCH RUN</div>
+                        <h3>DP Cafeteria Run</h3>
+                        <p class="route">DP → Engineering Boys</p>
+                        
+                        <div class="card-footer">
+                            <div class="load-info">
+                                <span class="label">Slots:</span>
+                                <span class="stat-value">3 / 5</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="session-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="trust-card session-card">
+                        <div class="card-options">
+                            <i class="fi-list-bullet"></i>
+                            <div class="options-dropdown">
+                                <button onclick="showForm('edit')">Edit</button>
+                                <button class="text-error">Delete</button>
+                            </div>
+                        </div>
+                        <div class="card-tag">MORNING RUN</div>
+                        <h3>Bakery Fresh</h3>
+                        <p class="route">Bakery → Female Hostels</p>
+                        
+                        <div class="card-footer">
+                            <div class="load-info">
+                                <span class="label">Slots:</span>
+                                <span class="stat-value">0 / 10</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="session-toggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline w-100 add-btn" onclick="showForm('add')">
+                    <i class="fi-plus"></i> Add New Session
+                </button>
+            </section>
+
+            <section id="sessionFormView" style="display: none;">
+                <div class="trust-card form-container">
+                    <div class="card-tag" id="formTitle">CREATE NEW SESSION</div>
+                    <div class="form-group">
+                        <label>Session Name</label>
+                        <input type="text" placeholder="e.g. Dinner Run">
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>From Location</label>
+                            <input type="text" placeholder="Pickup point">
+                        </div>
+                        <div class="form-group">
+                            <label>To Location</label>
+                            <input type="text" placeholder="Destination">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Delivery Charge (₦)</label>
+                            <input type="number" value="300">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Customers</label>
+                            <input type="number" value="5">
+                        </div>
+                    </div>
+
+                    <div class="divider-line"></div>
+
+                    <div class="card-tag">MENU SETUP</div>
+                    <div id="menuContainer">
+                        <div class="menu-item-input">
+                            <input type="text" placeholder="Food Name">
+                            <input type="number" placeholder="Price">
+                            <i class="fi-x remove-btn"></i>
+                        </div>
+                    </div>
+                    <button class="btn-text" onclick="addMenuItem()">+ Add Food Item</button>
+
+                    <div class="cta-group" style="margin-top: 30px;">
+                        <button class="btn btn-filled w-100" onclick="saveSession()">Save Session</button>
+                        <button class="btn-text w-100" onclick="hideForm()" style="margin-top: 10px; color: var(--text-dim);">Cancel</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="orders.html" class="nav-icon-box"><i class="fi-page-edit"></i></a>
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="dashboard.html" class="nav-icon-box active"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="merch-ser.html" class="nav-icon-box"><i class="fi-comments"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/session.js?=v20" type="module"></script>
+    <script src="js/location.js?=v18" type="module"></script>
+    <script src="js/firebase-config.js?=v10" type="module"></script>
+</body>
+</html>

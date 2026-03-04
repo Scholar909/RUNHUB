@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subscription Plans</title>
+    <link rel="stylesheet" href="css/plans.css?=v3" />
+</head>
+<body>
+
+<div class="main-wrapper">
+
+    <div class="navbar">
+        <div></div>
+        <div class="status-indicator">
+            <span class="dot animate-flicker"></span>
+            Subscription Required
+        </div>
+    </div>
+
+    <div class="content-body">
+        <h1>Choose a <span class="highlight">Plan</span></h1>
+        <p class="hero-description">
+            Your free trial has ended or wallet payment is required.
+            Select a plan to continue using RUNHUB.
+        </p>
+
+        <!-- Wallet Alert -->
+        <div class="trust-card" id="walletCard" style="display:none;">
+            <div class="card-tag">WALLET DEBT</div>
+            <h3 id="walletAmount">₦0</h3>
+            <p class="hero-description">Outstanding admin fee payment required.</p>
+        </div>
+
+        <div class="trust-grid">
+
+            <!-- Weekly -->
+            <div class="trust-card plan-card">
+                <div class="card-tag">WEEKLY PLAN</div>
+                <h2>₦1,500</h2>
+                <p class="hero-description">7 Days Full Access</p>
+                <button class="btn btn-filled" onclick="subscribe('weekly',1500)">
+                    Subscribe Weekly
+                </button>
+            </div>
+
+            <!-- Monthly -->
+            <div class="trust-card plan-card">
+                <div class="card-tag">MONTHLY PLAN</div>
+                <h2>₦5,000</h2>
+                <p class="hero-description">30 Days Full Access</p>
+                <button class="btn btn-filled" onclick="subscribe('monthly',5000)">
+                    Subscribe Monthly
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/plans.js?=v4"></script>
+</body>
+</html>
