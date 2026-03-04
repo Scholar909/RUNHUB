@@ -34,14 +34,18 @@ function initMap() {
     
     // Normal Map
     const normalLayer = L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { attribution: '&copy; OpenStreetMap contributors' }
+        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        }
     );
     
     // Satellite Layer (Esri Free Satellite)
     const satelliteLayer = L.tileLayer(
         'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        { attribution: 'Tiles &copy; Esri' }
+        {
+            attribution: 'Tiles © Esri'
+        }
     );
     
     // Add default layer
