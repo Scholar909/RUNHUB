@@ -186,7 +186,6 @@ window.handleLogout = async () => {
 // --- Start ---
 onAuthStateChanged(auth, (user) => {
     if (user) initMap();
-    else window.location.href = "./admin-login.html";
 });
 
 document.getElementById('addRestaurantBtn').onclick = window.toggleAddLocation;
