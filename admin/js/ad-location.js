@@ -32,6 +32,10 @@ function initMap() {
     
     map = L.map('map', { zoomControl: false }).setView([7.1903, 4.5607], 16);
     
+    map.whenReady(() => {
+    map.invalidateSize();
+});
+    
     // Normal Map
     const normalLayer = L.tileLayer(
         'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -214,7 +218,12 @@ window.handleLogout = async () => {
 
 // --- Start ---
 onAuthStateChanged(auth, (user) => {
-    if (user) initMap();
+    if (!user) {
+        window.location.href = "./admin-login.html";
+        return;
+    }
+
+    initMap();
 });
 
 document.getElementById('addRestaurantBtn').onclick = window.toggleAddLocation;
