@@ -19,8 +19,10 @@ const rtdb = getDatabase();
  * Kicks unauthorized users back to login page immediately
  */
 onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        window.location.href = "admin-login.html"; 
+    if (user) {
+        initDashboard(); // only start dashboard AFTER auth confirmed
+    } else {
+        window.location.href = "admin-login.html";
     }
 });
 
@@ -261,6 +263,3 @@ window.deleteUser = async (userId) => {
         }
     }
 };
-
-// Initialize the system
-initDashboard();
