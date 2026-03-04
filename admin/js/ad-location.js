@@ -29,11 +29,31 @@ let tempMarker = null;
 // --- Get User Location Before Map Sync ---
 function initMap() {
     const overlay = document.getElementById('loadingOverlay');
-
-    map = L.map('map', { zoomControl: false }).setView([7.1903, 4.5607], 16); // approximate campus coords
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-     .addTo(map);
+    
+    map = L.map('map', { zoomControl: false }).setView([7.1903, 4.5607], 16);
+    
+    // Normal Map
+    const normalLayer = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: '&copy; OpenStreetMap contributors' }
+    );
+    
+    // Satellite Layer (Esri Free Satellite)
+    const satelliteLayer = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Tiles &copy; Esri' }
+    );
+    
+    // Add default layer
+    normalLayer.addTo(map);
+    
+    // Add layer control toggle
+    L.control.layers(
+        {
+            "Normal": normalLayer,
+            "Satellite": satelliteLayer
+        }
+    ).addTo(map);
 
     // Wait for layout to settle
     setTimeout(() => {
