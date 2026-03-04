@@ -9,21 +9,43 @@ let merchantMarkers = {};
 let staticMarkers = {};
 let tempMarker = null;
 
-// --- 1. Map Initialization ---
+// --- Get User Location Before Map Sync ---
 function initMap() {
-    // Standard Leaflet initialization
-    map = L.map('map', { zoomControl: false }).setView([6.6726, 3.1614], 16); 
+    map = L.map('map', { zoomControl: false }).setView([6.6726, 3.1614], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    // Initial sync
-    syncMerchants();
-    syncStaticLocations();
+    // Hide loading overlay so footer/nav are usable
     document.getElementById('loadingOverlay').style.display = 'none';
+
+    // Try to get admin location to center map and unlock live pins
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                map.setView([lat, lng], 16);
+
+                // Now live merchant pins can appear
+                syncMerchants(true); // pass true = admin location is ON
+            },
+            (err) => {
+                console.warn("Admin location not available:", err);
+                // Location off → don't show merchant pins yet
+                syncMerchants(false); // pass false = admin location is OFF
+            }
+        );
+    } else {
+        console.warn("Geolocation not supported");
+        syncMerchants(false);
+    }
+
+    // Static locations can sync regardless
+    syncStaticLocations();
 }
 
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
-function syncMerchants() {
+function syncMerchants(adminLocationOn) {
     const q = query(collection(db, "users"), where("accountType", "==", "merchant"));
     
     onSnapshot(q, (snapshot) => {
@@ -34,12 +56,20 @@ function syncMerchants() {
             const data = change.doc.data();
             const id = change.doc.id;
 
-            // Only show pin if location is provided and they are online (logic: location ON)
+            if (!adminLocationOn) {
+                // Admin location OFF → hide all merchant pins
+                if (merchantMarkers[id]) {
+                    map.removeLayer(merchantMarkers[id]);
+                    delete merchantMarkers[id];
+                }
+                return;
+            }
+
+            // Admin location ON → show only merchants with location
             if (data.location && data.location.lat) {
                 updateMerchantMarker(id, data);
                 renderMerchantCard(id, data);
             } else if (merchantMarkers[id]) {
-                // Rule: If location turned OFF, pin disappears
                 map.removeLayer(merchantMarkers[id]);
                 delete merchantMarkers[id];
             }
@@ -150,13 +180,13 @@ window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggl
 
 window.handleLogout = async () => {
     await signOut(auth);
-    window.location.href = "sign-login.html";
+    window.location.href = "./admin-login.html";
 };
 
 // --- Start ---
 onAuthStateChanged(auth, (user) => {
     if (user) initMap();
-    else window.location.href = "sign-login.html";
+    else window.location.href = "./admin-login.html";
 });
 
 document.getElementById('addRestaurantBtn').onclick = window.toggleAddLocation;
