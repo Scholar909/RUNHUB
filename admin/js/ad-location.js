@@ -60,11 +60,11 @@ function initMap() {
 function syncMerchants() {
     const q = query(
         collection(db, "users"),
-        where("accountType", "==", "merchant"),
-        where("isActive", "==", true) // only active/logged-in merchants
+        where("role", "==", "merchant"),
+        //where("isActive", "==", true)  only active/logged-in merchants
     );
 
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(q, async (snapshot) => {
         const tray = document.getElementById('merchantFooter');
         tray.innerHTML = '';
 
@@ -173,7 +173,7 @@ function renderMerchantCard(id, data) {
     const card = document.createElement('div');
     card.className = 'merchant-card';
     card.innerHTML = `
-        <img src="${data.profilePic || 'img/default.png'}">
+        <img src="${data.profilePhoto || 'img/default.png'}">
         <span>${data.username}</span>
     `;
     // Rule: Click tray card to zoom into merchant pin
