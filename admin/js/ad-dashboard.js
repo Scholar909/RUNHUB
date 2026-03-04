@@ -204,10 +204,31 @@ const triggerSearch = () => {
 // Event listener for instant filtering as you type
 searchInput.addEventListener('input', triggerSearch);
 
+async function deactivateActiveSession(uid) {
+    try {
+        // 1. Turn off public visibility
+        await updateDoc(doc(db, "users", uid), { isActive: false });
+        
+        // 2. Find and turn off the active session in sub-collection
+        const q = query(collection(db, "merchants", uid, "sessions"), where("isActive", "==", true));
+        const snap = await getDocs(q);
+        const batch = [];
+        snap.forEach(d => {
+            batch.push(updateDoc(d.ref, { 
+                isActive: false, 
+                lastTurnedOff: Date.now() 
+            }));
+        });
+        await Promise.all(batch);
+    } catch (e) {
+        console.error("Cleanup failed:", e);
+    }
+}
+
 // --- UPDATED ADMIN ACTIONS ---
 
 window.toggleUserLock = async (userId, currentStatus) => {
-    const isLocking = currentStatus.toLowerCase() !== 'locked'; // true if we are blocking
+    const isLocking = currentStatus.toLowerCase() !== 'locked'; // true if blocking
     const newStatus = isLocking ? "Locked" : "Active";
 
     if (!confirm(`Are you sure you want to ${isLocking ? 'BLOCK' : 'UNBLOCK'} this user?`)) return;
@@ -215,7 +236,7 @@ window.toggleUserLock = async (userId, currentStatus) => {
     try {
         const userRef = doc(db, "users", userId);
 
-        // 1️⃣ Update user status and isActive
+        // 1️⃣ Update status and isActive
         await updateDoc(userRef, {
             status: newStatus,
             isActive: !isLocking, // false if blocking, true if unblocking
@@ -224,19 +245,7 @@ window.toggleUserLock = async (userId, currentStatus) => {
 
         // 2️⃣ If blocking, shut down all active sessions
         if (isLocking) {
-            const sessionsRef = collection(db, "merchants", userId, "sessions");
-            const q = query(sessionsRef, where("isActive", "==", true));
-            const snap = await getDocs(q);
-
-            const batch = [];
-            snap.forEach(docSnap => {
-                batch.push(updateDoc(docSnap.ref, {
-                    isActive: false,
-                    lastTurnedOff: Date.now()
-                }));
-            });
-
-            await Promise.all(batch);
+            await deactivateActiveSession(userId); // re-use your helper
         }
 
         alert(`User has been successfully ${isLocking ? 'BLOCKED' : 'UNBLOCKED'}.`);
