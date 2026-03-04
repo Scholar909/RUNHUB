@@ -113,6 +113,9 @@ async function enforceRules(uid) {
     if (!userSnap.exists()) return forceLogout();
 
     const userData = userSnap.data();
+    
+    if ((userData.role || "").toLowerCase() === "admin" || "customer") return;
+    
     const now = new Date();
 
     // 2. Subscription Check
