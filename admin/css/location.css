@@ -39,7 +39,10 @@ body {
 
 /* --- Map Elements --- */
 #map-container { flex-grow: 1; position: relative; width: 100%; height: 100%; }
-#map { height: 100%; width: 100%; filter: invert(100%) hue-rotate(180deg) brightness(0.6); }
+#map { 
+height: 100%; width: 100%; 
+/*filter: invert(100%) hue-rotate(180deg) brightness(0.6); */
+}
 
 /* --- Trays (Merchant & Restaurant Footers) --- */
 .map-tray {
