@@ -45,7 +45,6 @@ function initMap() {
             navigator.geolocation.getCurrentPosition(
                 pos => {
                     map.setView([pos.coords.latitude, pos.coords.longitude], 16);
-                    startLiveTracking(pos.coords.latitude, pos.coords.longitude);
                 },
                 err => console.warn("Location unavailable:", err)
             );
@@ -61,10 +60,11 @@ function syncMerchants() {
     const q = query(
         collection(db, "users"),
         where("role", "==", "merchant"),
-        //where("isActive", "==", true)  only active/logged-in merchants
+        where("isActive", "==", true)  //only active/logged-in merchants
     );
-
+    
     onSnapshot(q, async (snapshot) => {
+      console.log("Snapshot size:", snapshot.size);
         const tray = document.getElementById('merchantFooter');
         tray.innerHTML = '';
 
