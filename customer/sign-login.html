@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Access | RUN HUB</title>
+    <link rel="stylesheet" href="css/sign-login.css?=v6">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <a href="../index.html" class="logo">RUN<span class="accent">HUB</span></a>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> CUSTOMER GATEWAY
+            </div>
+        </nav>
+
+        <main class="auth-container">
+            <header class="section-header">
+                <h1>Student <span class="highlight">Access</span></h1>
+                <p class="hero-description">Sign in or create your student runner account.</p>
+            </header>
+
+            <div class="tab-switcher">
+                <button onclick="switchTab('login')" id="l-btn" class="tab-btn active">Login</button>
+                <button onclick="switchTab('signup')" id="s-btn" class="tab-btn">Sign Up</button>
+            </div>
+
+            <div id="login-view" class="tab-view active">
+                <form id="customer-login" class="report-card">
+                    <div class="form-group">
+                        <label>Username or Email</label>
+                        <input type="text" class="glass-input" placeholder="e.g. runner_01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" class="glass-input" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-filled w-100">Sign In to Hub</button>
+                </form>
+            </div>
+
+            <div id="signup-view" class="tab-view">
+                <form id="customer-signup" class="report-card scroll-box">
+                    <div class="card-tag">NEW ACCOUNT DETAILS</div>
+                    
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" placeholder="johndoe22" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" placeholder="student@run.edu.ng" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Level</label>
+                            <input type="number" placeholder="400" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Matric No</label>
+                            <input type="text" placeholder="20/0123" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>WhatsApp Number</label>
+                        <input type="tel" placeholder="08012345678" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location (Room, Block, Hostel)</label>
+                        <input type="text" placeholder="Rm 4, Blk B, Paul Hostel" required>
+                    </div>
+
+                    <div class="card-tag" style="margin-top:20px">PAYMENT SETTINGS (FOR REFUNDS)</div>
+
+                    <div class="form-group">
+                        <label>Bank Name</label>
+                        <input type="text" placeholder="Access Bank" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Account Name</label>
+                            <input type="text" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Account No</label>
+                            <input type="text" placeholder="1234567890" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" placeholder="Create Password" required>
+                        <input type="password" placeholder="Confirm Password" required style="margin-top:10px">
+                    </div>
+
+                    <div class="legal-check">
+                        <label><input type="checkbox" required> I agree to the <a href="../pol.html" class="accent-link">Privacy Policy</a></label>
+                        <label><input type="checkbox" required> I accept the <a href="../tandc.html" class="accent-link">Terms & Conditions</a></label>
+                    </div>
+
+                    <button type="submit" class="btn btn-filled w-100">Create Account</button>
+                </form>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; <span id="year"></span> RUN HUB. Verified Students Only.</p>
+        </footer>
+    </div>
+    <script src="js/sign-login.js?=v9" type="module"></script>
+    <script src="js/firebase-config.js?=v6" type="module"></script>
+</body>
+</html>

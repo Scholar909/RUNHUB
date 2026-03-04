@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | RUN Delivery Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/profile.css?=v2">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> VERIFIED
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="home.html">Dashboard</a></li>
+        <li><a href="history.html">My Orders</a></li>
+        <li><a href="rating.html">Rate Merchants</a></li>
+        <li><a href="profile.html">My Account</a></li>
+        <li><a href="service.html">Support</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+      <main class="content-body">
+          <header class="section-header">
+              <h1>My <span class="highlight">Profile</span></h1>
+              <p class="hero-description">Your official campus delivery identification and account details.</p>
+          </header>
+      
+          <div class="profile-card">
+              <div class="card-glass-overlay"></div>
+              
+              <div class="profile-main">
+                  <div class="avatar-container">
+                      <img src="" alt="Profile Photo" id="profileImage">
+                      <div class="active-badge"></div>
+                  </div>
+                  <div class="user-meta">
+                      <h2 id="fullName">Loading...</h2>
+                      <p class="username" id="displayUsername">@username</p>
+                  </div>
+              </div>
+      
+              <div class="info-grid">
+                  <div class="info-item"><label>Matric No</label><p id="matricNum">---</p></div>
+                  <div class="info-item"><label>Level</label><p id="level">---</p></div>
+                  <div class="info-item"><label>Email</label><p id="emailAddr">---</p></div>
+              </div>
+              
+              <div class="location-box"><label>WhatsApp</label><p id="phoneNum">---</p></div>
+              
+              <div class="location-box">
+                  <label>Current Residence</label>
+                  <p id="roomDetails">---</p>
+              </div>
+              
+              <div class="location-box" style="border-top: 1px solid var(--border); margin-top: 15px;">
+                  <label>Refund Account (Bank)</label>
+                  <p id="bankDetails">---</p>
+                  <p id="accNum" style="font-size: 0.8rem; color: var(--accent);">---</p>
+              </div>
+          </div> 
+          <div class="action-list">
+              <button class="btn btn-outline w-100 mb-10" onclick="contactSupport()"><i class="fi-comment"></i> Contact Support</button>
+              <button id="mainLogoutBtn" class="btn btn-filled w-100" style="background: #ff3b30; color: white;">Logout Account</button>
+          </div>
+      </main>
+      
+        <footer class="bottom-nav">
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="rating.html" class="nav-icon-box"><i class="fi-star"></i></a>
+            <a href="home.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box active"><i class="fi-torso"></i></a>
+            <a href="cust-ser.html" class="nav-icon-box"><i class="fi-comments"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/cust-profile.js?=v17" type="module"></script>
+    <script src="js/firebase-config.js?=v5" type="module"></script>
+</body>
+</html>

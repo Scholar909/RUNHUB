@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Guide | RUNHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <style>
+        :root {
+            --bg-dark: #0a0b10;
+            --accent: #007aff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f5f5f7;
+            --text-dim: #86868b;
+            --success: #34c759;
+            --error: #ff3b30;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            line-height: 1.6;
+            padding-bottom: 50px;
+        }
+
+        .container { padding: 20px 6%; max-width: 800px; margin: auto; }
+        
+        header { padding: 40px 0; text-align: center; }
+        header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; }
+        header span { color: var(--accent); }
+        .hero-desc { color: var(--text-dim); font-size: 0.95rem; }
+
+        .section-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(20px);
+        }
+
+        .section-card h2 {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-list { list-style: none; }
+        .info-list li {
+            margin-bottom: 18px;
+            padding-left: 30px;
+            position: relative;
+            font-size: 0.9rem;
+        }
+
+        .info-list li::before {
+            content: "\f105"; /* fi-arrow-right icon */
+            font-family: "foundation-icons";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        .highlight-box {
+            background: rgba(255, 59, 48, 0.1);
+            border-left: 4px solid var(--error);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.85rem;
+        }
+
+        .success-box {
+            background: rgba(52, 199, 89, 0.1);
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.85rem;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="javascript:history.back()" class="back-btn"><i class="fi-arrow-left"></i> Back</a>
+        
+        <header>
+            <h1>Safety & <span>FAQ</span></h1>
+            <p class="hero-desc">Your guide to ordering and staying safe on RUNHUB.</p>
+        </header>
+
+        <div class="section-card">
+            <h2><i class="fi-shopping-cart"></i> How to Place an Order</h2>
+            <ul class="info-list">
+                <li>Pick a merchant from your dashboard (ensure the slots left is large).</li>
+                <li>Customize your order in the popup modal—adjust items and food packs.</li>
+                <li>Review the breakdown. Click <strong>Pay & Confirm</strong> after transferring to the merchant's bank details.</li>
+                <li>Transfer the exact total shown. Once done, click <strong>"Pay & Confirm"</strong>.</li>
+            </ul>
+        </div>
+
+        <div class="section-card">
+            <h2><i class="fi-info"></i> Important Billing Rules</h2>
+            <ul class="info-list">
+                <li><strong>Platform Fee:</strong> A fixed ₦50 fee is applied to every order.</li>
+                <li class="highlight-box">
+                    <strong>Note:</strong> The ₦50 platform fee is non-refundable. Even if a merchant declines your order, the platform fee is retained for system processing.
+                </li>
+                <li class="success-box">
+                    <strong>Refunds:</strong> If a merchant declines your order, they are required by policy to refund your food and delivery money within 30 minutes.
+                </li>
+            </ul>
+        </div>
+
+        <div class="section-card">
+            <h2><i class="fi-shield"></i> Safety & Navigation</h2>
+            <ul class="info-list">
+                <li><strong>Contacting Merchants:</strong> Long-press a merchant's name on the dashboard to view their WhatsApp number. Only use this for urgent coordination!</li>
+                <li><strong>Verified Status:</strong> All merchants are physically verified by RUNHUB Admin for your safety.</li>
+                <li><strong>History:</strong> Track your order status (Pending, Approved, Delivered, or Declined) in the History tab.</li>
+                <li><strong>Ratings:</strong> Always rate your experience. Your feedback helps us keep the platform high-quality.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

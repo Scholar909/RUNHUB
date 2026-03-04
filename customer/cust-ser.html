@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Support | RUN Delivery Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/cust-ser.css?=v2">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> SUPPORT
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="home.html">Dashboard</a></li>
+        <li><a href="history.html">My Orders</a></li>
+        <li><a href="rating.html">Rate Merchants</a></li>
+        <li><a href="profile.html">My Account</a></li>
+        <li><a href="service.html">Support</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="section-header">
+                <h1>Help & <span class="highlight">Support</span></h1>
+                <p class="hero-description">Facing an issue with your delivery? Our team is here to assist you 24/7.</p>
+            </header>
+
+            <div class="support-grid">
+                <div class="trust-card support-card">
+                    <div class="card-info">
+                        <div class="card-tag">WHATSAPP</div>
+                        <h3>Chat with Admin</h3>
+                        <p>Instant resolution for order disputes or payment issues.</p>
+                    </div>
+                    <a href="https://wa.me/yournumber" class="btn btn-outline">Connect</a>
+                </div>
+
+                <div class="trust-card support-card">
+                    <div class="card-info">
+                        <div class="card-tag">GUIDE</div>
+                        <h3>How it Works</h3>
+                        <p>New to RUNHUB? Learn how to place orders safely.</p>
+                    </div>
+                    <button class="btn btn-outline"><a href="faq.html">View FAQ</a></button>
+                </div>
+            </div>
+
+            <section class="report-section">
+                <div class="trust-card report-card">
+                    <div class="card-tag" style="color: var(--error);">REPORT AN ISSUE</div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" placeholder="#RH-12345">
+                    </div>
+                    <div class="form-group">
+                        <label>Describe the Problem</label>
+                        <textarea placeholder="e.g. My order was approved but not delivered..."></textarea>
+                    </div>
+                    <button class="btn btn-filled w-100">Send Report</button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="rating.html" class="nav-icon-box"><i class="fi-star"></i></a>
+            <a href="home.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="cust-ser.html" class="nav-icon-box active"><i class="fi-comments"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/cust-ser.js?=v4" type="module"></script>
+    <script src="js/firebase-config.js?=v5" type="module"></script>
+</body>
+</html>

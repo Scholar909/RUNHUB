@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Order | RUN Delivery Hub</title>
+    <link rel="stylesheet" href="/css/order-modal.css?=v3">
+</head>
+<body class="modal-open">
+    <div class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="merchant-meta">
+                    <h2>Order from <span class="accent">@SwiftCourier</span></h2>
+                    <p class="status-indicator"><span class="dot"></span> Online Now</p>
+                </div>
+                <button class="close-btn">&times;</button>
+            </div>
+
+            <div class="modal-body scroll-box">
+                <section class="selection-section">
+                    <h3>Select Items</h3>
+                    <div class="food-item">
+                        <div class="item-details">
+                            <label class="check-container">
+                                <input type="checkbox" checked>
+                                <span class="checkmark"></span>
+                                Food Pack (Standard)
+                            </label>
+                        </div>
+                        <span class="item-price">₦200</span>
+                    </div>
+
+                    <div class="food-item">
+                        <div class="item-details">
+                            <label class="check-container">
+                                <input type="checkbox">
+                                <span class="checkmark"></span>
+                                Jollof Rice
+                            </label>
+                        </div>
+                        <div class="quantity-control">
+                            <button class="qty-btn">-</button>
+                            <span class="qty-val">1</span>
+                            <button class="qty-btn">+</button>
+                        </div>
+                        <span class="item-price">₦1,000</span>
+                    </div>
+                </section>
+
+                <section class="breakdown-section">
+                    <h3>Payment Summary</h3>
+                    <div class="price-row">
+                        <span>Subtotal (Food)</span>
+                        <span>₦1,000</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Delivery Charge</span>
+                        <span>₦300</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Packaging Cost</span>
+                        <span>₦200</span>
+                    </div>
+                    <div class="price-row highlight-row">
+                        <span>Platform Fee</span>
+                        <span>₦50</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Total to Pay</span>
+                        <span class="accent">₦1,550</span>
+                    </div>
+                </section>
+
+                <section class="payment-details">
+                    <div class="bank-card">
+                        <p class="card-tag">MERCHANT BANK DETAILS</p>
+                        <h4>Access Bank</h4>
+                        <p class="acc-num">0123456789</p>
+                        <p class="acc-name">JOHN DOE DELIVERIES</p>
+                    </div>
+                    <p class="payment-instruction">Transfer the total amount exactly as shown above, then click confirm.</p>
+                </section>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline w-100">Cancel</button>
+                <button class="btn btn-filled w-100">Pay & Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/order-modal.js?=v3" type="module"></script>
+    <script src="js/firebase-config.js?=v5" type="module"></script>
+</body>
+</html>

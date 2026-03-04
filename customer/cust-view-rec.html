@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Receipt | RUNHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/view-rec.css?=v4">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <button class="back-link" onclick="history.back()"><i class="fi-arrow-left"></i> Back</button>
+        </nav>
+
+        <main class="content-body">
+            <div class="receipt-container" id="receiptContent">
+                <header class="receipt-header">
+                    <div id="statusBadge" class="status-badge">LOADING...</div>
+                    <p class="receipt-id" id="recId">#000000</p>
+                    <h2 id="merchantHandle">@merchant</h2>
+                    <p class="merchant-name" id="merchantFullName">Merchant Name</p>
+                </header>
+
+                <div class="divider-dashed"></div>
+
+                <section class="itemized-list" id="itemList">
+                    </section>
+
+                <div class="divider-dashed"></div>
+
+                <section class="receipt-summary">
+                    <div class="price-row">
+                        <span>Items Subtotal</span>
+                        <span id="subtotal">₦0</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Delivery Fee</span>
+                        <span id="delivery">₦0</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Packaging</span>
+                        <span id="packaging">₦0</span>
+                    </div>
+                    <div class="price-row highlight" id="platformFeeRow">
+                        <span>Platform Fee</span>
+                        <span id="platformFee">₦50</span>
+                    </div>
+                    <div class="total-row">
+                        <span id="totalLabel">TOTAL PAID</span>
+                        <span class="accent" id="grandTotal">₦0</span>
+                    </div>
+                </section>
+
+                <div class="divider-dashed"></div>
+
+                <section class="order-timeline" id="timeline">
+                    <h3>Order Journey</h3>
+                    </section>
+            </div>
+
+            <button class="btn btn-outline w-100" onclick="window.print()">
+                <i class="fi-print"></i> Download PDF Receipt
+            </button>
+        </main>
+    </div>
+
+    <script src="js/cust-view-rec.js?=v4" type="module"></script>
+    <script src="js/firebase-config.js?=v5" type="module"></script>
+</body>
+</html>
