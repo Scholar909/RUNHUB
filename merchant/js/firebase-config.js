@@ -64,7 +64,7 @@ async function handleSecurityExit(message) {
     // 2. Clear Auth
     await signOut(auth);
     // 3. Redirect
-    window.location.href = "sign-login.html";
+    window.location.href = "./sign-login.html";
 }
 
 export { auth, db };
