@@ -1,0 +1,290 @@
+/* --- Core Variables & Reset --- */
+:root {
+    --bg-dark: #0a0b10;
+    --accent: #007aff;
+    --glass: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --text-main: #f5f5f7;
+    --text-dim: #86868b;
+    --success: #34c759;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.modal-open {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    line-height: 1.6;
+    overflow: hidden; /* Prevents background scrolling */
+}
+
+/* --- Modal Overlay --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Mobile optimization: slides from bottom */
+    z-index: 3000;
+}
+
+/* --- Modal Container --- */
+.modal-container {
+    background: #111218;
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 500px;
+    height: 85vh;
+    border-radius: 28px 28px 0 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* --- Header Section --- */
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.merchant-meta h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.accent { color: var(--accent); }
+
+.status-indicator {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--success); /* */
+}
+
+.close-btn {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Scrollable Body Content --- */
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.scroll-box::-webkit-scrollbar { width: 4px; }
+.scroll-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+/* --- Food Item Cards --- */
+.food-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--glass);
+    padding: 16px;
+    border-radius: 18px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+}
+
+.check-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    gap: 10px;
+}
+
+.item-price {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 10px;
+}
+
+.qty-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.qty-val {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* --- Summary & Breakdown --- */
+.breakdown-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+}
+
+.highlight-row {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border);
+    font-weight: 800;
+    font-size: 1.15rem;
+}
+
+/* --- Bank Account Card --- */
+.payment-details { margin-top: 32px; }
+
+.bank-card {
+    background: linear-gradient(135deg, #16171d 0%, #0a0b10 100%);
+    border: 1px solid var(--border);
+    padding: 24px;
+    border-radius: 22px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-tag {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.acc-num {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 6px 0;
+}
+
+.acc-name {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.payment-instruction {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 16px;
+    padding: 0 10px;
+}
+
+/* --- Footer Buttons --- */
+.modal-footer {
+    padding: 20px 24px 40px; /* Padding for mobile home indicators */
+    display: flex;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-outline {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.btn-filled {
+    background: var(--text-main);
+    color: var(--bg-dark);
+}
+
+.btn-filled:hover { transform: translateY(-2px); }
+
+.w-100 { width: 100%; }
+
+/* --- Responsive Adjustments --- */
+@media (min-width: 768px) {
+    .modal-overlay { align-items: center; }
+    .modal-container {
+        border-radius: 28px;
+        height: auto;
+        max-height: 85vh;
+    }
+}

@@ -1,0 +1,107 @@
+:root {
+    --bg-dark: #0a0b10;
+    --accent: #007aff;
+    --glass: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --text-main: #f5f5f7;
+    --text-dim: #86868b;
+    --success: #34c759;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    line-height: 1.5;
+}
+
+.main-wrapper { padding: 0 5%; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* --- Navigation --- */
+.navbar { height: 80px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.logo { font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; text-decoration: none; color: white; }
+.accent { color: var(--accent); }
+
+/* --- Auth Container --- */
+.auth-container { max-width: 500px; margin: 30px auto; width: 100%; }
+
+.section-header { text-align: center; margin-bottom: 30px; }
+h1 { font-size: 2rem; font-weight: 800; }
+.highlight { color: var(--accent); }
+.hero-description { color: var(--text-dim); font-size: 0.9rem; }
+
+/* --- Tabs --- */
+.tab-switcher {
+    display: flex; background: var(--glass); padding: 6px; 
+    border-radius: 16px; margin-bottom: 25px; border: 1px solid var(--border);
+}
+.tab-btn {
+    flex: 1; padding: 12px; border: none; background: transparent;
+    color: var(--text-dim); font-weight: 700; cursor: pointer; transition: 0.3s;
+}
+.tab-btn.active { background: var(--text-main); color: var(--bg-dark); border-radius: 12px; }
+
+.tab-view { display: none; }
+.tab-view.active { display: block; animation: fadeIn 0.4s ease; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- Form Cards --- */
+.report-card { background: var(--glass); border: 1px solid var(--border); padding: 24px; border-radius: 22px; backdrop-filter: blur(20px); }
+.scroll-box { max-height: 500px; overflow-y: auto; padding-right: 10px; }
+/* Custom Scrollbar */
+.scroll-box::-webkit-scrollbar { width: 4px; }
+.scroll-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+.card-tag { font-size: 0.6rem; font-weight: 800; color: var(--accent); letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+input {
+    width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; color: var(--text-main); font-size: 0.95rem; outline: none; transition: 0.3s;
+}
+input:focus { border-color: var(--accent); background: rgba(0, 122, 255, 0.05); }
+
+/* --- Buttons & Legal --- */
+.btn { padding: 18px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; transition: 0.3s; }
+.btn-filled { background: var(--text-main); color: var(--bg-dark); }
+.w-100 { width: 100%; }
+
+.legal-check { margin: 20px 0; font-size: 0.8rem; color: var(--text-dim); }
+
+.legal-check label { 
+    display: flex;             /* Use flex to put checkbox and text side-by-side */
+    align-items: flex-start;   /* Align to top of text line */
+    gap: 10px;                 /* Space between checkbox and text */
+    margin-bottom: 12px; 
+    cursor: pointer; 
+    line-height: 1.2;
+}
+
+/* Ensure the checkbox doesn't stretch like the other inputs */
+.legal-check input[type="checkbox"] {
+    width: 18px;               /* Fixed width for checkbox */
+    height: 18px;              /* Fixed height for checkbox */
+    margin: 0;                 /* Remove default margins */
+    cursor: pointer;
+    flex-shrink: 0;            /* Prevent checkbox from getting squashed */
+    accent-color: var(--accent); /* Makes the check mark blue to match theme */
+}
+
+.accent-link { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+
+.footer { padding: 30px 0; text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-top: auto; }
+
+.status-indicator { font-size: 0.65rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); }
+.animate-flicker { animation: flicker 2s infinite ease-in-out; }
+@keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Desktop Adjustment */
+@media (min-width: 768px) { .auth-container { max-width: 450px; } }
