@@ -14,6 +14,10 @@ import {
     getDocs 
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+// --- State Tracking ---
+let isUsernameValid = false;
+let isMatricValid = false;
+
 // --- UI Logic: Tab Switching ---
 window.switchTab = (tab) => {
     const loginView = document.getElementById('login-view');
@@ -36,42 +40,73 @@ window.switchTab = (tab) => {
 
 // --- REAL-TIME UNIQUENESS CHECKS ---
 
-async function checkAvailability(field, value) {
-    if (!value) return true;
-    const q = query(collection(db, "users"), where(field, "==", value.toLowerCase()));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.empty; 
-}
-
-function debounce(func, timeout = 500) {
-    let timer;
+const debounce = (func, delay = 500) => {
+    let timeout;
     return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
     };
-}
+};
+
+const checkUniqueness = async (field, value, statusId) => {
+    const statusEl = document.getElementById(statusId);
+    if (!value || value.length < 3) {
+        statusEl.innerText = "";
+        statusEl.className = "validation-msg";
+        return;
+    }
+
+    statusEl.innerText = "Checking...";
+    statusEl.style.color = "gray";
+
+    try {
+        const q = query(collection(db, "users"), where(field, "==", value.toLowerCase()));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            statusEl.innerText = "✓ Available";
+            statusEl.className = "validation-msg status-available";
+            statusEl.style.color = "#34c759";
+            if (field === "username") isUsernameValid = true;
+            if (field === "matricNo") isMatricValid = true;
+        } else {
+            statusEl.innerText = "✕ Already Taken";
+            statusEl.className = "validation-msg status-taken";
+            statusEl.style.color = "#ff3b30";
+            if (field === "username") isUsernameValid = false;
+            if (field === "matricNo") isMatricValid = false;
+        }
+    } catch (err) {
+        console.error("Validation error:", err);
+    }
+};
 
 const signupForm = document.getElementById('customer-signup');
-const usernameInput = signupForm.querySelectorAll('input')[1];
-const matricInput = signupForm.querySelectorAll('input')[4];
+const inputs = signupForm.querySelectorAll('input');
+const usernameInput = inputs[1]; 
+const matricInput = inputs[4]; 
 
-usernameInput.addEventListener('input', debounce(async (e) => {
-    const isAvailable = await checkAvailability("username", e.target.value.trim());
-    e.target.style.borderColor = isAvailable ? "#34c759" : "#ff3b30";
+// Attach listeners (Make sure IDs 'username-status' and 'matric-status' exist in HTML)
+usernameInput.addEventListener('input', debounce((e) => {
+    checkUniqueness("username", e.target.value.trim(), "username-status");
 }));
 
-matricInput.addEventListener('input', debounce(async (e) => {
-    const isAvailable = await checkAvailability("matricNo", e.target.value.trim());
-    e.target.style.borderColor = isAvailable ? "#34c759" : "#ff3b30";
+matricInput.addEventListener('input', debounce((e) => {
+    checkUniqueness("matricNo", e.target.value.trim(), "matric-status");
 }));
 
 
-// --- Feature: Customer Signup (WITH BLACKLIST CHECK) ---
+// --- Feature: Customer Signup ---
 signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const submitBtn = signupForm.querySelector('button');
     
-    const inputs = signupForm.querySelectorAll('input');
+    // Prevent submission if validation failed
+    if (!isUsernameValid || !isMatricValid) {
+        alert("Please fix the errors (Username or Matric Number already in use).");
+        return;
+    }
+
+    const submitBtn = signupForm.querySelector('button');
     const fullName = inputs[0].value;
     const username = inputs[1].value.trim().toLowerCase();
     const email = inputs[2].value.trim();
@@ -92,28 +127,16 @@ signupForm.addEventListener('submit', async (e) => {
     submitBtn.innerText = "Verifying Details...";
 
     try {
-        // 1. SECURITY CHECK: Check if email is blacklisted
+        // Blacklist Check
         const blacklistRef = doc(db, "blacklist", email.toLowerCase());
         const blacklistSnap = await getDoc(blacklistRef);
-        
-        if (blacklistSnap.exists()) {
-            throw new Error("This email has been blacklisted and cannot be used for registration.");
-        }
+        if (blacklistSnap.exists()) throw new Error("This email is blacklisted.");
 
-        // 2. Final Uniqueness Check
-        const [isUserFree, isMatricFree] = await Promise.all([
-            checkAvailability("username", username),
-            checkAvailability("matricNo", matricNo)
-        ]);
-
-        if (!isUserFree) throw new Error("Username is already taken.");
-        if (!isMatricFree) throw new Error("Matric number is already registered.");
-
-        // 3. Firebase Auth Creation
+        // Auth Creation
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // 4. Save Profile
+        // Save Profile
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             fullName,
@@ -125,7 +148,7 @@ signupForm.addEventListener('submit', async (e) => {
             location,
             bankDetails: { bankName, accName, accNo },
             role: "customer",
-            status: "Active", // Default status
+            status: "Active",
             createdAt: new Date().toISOString()
         });
 
@@ -140,9 +163,7 @@ signupForm.addEventListener('submit', async (e) => {
     }
 });
 
-
-
-// --- Feature: Customer Login (WITH STATUS CHECK) ---
+// --- Feature: Customer Login ---
 const loginForm = document.getElementById('customer-login');
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -156,7 +177,6 @@ loginForm.addEventListener('submit', async (e) => {
     try {
         let email = identifier;
 
-        // Support Username Login
         if (!identifier.includes('@')) {
             const q = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
             const querySnapshot = await getDocs(q);
@@ -164,35 +184,23 @@ loginForm.addEventListener('submit', async (e) => {
             email = querySnapshot.docs[0].data().email;
         }
 
-        // 1. Attempt Firebase Login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-
-        // 2. Fetch user data to verify Status and Role
         const userDoc = await getDoc(doc(db, "users", user.uid));
         
         if (userDoc.exists()) {
             const userData = userDoc.data();
-
-            // CHECK: Is the account blocked?
             if (userData.status === "Locked") {
-                await signOut(auth); // Force sign out
-                throw new Error("Your account has been BLOCKED. Please contact support.");
+                await signOut(auth);
+                throw new Error("Your account has been BLOCKED.");
             }
-
-            // CHECK: Is the role correct?
             if (userData.role === "customer") {
                 window.location.href = "./home.html";
             } else {
                 await signOut(auth);
-                throw new Error("This account is not registered as a Customer.");
+                throw new Error("Not a customer account.");
             }
-        } else {
-            // Document missing (Likely deleted by admin)
-            await signOut(auth);
-            throw new Error("Account data not found. It may have been deleted.");
         }
-
     } catch (error) {
         alert("Login failed: " + error.message);
     } finally {
