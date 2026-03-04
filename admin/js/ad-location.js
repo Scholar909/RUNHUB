@@ -56,15 +56,6 @@ function syncMerchants(adminLocationOn) {
             const data = change.doc.data();
             const id = change.doc.id;
 
-            if (!adminLocationOn) {
-                // Admin location OFF → hide all merchant pins
-                if (merchantMarkers[id]) {
-                    map.removeLayer(merchantMarkers[id]);
-                    delete merchantMarkers[id];
-                }
-                return;
-            }
-
             // Admin location ON → show only merchants with location
             if (data.location && data.location.lat) {
                 updateMerchantMarker(id, data);
