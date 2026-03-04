@@ -59,12 +59,12 @@ function updateUIStatus(enabled) {
     const statusText = document.querySelector('.status-indicator');
     if (!dot || !statusText) return;
 
-    if (!isMonitoringActive || enabled) {
+    if (enabled) {
         dot.style.background = "#34c759";
         statusText.innerHTML = `<span class="dot animate-flicker" style="background:#34c759"></span> ONLINE`;
     } else {
         dot.style.background = "#ff3b30";
-        statusText.innerHTML = `<span class="dot" style="background:#ff3b30"></span> OFFLINE (GPS REQUIRED)`;
+        statusText.innerHTML = `<span class="dot" style="background:#ff3b30"></span> OFFLINE (GPS OFF)`;
     }
 }
 
@@ -75,11 +75,25 @@ function startLocationMonitoring() {
     }
 
     if ("geolocation" in navigator) {
-        locationWatcher = navigator.geolocation.watchPosition(
-            () => updateUIStatus(true),
-            () => handleLocationFailure(),
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-        );
+      let lastLocationTimestamp = Date.now();
+      const GPS_GRACE_MS = 2 * 60 * 1000; // 2 minutes grace
+      
+      locationWatcher = navigator.geolocation.watchPosition(
+          (pos) => {
+              lastLocationTimestamp = Date.now();
+              updateUIStatus(true);
+          },
+          () => {
+              const now = Date.now();
+              if (now - lastLocationTimestamp > GPS_GRACE_MS) {
+                  alert("Please turn on your location to remain visible.");
+                  forceLogout(); // only after 2 minutes of being off
+              } else {
+                  updateUIStatus(false); // just show offline temporarily
+              }
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      );
     } else {
         handleLocationFailure();
     }
