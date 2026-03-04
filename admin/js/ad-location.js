@@ -4,6 +4,23 @@ import {
     collection, onSnapshot, doc, addDoc, serverTimestamp, getDocs, query, where 
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+async function getClosestLocationName(merchantLatLng) {
+    const staticSnap = await getDocs(collection(db, "staticLocations"));
+    let closest = null;
+    let minDist = Infinity;
+
+    staticSnap.forEach(doc => {
+        const loc = doc.data();
+        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng); // rough distance
+        if (dist < minDist) {
+            minDist = dist;
+            closest = loc.name;
+        }
+    });
+
+    return closest || "N/A";
+}
+
 let map;
 let merchantMarkers = {};
 let staticMarkers = {};
@@ -11,52 +28,51 @@ let tempMarker = null;
 
 // --- Get User Location Before Map Sync ---
 function initMap() {
-    map = L.map('map', { zoomControl: false }).setView([6.6726, 3.1614], 16);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    // Hide loading overlay first
     const overlay = document.getElementById('loadingOverlay');
-    overlay.style.display = 'none';
 
-    // Force Leaflet to recalc the container size
-    map.invalidateSize();
+    map = L.map('map', { zoomControl: false }).setView([7.1903, 4.5607], 16); // approximate campus coords
 
-    // Center map using geolocation
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                map.setView([pos.coords.latitude, pos.coords.longitude], 16);
-                syncMerchants(true);
-            },
-            (err) => {
-                console.warn("Admin location not available:", err);
-                syncMerchants(false);
-            }
-        );
-    } else {
-        console.warn("Geolocation not supported");
-        syncMerchants(false);
-    }
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+     .addTo(map);
 
-    // Always sync static locations
-    syncStaticLocations();
+    // Wait for layout to settle
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        map.invalidateSize();
+
+        // Try geolocation
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                    startLiveTracking(pos.coords.latitude, pos.coords.longitude);
+                },
+                err => console.warn("Location unavailable:", err)
+            );
+        }
+
+        syncMerchants();
+        syncStaticLocations();
+    }, 200);
 }
 
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
-function syncMerchants(adminLocationOn) {
-    const q = query(collection(db, "users"), where("accountType", "==", "merchant"));
-    
+function syncMerchants() {
+    const q = query(
+        collection(db, "users"),
+        where("accountType", "==", "merchant"),
+        where("isActive", "==", true) // only active/logged-in merchants
+    );
+
     onSnapshot(q, (snapshot) => {
         const tray = document.getElementById('merchantFooter');
         tray.innerHTML = '';
 
-        snapshot.docChanges().forEach((change) => {
-            const data = change.doc.data();
-            const id = change.doc.id;
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id;
 
-            // Admin location ON → show only merchants with location
-            if (data.location && data.location.lat) {
+            if (data.location?.lat && data.location?.lng) {
                 updateMerchantMarker(id, data);
                 renderMerchantCard(id, data);
             } else if (merchantMarkers[id]) {
@@ -67,17 +83,16 @@ function syncMerchants(adminLocationOn) {
     });
 }
 
-function updateMerchantMarker(id, data) {
-    const pos = [data.location.lat, data.location.lng];
-    
-    // Determine session status for label
-    let status = data.isActive ? "Available" : "Unavailable";
-    
+async function updateMerchantMarker(id, data) {
+    const pos = { lat: data.location.lat, lng: data.location.lng };
+    const closestName = await getClosestLocationName(pos);
+
     if (merchantMarkers[id]) {
-        merchantMarkers[id].setLatLng(pos);
+        merchantMarkers[id].setLatLng([pos.lat, pos.lng]);
+        merchantMarkers[id].bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
     } else {
-        const marker = L.marker(pos).addTo(map)
-            .bindPopup(`<b>${data.username}</b><br>Status: ${status}`);
+        const marker = L.marker([pos.lat, pos.lng]).addTo(map)
+            .bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
         merchantMarkers[id] = marker;
     }
 }

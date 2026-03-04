@@ -10,6 +10,25 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
+async function getClosestLocationName(merchantLatLng) {
+    if (!merchantLatLng || !merchantLatLng.lat || !merchantLatLng.lng) return "N/A";
+
+    const staticSnap = await getDocs(collection(db, "staticLocations"));
+    let closest = null;
+    let minDist = Infinity;
+
+    staticSnap.forEach(doc => {
+        const loc = doc.data();
+        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng); // rough distance
+        if (dist < minDist) {
+            minDist = dist;
+            closest = loc.name;
+        }
+    });
+
+    return closest || "N/A";
+}
+
 // --- CONFIG ---
 const ADMIN_FEE_PER_ORDER = 50;
 
@@ -143,7 +162,7 @@ function getInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 }
 
-function renderProfile(data, walletAmt) {
+async function renderProfile(data, walletAmt) {
     let role = "customer"; // default assume customer
     
     if (data.role) {
@@ -176,6 +195,14 @@ function renderProfile(data, walletAmt) {
     const isLocked = data.status?.toLowerCase() === 'locked';
     suspendBtn.textContent = isLocked ? "Unlock Account" : "Suspend Account";
     suspendBtn.onclick = () => toggleLock(isLocked);
+    
+    let currentLocDisplay = "N/A";
+    if (data.role?.toLowerCase() === 'merchant' && data.location) {
+        const closestName = await getClosestLocationName(data.location);
+        currentLocDisplay = `Closest to: ${closestName}`;
+    } else if (data.location) {
+        currentLocDisplay = data.location;
+    }
 
     // 2. Info Grid Construction
     let htmlContent = `
@@ -187,7 +214,7 @@ function renderProfile(data, walletAmt) {
             ${createInfoRow("Phone", data.phoneNumber || data.phone)}
             ${createInfoRow("Level", data.level)}
             ${createInfoRow("Matric No", data.matricNumber || data.matricNo)}
-            ${createInfoRow("Current Location", data.location)}
+            ${createInfoRow("Current Location", currentLocDisplay)}
             ${createInfoRow("Status", data.status || "Active")}
             ${createInfoRow("Created At", formatDate(data.createdAt))}
         </div>
