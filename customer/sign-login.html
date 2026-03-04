@@ -29,7 +29,7 @@
             <div id="login-view" class="tab-view active">
                 <form id="customer-login" class="report-card">
                     <div class="form-group">
-                        <label>Username or Email</label>
+                        <label>Email</label>
                         <input type="text" class="glass-input" placeholder="e.g. runner_01" required>
                     </div>
                     <div class="form-group">
@@ -53,6 +53,7 @@
                         <div class="form-group">
                             <label>Username</label>
                             <input type="text" placeholder="johndoe22" required>
+                            <small id="username-status" class="validation-msg"></small>
                         </div>
                         <div class="form-group">
                             <label>Email</label>
@@ -67,7 +68,8 @@
                         </div>
                         <div class="form-group">
                             <label>Matric No</label>
-                            <input type="text" placeholder="20/0123" required>
+                            <input type="text" placeholder="RUN/ABC/12/12345" required>
+                            <small id="matric-status" class="validation-msg"></small>
                         </div>
                     </div>
 
@@ -119,7 +121,7 @@
             <p>&copy; <span id="year"></span> RUN HUB. Verified Students Only.</p>
         </footer>
     </div>
-    <script src="js/sign-login.js?=v9" type="module"></script>
+    <script src="js/sign-login.js?=v10" type="module"></script>
     <script src="js/firebase-config.js?=v6" type="module"></script>
 </body>
 </html>
