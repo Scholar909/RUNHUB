@@ -1,0 +1,141 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | RUN HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/dashboard.css?=v8">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> ADMIN SECURE
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Admin Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="location.html">Live Tracking</a></li>
+        <li><a href="complaints.html">Complaints</a></li>
+        <li><a href="merch-signup.html">Merchant Registration</a></li>
+        <li><a href="pol-term-edit.html">Policies & Legal</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="hero-section">
+                <h1>Control <span class="highlight">Center</span></h1>
+                <p class="hero-description">Oversee system-wide activity, manage users, and enforce platform regulations.</p>
+            </header>
+
+            <section class="trust-grid">
+                <div class="trust-card stat-card">
+                    <div class="card-tag">TOTAL CUSTOMERS</div>
+                    <h3 class="stat-value">0</h3>
+                    <p>Verified Student Accounts</p>
+                </div>
+
+                <div class="trust-card stat-card">
+                    <div class="card-tag">TOTAL MERCHANTS</div>
+                    <h3 class="stat-value">0</h3>
+                    <p>Verified Service Providers</p>
+                </div>
+            </section>
+
+            <section class="management-section">
+                <div class="trust-card table-card">
+                    <div class="table-header">
+                        <div class="card-tag">USER MANAGEMENT</div>
+                        <div class="search-container">
+                            <i class="fi-magnifying-glass"></i>
+                            <input type="text" placeholder="Search by name, ID, or phone..." class="admin-search">
+                        </div>
+                    </div>
+
+                    <div class="table-overflow-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Account Type</th>
+                                    <th>Phone No.</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Doe</td>
+                                    <td><span class="badge customer">Customer</span></td>
+                                    <td>08123456789</td>
+                                    <td><span class="status-pill active">Active</span></td>
+                                    <td class="action-cell">
+                                        <a href="view.html" class="action-btn view-btn" title="View Profile">
+                                            <i class="fi-eye"></i>
+                                        </a>
+                                        <button class="action-btn lock-btn" title="Lock Account">
+                                            <i class="fi-lock"></i>
+                                        </button>
+                                        <button class="action-btn delete-btn" title="Delete User">
+                                            <i class="fi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Swift Deliveries</td>
+                                    <td><span class="badge merchant">Merchant</span></td>
+                                    <td>08132458679</td>
+                                    <td><span class="status-pill locked">Locked</span></td>
+                                    <td class="action-cell">
+                                        <a href="location.html" class="action-btn loc-btn" title="Track Location">
+                                            <i class="fi-marker"></i>
+                                        </a>
+                                        <a href="view.html" class="action-btn view-btn" title="View Profile">
+                                            <i class="fi-eye"></i>
+                                        </a>
+                                        <button class="action-btn lock-btn" title="Lock Account">
+                                            <i class="fi-unlock"></i>
+                                        </button>
+                                        <button class="action-btn delete-btn" title="Delete User">
+                                            <i class="fi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
+            <a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
+            <a href="dashboard.html" class="nav-icon-box active"><i class="fi-home"></i></a>
+            <a href="merch-signup.html" class="nav-icon-box"><i class="fi-plus"></i></a>
+            <a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/ad-dashboard.js?=v10" type="module"></script>
+</body>
+</html>

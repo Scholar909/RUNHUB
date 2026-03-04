@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Policies | Admin RUN HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/pol-term-edit.css?=v4">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> LEGAL EDITOR
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Admin Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="location.html">Live Tracking</a></li>
+        <li><a href="complaints.html">Complaints</a></li>
+        <li><a href="merch-signup.html">Merchant Registration</a></li>
+        <li><a href="pol-term-edit.html">Policies & Legal</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="section-header">
+                <h1>Terms & <span class="highlight">Conditions</span></h1>
+                <p class="hero-description">Update the platform rules. Changes reflect immediately on all sign-up pages.</p>
+            </header>
+
+            <section class="editor-section">
+                <div class="trust-card report-card">
+                    <div class="card-tag">CONTENT EDITOR</div>
+                    
+                    <div class="form-group">
+                        <label>Document Category</label>
+                        <select class="admin-select">
+                          <option value="">Select Content To Make Changes</option>
+                            <option value="terms">General Terms & Conditions</option>
+                            <option value="privacy">Privacy Policy</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Last Updated: <span id="lastUpdate">Oct 24, 2023</span></label>
+                        <textarea class="policy-textarea" placeholder="Paste your legal content here..."></textarea>
+                    </div>
+
+                    <div class="alert-box-info">
+                        <i class="fi-info"></i>
+                        <span>Clicking update will overwrite the previous version of this document.</span>
+                    </div>
+
+                    <button class="btn btn-filled w-100" style="margin-top: 20px;">Update & Publish Changes</button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
+            <a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
+            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="merch-signup.html" class="nav-icon-box"><i class="fi-plus"></i></a>
+            <a href="pol-term-edit.html" class="nav-icon-box active"><i class="fi-page-filled"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/pol-term-edit.js?=v2" type="module"></script>
+</body>
+</html>

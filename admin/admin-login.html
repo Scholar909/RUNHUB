@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | RUN HUB</title>
+    <link rel="stylesheet" href="css/admin-login.css?=v3">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> SYSTEM COMMAND
+            </div>
+        </nav>
+
+        <main class="auth-container">
+            <header class="section-header">
+                <h1>Admin <span class="highlight">Login</span></h1>
+                <p class="hero-description">Access restricted to authorized platform administrators only.</p>
+            </header>
+
+            <div class="report-card">
+                <div class="card-tag">SECURE GATEWAY</div>
+                <form id="admin-login-form">
+                    <div class="form-group">
+                        <label>Admin Email</label>
+                        <input type="email" id="admin-email" placeholder="admin@runhub.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Secure Password</label>
+                        <input type="password" id="admin-password" placeholder="••••••••" required>
+                    </div>
+
+                    <div id="login-error" class="error-msg" style="display: none;">
+                        Invalid credentials or access denied.
+                    </div>
+
+                    <button type="submit" class="btn btn-filled w-100" id="login-btn">
+                        Authorize Access
+                    </button>
+                </form>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; RUN HUB Admin Terminal. Connection Encrypted.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="js/admin-login.js?=v3"></script>
+</body>
+</html>

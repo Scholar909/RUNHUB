@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tracking | Admin RUN HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/location.css?=v10">
+</head>
+<body>
+    <div id="loadingOverlay">
+        <div>📍 Please enable location to sync the live radar...</div>
+    </div>
+
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> LIVE RADAR
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Admin Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="location.html">Live Tracking</a></li>
+        <li><a href="complaints.html">Complaints</a></li>
+        <li><a href="merch-signup.html">Merchant Registration</a></li>
+        <li><a href="pol-term-edit.html">Policies & Legal</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <div id="map-container">
+                <div id="map"></div>
+                
+                <div id="addRestaurantBtn" title="Add New Location">+</div>
+                <div id="confirmBtn" title="Confirm Position">✓</div>
+
+                <div id="merchantFooter" class="map-tray"></div>
+                
+                <div id="restaurantFooter" class="map-tray"></div>
+            </div>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="location.html" class="nav-icon-box active"><i class="fi-marker"></i></a>
+            <a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
+            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="merch-signup.html" class="nav-icon-box"><i class="fi-plus"></i></a>
+            <a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
+        </footer>
+    </div>
+
+    <div id="restaurantSelectOverlay" class="modal-overlay">
+        <div class="modal-content trust-card">
+            <div class="card-tag">NAME LOCATION</div>
+            <select id="restaurantSelect" class="admin-input"></select>
+            <div class="modal-btns">
+                <button id="restaurantSelectConfirm" class="btn btn-filled w-100">Save Location</button>
+                <button onclick="closeLocModal()" class="btn btn-outline w-100">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="js/location.js?=v2"></script>
+</body>
+</html>

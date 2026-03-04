@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Onboarding | Admin RUN HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/merch-signup.css?=v7">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> ONBOARDING
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Admin Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="location.html">Live Tracking</a></li>
+        <li><a href="complaints.html">Complaints</a></li>
+        <li><a href="merch-signup.html">Merchant Registration</a></li>
+        <li><a href="pol-term-edit.html">Policies & Legal</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="section-header">
+                <h1>Merchant <span class="highlight">Registration</span></h1>
+                <p class="hero-description">Verify ID and academic details before creating credentials.</p>
+            </header>
+
+            <section class="registration-section">
+                <form id="merchantSignupForm" class="trust-card report-card">
+                    <div class="card-tag">PHYSICAL VERIFICATION REQUIRED</div>
+                    
+                    <div class="form-group">
+                        <label>Profile Photo (ID Card)</label>
+                        <input type="file" id="profilePhoto" accept="image/*" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Full Name (Official)</label>
+                        <input type="text" id="fullName" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Username (System ID)</label>
+                        <input type="text" id="username" placeholder="tunde_kitchen" required>
+                        <span id="username-status" class="validation-msg"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="text" id="email" placeholder="email" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Level</label>
+                            <input type="number" id="level" placeholder="e.g. 400" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Matric Number</label>
+                            <input type="text" id="matricNumber" placeholder="20/0000" required>
+                            <span id="matric-status" class="validation-msg"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>WhatsApp Number</label>
+                        <input type="tel" id="phoneNumber" placeholder="08012345678" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Campus Location (Room, Block, Hostel)</label>
+                        <input type="text" id="location" placeholder="Room 12, Block A, Paul Hostel" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bank Name</label>
+                        <input type="text" id="bankName" placeholder="Access Bank" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input type="text" id="accountName" placeholder="John Doe Services" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" id="accountNumber" placeholder="1234567890" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="password" placeholder="Password" required>
+                        <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+                    </div>
+
+                    <div class="alert-box-info">
+                        <i class="fi-info"></i>
+                        <span>By clicking register, you verify that this merchant is physically present and verified.</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-filled w-100" style="margin-top: 20px;">Register & Verify Merchant</button>
+                </form>
+            </section>
+        </main>
+        
+        <footer class="bottom-nav">
+            <a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
+            <a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
+            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="merch-signup.html" class="nav-icon-box active"><i class="fi-plus"></i></a>
+            <a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
+        </footer>
+        </div>
+
+    <script src="js/merch-signup.js?=v11" type="module"></script>
+</body>
+</html>

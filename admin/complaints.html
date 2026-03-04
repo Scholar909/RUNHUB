@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Complaints | Admin RUN HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/complaints.css?=v8">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> SUPPORT TICKETS
+            </div>
+        </nav>
+
+<div id="navDrawer" class="nav-drawer">
+    <div class="drawer-header">
+        <h3>Admin Menu</h3>
+        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+    </div>
+    <ul class="drawer-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="location.html">Live Tracking</a></li>
+        <li><a href="complaints.html">Complaints</a></li>
+        <li><a href="merch-signup.html">Merchant Registration</a></li>
+        <li><a href="pol-term-edit.html">Policies & Legal</a></li>
+    </ul>
+    <div class="drawer-footer">
+        <button class="logout-btn" onclick="handleLogout()">
+            <i class="fi-power"></i> Logout
+        </button>
+    </div>
+</div>
+
+
+        <main class="content-body">
+            <header class="section-header">
+                <h1>User <span class="highlight">Complaints</span></h1>
+                <p class="hero-description">Review issues. "Settled" tickets trigger an auto-email to the user.</p>
+            </header>
+
+            <section class="management-section">
+                <div class="trust-card table-card">
+                    <div class="table-header">
+                        <div class="card-tag">TICKET OVERVIEW</div>
+                        <div class="search-container">
+                            <i class="fi-magnifying-glass"></i>
+                            <input type="text" placeholder="Search Order ID..." class="admin-search">
+                        </div>
+                    </div>
+
+                    <div class="table-overflow-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Order ID</th>
+                                    <th>Issue (Click to View)</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <span class="u-name">Tunde (Cust)</span>
+                                            <span class="u-meta">10:45 AM</span>
+                                        </div>
+                                    </td>
+                                    <td>#RH-8821</td>
+                                    <td>
+                                        <p class="issue-preview" onclick="openComplaintModal('Tunde (Cust)', '#RH-8821', 'Merchant hasn\'t approved my payment for over 30 minutes despite several calls.')">
+                                            Merchant hasn't approved my payment...
+                                        </p>
+                                    </td>
+                                    <td><span class="status-pill pending">Pending</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn settle-btn" title="Mark Settled"><i class="fi-check"></i></button>
+                                        <button class="action-btn closed-btn" title="Close Complaint"><i class="fi-x-circle"></i></button>
+                                        <button class="action-btn delete-btn" title="Discard"><i class="fi-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <span class="u-name">Bolatito (Merch)</span>
+                                            <span class="u-meta">08:20 AM</span>
+                                        </div>
+                                    </td>
+                                    <td>#RH-7750</td>
+                                    <td>
+                                        <p class="issue-preview" onclick="openComplaintModal('Bolatito (Merch)', '#RH-7750', 'Customer sent fake transfer screenshot. I have verified with my bank app and no funds arrived.')">
+                                            Customer sent fake transfer screenshot...
+                                        </p>
+                                    </td>
+                                    <td><span class="status-pill settled">Settled</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn delete-btn"><i class="fi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="complaintModal" class="modal-overlay">
+            <div class="modal-content trust-card">
+                <div class="modal-header">
+                    <div class="card-tag">FULL COMPLAINT</div>
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-group">
+                        <label>Reporter</label>
+                        <h4 id="modalUser">---</h4>
+                    </div>
+                    <div class="detail-group">
+                        <label>Full Description</label>
+                        <p id="modalDesc" class="full-issue-text">---</p>
+                    </div>
+                    <button class="btn btn-filled w-100" onclick="closeModal()">Close View</button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="bottom-nav">
+            <a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
+            <a href="complaints.html" class="nav-icon-box active"><i class="fi-comment"></i></a>
+            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="merch-signup.html" class="nav-icon-box"><i class="fi-plus"></i></a>
+            <a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/complaints.js?=v2" type="module"></script>
+</body>
+</html>

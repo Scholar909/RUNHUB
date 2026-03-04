@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile | Admin RUN HUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/view.css?=v6">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="logo">RUN<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> ADMIN VIEW
+            </div>
+        </nav>
+
+        <main class="content-body">
+            <header class="profile-header">
+                <div class="profile-avatar-wrapper">
+                    <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-img">
+                    <div class="badge">CUSTOMER</div> 
+                    </div>
+                <h1 class="user-display-name">Tunde's Kitchen</h1>
+                <p class="user-handle">@tunde_kitchen</p>
+            </header>
+
+            <section class="details-grid">
+                <div class="trust-card details-card">
+                    <div class="card-tag">REGISTRATION INFO</div>
+                    <div class="info-row">
+                        <span class="label">Full Name:</span>
+                        <span class="value">Babatunde Olatunji</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Email Address:</span>
+                        <span class="value">tunde@example.com</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Phone Number:</span>
+                        <span class="value">08012345678</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Join Date:</span>
+                        <span class="value">Oct 12, 2023</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Wallet Owing:</span>
+                        <span class="value">₦350</span>
+                    </div>
+                </div>
+
+                <div class="trust-card details-card">
+                    <div class="card-tag">SUBSCRIPTION STATUS</div>
+                    <div class="info-row">
+                        <span class="label">Current Plan:</span>
+                        <span class="value status-active">Premium | Monthly | Trial</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Expiry Date:</span>
+                        <span class="value">Nov 12, 2023</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Auto-Renew:</span>
+                        <span class="value">Enabled</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">Direct Transfer</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="action-footer-btns">
+                <button class="btn btn-outline" onclick="history.back()">Back to List</button>
+                <button class="btn btn-danger">Suspend Account</button>
+            </div>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
+            <a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
+            <a href="dashboard.html" class="nav-icon-box active"><i class="fi-home"></i></a>
+            <a href="merch-signup.html" class="nav-icon-box"><i class="fi-plus"></i></a>
+            <a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
+        </footer>
+    </div>
+
+    <script src="js/ad-view.js?=v17" type="module"></script>
+</body>
+</html>
