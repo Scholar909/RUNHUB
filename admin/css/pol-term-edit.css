@@ -1,0 +1,167 @@
+:root {
+    --bg-dark: #0a0b10;
+    --accent: #007aff;
+    --glass: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --text-main: #f5f5f7;
+    --text-dim: #86868b;
+    --success: #34c759;
+    --error: #ff3b30;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    padding-bottom: 100px;
+}
+
+.main-wrapper { padding: 0 8%; }
+
+/* --- Navigation --- */
+.navbar { height: 100px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.logo { font-weight: 800; letter-spacing: 2px; font-size: 1.1rem; }
+.accent { color: var(--accent); }
+
+/* --- Fix for Menu Bar --- */
+.menu-trigger { 
+    cursor: pointer; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 4px; 
+    padding: 10px 0;
+}
+
+.bar { 
+    width: 22px; 
+    height: 2px; 
+    background: var(--text-main); 
+    border-radius: 2px; 
+    transition: 0.3s;
+}
+
+/* Optional: Slight hover effect */
+.menu-trigger:hover .bar {
+    background: var(--accent);
+}
+
+
+/* --- Editor Styles --- */
+.editor-section { margin-top: 10px; }
+.report-card { background: var(--glass); border: 1px solid var(--border); padding: 24px; border-radius: 22px; }
+.card-tag { font-size: 0.65rem; font-weight: 800; color: var(--accent); letter-spacing: 2px; margin-bottom: 20px; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Custom Select & Textarea */
+.admin-select {
+    width: 100%; background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; color: var(--text-main);
+    font-size: 0.9rem; outline: none; appearance: none;
+}
+
+.policy-textarea {
+    width: 100%; height: 350px; background: rgba(255,255,255,0.01); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px; color: var(--text-main);
+    font-size: 0.9rem; outline: none; transition: 0.3s; resize: vertical; line-height: 1.6;
+}
+.policy-textarea:focus { border-color: var(--accent); background: var(--glass); }
+
+.alert-box-info {
+    background: rgba(0, 122, 255, 0.05); border: 1px solid rgba(0, 122, 255, 0.1);
+    padding: 12px; border-radius: 12px; display: flex; gap: 10px; align-items: center;
+    font-size: 0.75rem; color: var(--text-dim);
+}
+
+/* --- Buttons --- */
+.btn { padding: 16px 25px; border-radius: 14px; font-weight: 700; font-size: 0.9rem; border: none; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
+.btn-filled { background: var(--text-main); color: var(--bg-dark); }
+.w-100 { width: 100%; }
+
+/* --- Bottom Nav --- */
+.bottom-nav {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 75px;
+    background: rgba(10, 11, 16, 0.9); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border); display: flex;
+    justify-content: space-around; align-items: center; z-index: 1000;
+}
+.nav-icon-box {
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+    border-radius: 14px; background: var(--glass); border: 1px solid var(--border);
+    color: var(--text-dim); text-decoration: none;
+}
+.nav-icon-box.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* --- Unified Drawer Styles --- */
+.nav-drawer {
+    position: fixed; top: 0; left: -100%; width: 280px; height: 100%;
+    background: rgba(10, 11, 16, 0.98); backdrop-filter: blur(20px);
+    z-index: 2000; padding: 30px 20px; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border-right: 1px solid var(--border);
+    
+    /* Layout for Logout Pinning */
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-drawer.active { left: 0; }
+
+.drawer-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    margin-bottom: 20px; flex-shrink: 0;
+}
+
+.drawer-links { 
+    list-style: none; 
+    flex-grow: 1; /* This pushes the footer down */
+    overflow-y: auto;
+}
+
+.drawer-links li { margin: 18px 0; }
+.drawer-links a { 
+    color: var(--text-dim); text-decoration: none; 
+    font-size: 0.95rem; transition: 0.3s; 
+}
+.drawer-links a:hover { color: var(--accent); }
+
+/* Logout Section */
+.drawer-footer {
+    padding-top: 20px;
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.logout-btn {
+    width: 100%;
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.2);
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.logout-btn:active {
+    transform: scale(0.97);
+    background: rgba(255, 59, 48, 0.2);
+}
+
+.section-header { padding: 40px 0 20px; }
+h1 { font-size: 2.2rem; font-weight: 800; }
+.highlight { background: linear-gradient(180deg, #fff 0%, var(--text-dim) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero-description { color: var(--text-dim); font-size: 0.9rem; }
+.status-indicator { font-size: 0.65rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+.dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); }
+.animate-flicker { animation: flicker 2s infinite ease-in-out; }
+@keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
