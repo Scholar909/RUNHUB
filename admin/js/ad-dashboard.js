@@ -207,20 +207,43 @@ searchInput.addEventListener('input', triggerSearch);
 // --- UPDATED ADMIN ACTIONS ---
 
 window.toggleUserLock = async (userId, currentStatus) => {
-    const isLocking = currentStatus.toLowerCase() !== 'locked';
+    const isLocking = currentStatus.toLowerCase() !== 'locked'; // true if we are blocking
     const newStatus = isLocking ? "Locked" : "Active";
-    
-    if (confirm(`Are you sure you want to ${isLocking ? 'BLOCK' : 'UNBLOCK'} this user?`)) {
-        try {
-            const userRef = doc(db, "users", userId);
-            await updateDoc(userRef, { 
-                status: newStatus,
-                lastStatusUpdate: new Date().toISOString() 
+
+    if (!confirm(`Are you sure you want to ${isLocking ? 'BLOCK' : 'UNBLOCK'} this user?`)) return;
+
+    try {
+        const userRef = doc(db, "users", userId);
+
+        // 1️⃣ Update user status and isActive
+        await updateDoc(userRef, {
+            status: newStatus,
+            isActive: !isLocking, // false if blocking, true if unblocking
+            lastStatusUpdate: new Date().toISOString()
+        });
+
+        // 2️⃣ If blocking, shut down all active sessions
+        if (isLocking) {
+            const sessionsRef = collection(db, "merchants", userId, "sessions");
+            const q = query(sessionsRef, where("isActive", "==", true));
+            const snap = await getDocs(q);
+
+            const batch = [];
+            snap.forEach(docSnap => {
+                batch.push(updateDoc(docSnap.ref, {
+                    isActive: false,
+                    lastTurnedOff: Date.now()
+                }));
             });
-            // The user's app will detect this change and log them out automatically
-        } catch (error) {
-            alert("Error: " + error.message);
+
+            await Promise.all(batch);
         }
+
+        alert(`User has been successfully ${isLocking ? 'BLOCKED' : 'UNBLOCKED'}.`);
+
+    } catch (error) {
+        console.error("Error toggling lock:", error);
+        alert("Failed to update user status: " + error.message);
     }
 };
 
