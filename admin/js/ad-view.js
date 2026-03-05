@@ -34,12 +34,12 @@ const ADMIN_FEE_PER_ORDER = 50;
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        window.location.href = "admin-login.html";
+        window.location.href = "./admin-login.html";
         return;
     }
 
     if (!userId) {
-        window.location.href = "dashboard.html";
+        window.location.href = "./dashboard.html";
         return;
     }
 
@@ -92,7 +92,7 @@ async function fetchUserDetails() {
             renderProfile(userData, calculatedWallet);
         } else {
             alert("User not found.");
-            window.location.href = "dashboard.html";
+            window.location.href = "./dashboard.html";
         }
     } catch (error) {
         console.error("Error fetching details:", error);
