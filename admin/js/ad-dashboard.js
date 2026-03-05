@@ -8,7 +8,9 @@ import {
     query, 
     orderBy,
     getDoc,
-    setDoc
+    setDoc,
+    where,
+    getDocs
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
@@ -18,11 +20,16 @@ const rtdb = getDatabase();
 /** * 1. AUTH GUARD
  * Kicks unauthorized users back to login page immediately
  */
+let authChecked = false;
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        initDashboard(); // only start dashboard AFTER auth confirmed
+        authChecked = true;
+        initDashboard();
     } else {
-        window.location.href = "admin-login.html";
+        if (authChecked) {
+            window.location.href = "./admin-login.html";
+        }
     }
 });
 
