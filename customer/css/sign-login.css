@@ -61,11 +61,11 @@ h1 { font-size: 2rem; font-weight: 800; }
 .form-group { margin-bottom: 18px; }
 .form-group label { display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
-input {
+input, select {
     width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
     border-radius: 12px; padding: 14px; color: var(--text-main); font-size: 0.95rem; outline: none; transition: 0.3s;
 }
-input:focus { border-color: var(--accent); background: rgba(0, 122, 255, 0.05); }
+input:focus, select:focus { border-color: var(--accent); background: rgba(0, 122, 255, 0.05); }
 
 /* --- Buttons & Legal --- */
 .btn { padding: 18px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; transition: 0.3s; }
