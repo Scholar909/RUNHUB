@@ -66,8 +66,15 @@ function renderMerchantGrid() {
                 <div class="card-tag">AVAILABLE</div>
                 <div class="merchant-header">
                     <h3 class="merchant-name-label">@${m.username}</h3>
-                    <div class="rating">${generateStars(m.rating || 5)} (${(m.rating || 5.0).toFixed(1)})</div>
+                    <div class="rating">
+                        ${generateStars(m.rating || 5)} 
+                        (${(m.rating || 5.0).toFixed(1)}) 
+                        <span style="font-size: 0.85rem; color: var(--text-dim); margin-left: 2px;">
+                            (${m.ratingCount || 0})
+                        </span>
+                    </div>
                 </div>
+
                 <div class="route">
                     <p><strong>From:</strong> ${m.fromLocation}</p>
                     <p><strong>To:</strong> ${m.toLocation}</p>
