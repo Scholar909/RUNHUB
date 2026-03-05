@@ -18,6 +18,27 @@ import {
 let isUsernameValid = false;
 let isMatricValid = false;
 
+// --- Generate Block and Room Dropdowns ---
+
+const blockSelect = document.getElementById("block");
+const roomSelect = document.getElementById("room");
+
+// Blocks 00 - 100
+for (let i = 0; i <= 100; i++) {
+    const option = document.createElement("option");
+    option.value = i.toString().padStart(2, "0");
+    option.textContent = "Block " + i.toString().padStart(2, "0");
+    blockSelect.appendChild(option);
+}
+
+// Rooms 1 - 100
+for (let i = 1; i <= 100; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = "Room " + i;
+    roomSelect.appendChild(option);
+}
+
 // --- UI Logic: Tab Switching ---
 window.switchTab = (tab) => {
     const loginView = document.getElementById('login-view');
@@ -113,12 +134,20 @@ signupForm.addEventListener('submit', async (e) => {
     const level = inputs[3].value;
     const matricNo = inputs[4].value.trim();
     const phone = inputs[5].value;
-    const location = inputs[6].value;
-    const bankName = inputs[7].value;
-    const accName = inputs[8].value;
-    const accNo = inputs[9].value;
-    const password = inputs[10].value;
-    const confirmPass = inputs[11].value;
+    
+    const gender = document.getElementById("gender").value;
+    const hostel = document.getElementById("hostel").value;
+    const block = document.getElementById("block").value;
+    const room = document.getElementById("room").value;
+    
+    const location = `Block ${block}, Room ${room}, ${hostel}`;
+    
+    const bankName = inputs[6].value;
+    const accName = inputs[7].value;
+    const accNo = inputs[8].value;
+    
+    const password = inputs[9].value;
+    const confirmPass = inputs[10].value;
 
     if (password !== confirmPass) return alert("Passwords do not match!");
     if (password.length < 6) return alert("Password must be at least 6 characters.");
@@ -142,6 +171,7 @@ signupForm.addEventListener('submit', async (e) => {
             fullName,
             username,
             email,
+            gender,
             level,
             matricNo,
             phoneNumber: phone,

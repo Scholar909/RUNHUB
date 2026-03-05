@@ -35,6 +35,7 @@ async function fetchUserProfile(uid) {
             setUI('displayUsername', `@${data.username}`);
             setUI('matricNum', data.matricNo);
             setUI('level', `${data.level}L`); // Adds 'L' suffix to level (e.g., 400L)
+            setUI('gender', data.gender);
             setUI('emailAddr', data.email);
             setUI('phoneNum', data.phoneNumber);
             setUI('roomDetails', data.location);
