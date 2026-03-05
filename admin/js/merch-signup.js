@@ -157,7 +157,7 @@ signupForm.addEventListener('submit', async (e) => {
             phoneNumber: document.getElementById('phoneNumber').value,
             gender: document.getElementById('gender').value,
             
-            location: `Room ${document.getElementById('room').value}, Block ${document.getElementById('block').value}, ${document.getElementById('hostel').value}`,
+            hostelLocation: `Block ${document.getElementById('block').value}, Room ${document.getElementById('room').value}, ${document.getElementById('hostel').value}`,
             bankDetails: {
                 bankName: document.getElementById('bankName').value,
                 accountName: document.getElementById('accountName').value,
