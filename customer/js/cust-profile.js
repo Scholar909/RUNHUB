@@ -38,7 +38,7 @@ async function fetchUserProfile(uid) {
             setUI('gender', data.gender);
             setUI('emailAddr', data.email);
             setUI('phoneNum', data.phoneNumber);
-            setUI('roomDetails', data.location);
+            setUI('roomDetails', data.hostelLocation);
             
             // Handle Nested Bank Details
             if (data.bankDetails) {
