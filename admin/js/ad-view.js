@@ -241,7 +241,13 @@ async function renderProfile(data, walletAmt) {
                     <span class="label">${walletLabel}:</span>
                     <span class="value" style="color: ${walletColor}; font-weight: bold;">${displayAmt}</span>
                 </div>
-                ${createInfoRow("Rating", `${data.rating || '5.0'} / 5.0`)}
+                ${createInfoRow("Rating", `
+                    ${(data.rating || 5.0).toFixed(1)} / 5.0 
+                    <span style="color: var(--text-dim); font-weight: normal; margin-left: 5px;">
+                        (${data.ratingCount || 0} reviews)
+                    </span>
+                `)}
+
                 ${createInfoRow("Current Plan", data.subscription?.type?.toUpperCase())}
                 ${createInfoRow("Expiry Date", formatDate(data.subscription?.expiryDate))}
             </div>
