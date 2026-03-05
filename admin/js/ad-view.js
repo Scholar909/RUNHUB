@@ -203,12 +203,11 @@ async function renderProfile(data, walletAmt) {
     suspendBtn.textContent = isLocked ? "Unlock Account" : "Suspend Account";
     suspendBtn.onclick = () => toggleLock(isLocked);
     
-    let currentLocDisplay = "N/A";
-    if (data.role?.toLowerCase() === 'merchant' && data.location) {
+    let staticLocation = "N/A";
+    
+    if (data.role?.toLowerCase() === 'merchant' && data.location?.lat && data.location?.lng) {
         const closestName = await getClosestLocationName(data.location);
-        currentLocDisplay = `Closest to: ${closestName}`;
-    } else if (data.location) {
-        currentLocDisplay = data.location;
+        staticLocation = closestName;
     }
 
     // 2. Info Grid Construction
@@ -218,10 +217,12 @@ async function renderProfile(data, walletAmt) {
             ${createInfoRow("Full Name", data.fullName)}
             ${createInfoRow("Email", data.email)}
             ${createInfoRow("Username", data.username)}
+            ${createInfoRow("Gender", data.gender)}
             ${createInfoRow("Phone", data.phoneNumber || data.phone)}
             ${createInfoRow("Level", data.level)}
             ${createInfoRow("Matric No", data.matricNumber || data.matricNo)}
-            ${createInfoRow("Current Location", currentLocDisplay)}
+            ${role === 'merchant' ? createInfoRow("Current Location", staticLocation) : ""}
+            ${createInfoRow("Hostel Location", data.location)}
             ${createInfoRow("Status", data.status || "Active")}
             ${createInfoRow("Created At", formatDate(data.createdAt))}
         </div>
