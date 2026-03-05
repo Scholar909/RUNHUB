@@ -68,7 +68,7 @@ async function fetchUserProfile(uid) {
 // --- 3. Interaction Logic ---
 window.contactSupport = () => {
     const adminPhone = "2349168873680"; 
-    const message = encodeURIComponent("Hello RUNHUB Admin, I am a merchant and I need assistance with my profile/account.");
+    const message = encodeURIComponent("Hello RUNHUB Admin, I am a customer and I need assistance with my profile/account.");
     window.location.href = `https://wa.me/${adminPhone}?text=${message}`;
 };
 /**
