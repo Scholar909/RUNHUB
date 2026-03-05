@@ -23,6 +23,28 @@ const db = getFirestore(app);
 let isUsernameValid = false;
 let isMatricValid = false;
 
+// --- LOCATION DROPDOWN GENERATOR ---
+
+const blockSelect = document.getElementById("block");
+const roomSelect = document.getElementById("room");
+
+// Generate Blocks 00 - 100
+for (let i = 0; i <= 100; i++) {
+    const option = document.createElement("option");
+    const value = i.toString().padStart(2, "0");
+    option.value = value;
+    option.textContent = "Block " + value;
+    blockSelect.appendChild(option);
+}
+
+// Generate Rooms 1 - 100
+for (let i = 1; i <= 100; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = "Room " + i;
+    roomSelect.appendChild(option);
+}
+
 // --- AUTH GUARD ---
 onAuthStateChanged(auth, (user) => {
     // Ensuring the logged-in user is actually an admin could be added here
@@ -133,7 +155,9 @@ signupForm.addEventListener('submit', async (e) => {
             level: document.getElementById('level').value,
             matricNumber: document.getElementById('matricNumber').value.trim(),
             phoneNumber: document.getElementById('phoneNumber').value,
-            location: document.getElementById('location').value,
+            gender: document.getElementById('gender').value,
+            
+            location: `Room ${document.getElementById('room').value}, Block ${document.getElementById('block').value}, ${document.getElementById('hostel').value}`,
             bankDetails: {
                 bankName: document.getElementById('bankName').value,
                 accountName: document.getElementById('accountName').value,
