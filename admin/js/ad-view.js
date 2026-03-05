@@ -221,8 +221,8 @@ async function renderProfile(data, walletAmt) {
             ${createInfoRow("Phone", data.phoneNumber || data.phone)}
             ${createInfoRow("Level", data.level)}
             ${createInfoRow("Matric No", data.matricNumber || data.matricNo)}
-            ${role === 'merchant' ? createInfoRow("Current Location: Closest To", staticLocation) : ""}
-            ${createInfoRow("Hostel Location", data.location)}
+            ${role === 'merchant' ? createInfoRow("Closest To", staticLocation) : ""}
+            ${createInfoRow("Hostel Location", data.hostelLocation)}
             ${createInfoRow("Status", data.status || "Active")}
             ${createInfoRow("Created At", formatDate(data.createdAt))}
         </div>
