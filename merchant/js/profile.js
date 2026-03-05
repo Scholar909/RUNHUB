@@ -62,9 +62,15 @@ const renderProfileUI = (data) => {
     }
 
     // 2. Stars & Rating
-    const ratingScore = data.rating || 5.0;
+    const ratingScore = data.rating || 0.0; // Default to 0 if no rating exists
+    const reviewCount = data.ratingCount || 0; // Pulling the count from your DB
+    
     document.querySelector('.rating-val').innerText = `${ratingScore.toFixed(1)} / 5.0 Rating`;
+    // Update the bracketed number
+    document.getElementById('p-review-count').innerText = `(${reviewCount})`; 
+    
     updateStars(ratingScore);
+
 
     // 3. Detailed Account Details
     document.getElementById('p-matric').innerText = data.matricNumber || "N/A";
