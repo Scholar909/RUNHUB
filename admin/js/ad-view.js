@@ -173,8 +173,14 @@ async function renderProfile(data, walletAmt) {
     if (role === 'merchant' && data.profilePhoto) {
         profileImg.src = data.profilePhoto;
         profileImg.style.display = "block";
+        // ADDED FOR MODAL
+        profileImg.style.cursor = "pointer";
+        profileImg.onclick = () => openModal(data.profilePhoto);
     } else {
         profileImg.style.display = "none";
+        // Reset onclick if no photo exists
+        profileImg.onclick = null; 
+        
         avatarWrapper.style.background = "var(--accent)";
         avatarWrapper.style.borderRadius = "50%";
         avatarWrapper.style.display = "flex";
@@ -185,6 +191,7 @@ async function renderProfile(data, walletAmt) {
         if (existingSpan) existingSpan.remove();
         avatarWrapper.innerHTML += `<span class="initials-span" style="font-size: 2.5rem; font-weight: 800; color: white; position: absolute;">${getInitials(data.fullName)}</span>`;
     }
+
 
     roleBadge.textContent = role.toUpperCase();
     roleBadge.className = `badge ${role}`;
@@ -279,3 +286,30 @@ async function toggleLock(currentlyLocked) {
         }
     }
 }
+
+// --- PHOTO MODAL LOGIC ---
+const createPhotoModal = () => {
+    if (document.getElementById('photoModal')) return;
+    const modal = document.createElement('div');
+    modal.id = "photoModal";
+    modal.style = `
+        display: none; position: fixed; z-index: 9999; left: 0; top: 0; 
+        width: 100%; height: 100%; background: rgba(0,0,0,0.95); 
+        align-items: center; justify-content: center; backdrop-filter: blur(8px);
+    `;
+    modal.innerHTML = `
+        <span style="position:absolute; top:30px; right:30px; color:white; font-size:40px; cursor:pointer; font-family:Arial;">&times;</span>
+        <img id="modalImg" style="max-width: 90%; max-height: 85%; border-radius: 8px; border: 3px solid white;">
+    `;
+    document.body.appendChild(modal);
+    modal.onclick = () => modal.style.display = "none";
+};
+
+const openModal = (src) => {
+    const modal = document.getElementById('photoModal');
+    document.getElementById('modalImg').src = src;
+    modal.style.display = "flex";
+};
+
+// Initialize Modal
+createPhotoModal();
