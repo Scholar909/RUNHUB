@@ -73,6 +73,7 @@ const renderProfileUI = (data) => {
 
 
     // 3. Detailed Account Details
+    document.getElementById('p-gender').innerText = data.gender || "N/A";
     document.getElementById('p-matric').innerText = data.matricNumber || "N/A";
     document.getElementById('p-dept').innerText = `${data.location || 'Unknown'} (${data.level || '0'}L)`;
     document.getElementById('p-email').innerText = data.email || "N/A";
