@@ -140,7 +140,7 @@ signupForm.addEventListener('submit', async (e) => {
     const block = document.getElementById("block").value;
     const room = document.getElementById("room").value;
     
-    const location = `Block ${block}, Room ${room}, ${hostel}`;
+    const hostelLocation = `Block ${block}, Room ${room}, ${hostel}`;
     
     const bankName = inputs[6].value;
     const accName = inputs[7].value;
@@ -175,7 +175,7 @@ signupForm.addEventListener('submit', async (e) => {
             level,
             matricNo,
             phoneNumber: phone,
-            location,
+            hostelLocation,
             bankDetails: { bankName, accName, accNo },
             role: "customer",
             status: "Active",
