@@ -20,16 +20,12 @@ const rtdb = getDatabase();
 /** * 1. AUTH GUARD
  * Kicks unauthorized users back to login page immediately
  */
-let authChecked = false;
-
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        authChecked = true;
-        initDashboard();
+        initDashboard(); // user is logged in, continue
     } else {
-        if (authChecked) {
-            window.location.href = "./admin-login.html";
-        }
+        // Only redirect if this is after login attempt
+        window.location.href = "./admin-login.html";
     }
 });
 
