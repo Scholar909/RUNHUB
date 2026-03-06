@@ -8,7 +8,7 @@ onAuthStateChanged(auth, (user) => {
     if (user && currentOrderId) {
         loadOrderDetails();
     } else {
-        window.location.href = "sign-login.html";
+        window.location.href = "./sign-login.html";
     }
 });
 
