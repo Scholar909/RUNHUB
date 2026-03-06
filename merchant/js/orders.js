@@ -1,7 +1,7 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
-    collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp 
+    collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 // --- State Management ---
@@ -22,7 +22,8 @@ function initOrdersListener() {
     const q = query(
         collection(db, "orders"), 
         where("merchantId", "==", currentMerchantId),
-        where("status", "==", "pending")
+        where("status", "==", "pending"),
+        orderBy("timestamp", "asc")
     );
 
     onSnapshot(q, (snapshot) => {
@@ -30,8 +31,6 @@ function initOrdersListener() {
         snapshot.forEach(doc => {
             activeOrders.push({ id: doc.id, ...doc.data() });
         });
-        
-        activeOrders.sort((a, b) => a.timestamp - b.timestamp);
         renderOrders();
     });
 }
