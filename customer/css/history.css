@@ -196,8 +196,18 @@ h1 { font-size: 1.5rem; font-weight: 800; }
     text-transform: uppercase;
     letter-spacing: 1px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.02);
+
+    background: transparent;           /* Transparent background */
+    border: 0.1px solid #fff;           /* White border */
+    color: #fff;                       /* White text */
     margin-left: 15px;
+
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.history-card .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1); /* Optional hover effect */
 }
 
 /* Bottom Nav Menu */
