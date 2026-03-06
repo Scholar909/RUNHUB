@@ -62,7 +62,7 @@ async function renderOrders() {
                 
                 <div class="customer-info">
                     <h3>${customer.fullName || 'Unknown Customer'}</h3>
-                    <p>@${customer.username || 'user'} • ${customer.location || 'Location not set'}</p>
+                    <p>@${customer.username || 'user'} • ${customer.hostelLocation || 'Location not set'}</p>
                 </div>
 
                 <div class="order-items">
