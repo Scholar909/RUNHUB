@@ -96,12 +96,20 @@ function initMap() {
 function syncMerchants() {
     const q = query(
         collection(db, "users"),
-        where("role", "==", "merchant"),
-        where("isActive", "==", true)  //only active/logged-in merchants
+        where("role", "==", "merchant")
     );
     
     onSnapshot(q, async (snapshot) => {
       console.log("Snapshot size:", snapshot.size);
+        // Remove markers for merchants no longer in the snapshot
+        const activeIds = new Set(snapshot.docs.map(d => d.id));
+        Object.keys(merchantMarkers).forEach(id => {
+            if (!activeIds.has(id)) {
+                map.removeLayer(merchantMarkers[id]);
+                delete merchantMarkers[id];
+            }
+        });
+        
         const tray = document.getElementById('merchantFooter');
         tray.innerHTML = '';
 
@@ -109,13 +117,24 @@ function syncMerchants() {
             const data = doc.data();
             const id = doc.id;
 
-            if (data.location?.lat && data.location?.lng) {
-                updateMerchantMarker(id, data);
-                renderMerchantCard(id, data);
-            } else if (merchantMarkers[id]) {
-                map.removeLayer(merchantMarkers[id]);
-                delete merchantMarkers[id];
-            }
+          if (data.location?.lat && data.location?.lng) {
+              // NEW: Check location freshness
+              const lastUpdate = data.locationUpdatedAt?.toDate?.() || new Date(0);
+              const ageMs = Date.now() - lastUpdate.getTime();
+          
+              const MAX_AGE = 2 * 60 * 1000; // 2 minutes
+              if (ageMs < MAX_AGE) {
+                  updateMerchantMarker(id, data);
+                  renderMerchantCard(id, data);
+              } else if (merchantMarkers[id]) {
+                  // Remove stale marker
+                  map.removeLayer(merchantMarkers[id]);
+                  delete merchantMarkers[id];
+              }
+          } else if (merchantMarkers[id]) {
+              map.removeLayer(merchantMarkers[id]);
+              delete merchantMarkers[id];
+          }
         });
     });
 }
