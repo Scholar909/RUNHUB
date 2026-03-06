@@ -46,12 +46,35 @@ function showDebtPaymentUI(action, amount) {
 }
 
 window.processWalletPayment = async (amount, action) => {
-    // TRIGGER PAYSTACK HERE
-    // For now, simulating success:
-    const confirmed = confirm(`Proceed to pay ₦${amount} via Paystack?`);
-    if (!confirmed) return;
+    // Amount in kobo for Paystack (₦1 = 100 kobo)
+    const payAmount = amount * 100;
 
-    await finalizeWalletPayment(amount, action);
+    const handler = PaystackPop.setup({
+        key: 'pk_test_edbc488c2d2591bee26afde01daccbf779bb81d6', // 🔑 Replace with your Paystack public key
+        email: currentUser.email,
+        amount: payAmount,
+        currency: 'NGN',
+        ref: 'RUNHUB_' + Math.floor(Math.random() * 1000000000),
+        metadata: {
+            custom_fields: [
+                {
+                    display_name: "User ID",
+                    variable_name: "user_id",
+                    value: currentUser.uid
+                }
+            ]
+        },
+        callback: async function(response) {
+            console.log('Payment successful! Reference:', response.reference);
+            // Finalize the payment like you do now
+            await finalizeWalletPayment(amount, action);
+        },
+        onClose: function() {
+            alert('Payment cancelled.');
+        }
+    });
+
+    handler.openIframe();
 };
 
 async function finalizeWalletPayment(paidAmount, action) {
@@ -104,37 +127,51 @@ async function finalizeWalletPayment(paidAmount, action) {
 /* ---------------------- */
 
 window.subscribe = async function(planType, amount) {
+    const payAmount = amount * 100;
 
-    // 🔹 Replace this block with Paystack popup
-    const confirmPayment = confirm(
-        `Proceed to pay ₦${amount} for ${planType} plan?`
-    );
-
-    if (!confirmPayment) return;
-
-    const now = new Date();
-    let expiryDate;
-
-    if (planType === "weekly") {
-        expiryDate = new Date(now.setDate(now.getDate() + 7));
-    } else {
-        expiryDate = new Date(now.setDate(now.getDate() + 30));
-    }
-
-    const userRef = doc(db, "users", currentUser.uid);
-
-    await updateDoc(userRef, {
-        subscription: {
-            type: planType,
-            startDate: new Date(),
-            expiryDate: expiryDate,
-            status: "Active"
+    const handler = PaystackPop.setup({
+        key: 'pk_test_edbc488c2d2591bee26afde01daccbf779bb81d6',
+        email: currentUser.email,
+        amount: payAmount,
+        currency: 'NGN',
+        ref: 'RUNHUB_SUB_' + Math.floor(Math.random() * 1000000000),
+        metadata: {
+            custom_fields: [
+                {
+                    display_name: "User ID",
+                    variable_name: "user_id",
+                    value: currentUser.uid
+                }
+            ]
         },
-        walletResetAt: serverTimestamp()
+        callback: async function(response) {
+            console.log('Subscription Payment successful! Reference:', response.reference);
+
+            const now = new Date();
+            let expiryDate = planType === 'weekly'
+                ? new Date(now.setDate(now.getDate() + 7))
+                : new Date(now.setDate(now.getDate() + 30));
+
+            const userRef = doc(db, "users", currentUser.uid);
+
+            await updateDoc(userRef, {
+                subscription: {
+                    type: planType,
+                    startDate: new Date(),
+                    expiryDate: expiryDate,
+                    status: "Active"
+                },
+                walletResetAt: serverTimestamp()
+            });
+
+            alert("Payment successful. Please login again.");
+            await signOut(auth);
+            window.location.href = "./sign-login.html";
+        },
+        onClose: function() {
+            alert('Payment cancelled.');
+        }
     });
 
-    alert("Payment successful. Please login again.");
-
-    await signOut(auth);
-    window.location.href = "./sign-login.html";
+    handler.openIframe();
 };
