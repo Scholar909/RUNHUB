@@ -141,6 +141,13 @@ window.updateTotal = () => {
 
 // --- 4. Final Order Submission ---
 window.submitOrder = async () => {
+    const submitBtn = document.querySelector('.btn-filled');
+
+    // Disable immediately to prevent double-click
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+    submitBtn.style.cursor = 'not-allowed';
+
     const selectedItems = [];
     const itemCheckboxes = document.querySelectorAll('.menu-item-checkbox');
     
@@ -157,6 +164,10 @@ window.submitOrder = async () => {
 
     if (selectedItems.length === 0 && !document.getElementById('pack-checkbox').checked) {
         alert("Please select at least one item to order.");
+        // Re-enable button if validation fails
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
         return;
     }
 
@@ -180,7 +191,7 @@ window.submitOrder = async () => {
         // 1. Save Order
         await addDoc(collection(db, "orders"), orderObj);
 
-        // 2. Increment Slots Filled (Both in User doc and Session doc)
+        // 2. Increment Slots Filled
         const mId = localStorage.getItem("selectedMerchantId");
         const merchantRef = doc(db, "users", mId);
         const sessionRef = doc(db, "merchants", mId, "sessions", merchantData.currentSessionId);
@@ -194,6 +205,11 @@ window.submitOrder = async () => {
     } catch (e) {
         console.error(e);
         alert("Failed to process order. Please try again.");
+
+        // Re-enable button if order fails
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
     }
 };
 
