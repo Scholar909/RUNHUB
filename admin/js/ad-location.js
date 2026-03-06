@@ -1,7 +1,16 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
-    collection, onSnapshot, doc, addDoc, serverTimestamp, getDocs, query, where 
+    collection,
+    onSnapshot,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp,
+    getDocs,
+    query,
+    where
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 async function getClosestLocationName(merchantLatLng) {
@@ -128,26 +137,52 @@ async function updateMerchantMarker(id, data) {
 // --- 3. Static Location Management (Buildings/Restaurants) ---
 async function syncStaticLocations() {
     const q = collection(db, "staticLocations");
+
     onSnapshot(q, (snapshot) => {
         const tray = document.getElementById('restaurantFooter');
         tray.innerHTML = '';
-        
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
+
+        snapshot.docs.forEach(docSnap => {
+
+            const data = docSnap.data();
+            const id = docSnap.id;
             const pos = [data.lat, data.lng];
-            
-            // Add to Map
-            if (!staticMarkers[doc.id]) {
-                staticMarkers[doc.id] = L.circleMarker(pos, { color: '#007aff', radius: 8 }).addTo(map)
-                    .bindPopup(`<b>${data.name}</b>`);
+
+            // ADD MARKER IF NOT EXISTS
+            if (!staticMarkers[id]) {
+
+                const marker = L.circleMarker(pos, {
+                    color: '#007aff',
+                    radius: 8
+                }).addTo(map).bindPopup(`<b>${data.name}</b>`);
+
+                staticMarkers[id] = marker;
+
+                let pressTimer;
+
+                marker.on('mousedown touchstart', () => {
+                    pressTimer = setTimeout(() => {
+                        editOrDeleteLocation(id, data);
+                    }, 700);
+                });
+
+                marker.on('mouseup touchend', () => clearTimeout(pressTimer));
+
+                marker.on('contextmenu', () => {
+                    editOrDeleteLocation(id, data);
+                });
             }
-            
-            // Add to Tray
+
+            // ADD CARD TO FOOTER
             const card = document.createElement('div');
             card.className = 'merchant-card';
             card.innerHTML = `<span>📍</span><span>${data.name}</span>`;
             card.onclick = () => map.flyTo(pos, 18);
+
+            attachLongPress(card, () => editOrDeleteLocation(id, data));
+
             tray.appendChild(card);
+
         });
     });
 }
@@ -207,6 +242,45 @@ function renderMerchantCard(id, data) {
     // Rule: Click tray card to zoom into merchant pin
     card.onclick = () => map.flyTo([data.location.lat, data.location.lng], 18);
     tray.appendChild(card);
+}
+
+async function editOrDeleteLocation(id, data) {
+    const action = prompt(
+        `Location: ${data.name}\n\nType:\n1 to EDIT name\n2 to DELETE location`
+    );
+
+    if (action === "1") {
+        const newName = prompt("Enter new name:", data.name);
+        if (newName && newName.trim() !== "") {
+            await updateDoc(doc(db, "staticLocations", id), {
+                name: newName.trim()
+            });
+        }
+    }
+
+    if (action === "2") {
+        if (confirm(`Delete "${data.name}" permanently?`)) {
+            await deleteDoc(doc(db, "staticLocations", id));
+        }
+    }
+}
+
+function attachLongPress(element, callback) {
+    let pressTimer;
+
+    element.addEventListener("mousedown", () => {
+        pressTimer = setTimeout(callback, 700); // 700ms hold
+    });
+
+    element.addEventListener("mouseup", () => clearTimeout(pressTimer));
+    element.addEventListener("mouseleave", () => clearTimeout(pressTimer));
+
+    // Mobile support
+    element.addEventListener("touchstart", () => {
+        pressTimer = setTimeout(callback, 700);
+    });
+
+    element.addEventListener("touchend", () => clearTimeout(pressTimer));
 }
 
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
