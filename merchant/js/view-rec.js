@@ -22,10 +22,10 @@ onAuthStateChanged(auth, async (user) => {
         if (currentOrderId) {
             loadOrderDetails(user);
         } else {
-            window.location.href = "history.html"; // Redirect if no order ID found
+            window.location.href = "./history.html"; // Redirect if no order ID found
         }
     } else {
-        window.location.href = "sign-login.html";
+        window.location.href = "./sign-login.html";
     }
 });
 
@@ -79,7 +79,7 @@ async function loadOrderDetails(user) {
         // UI Header & Status
         document.getElementById('recId').innerText = `#RH-${currentOrderId.slice(-5).toUpperCase()}`;
         document.getElementById('custUser').innerText = `@${customer.username || 'user'}`;
-        document.getElementById('custName').innerText = `Customer: ${customer.fullName} (${customer.location || 'No Location'})`;
+        document.getElementById('custName').innerText = `Customer: ${customer.fullName} (${customer.hostelLocation || 'No Location'})`;
         
         const badge = document.getElementById('statusBadge');
         badge.innerText = order.status.toUpperCase();
