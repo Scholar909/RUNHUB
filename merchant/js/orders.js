@@ -30,6 +30,8 @@ function initOrdersListener() {
         snapshot.forEach(doc => {
             activeOrders.push({ id: doc.id, ...doc.data() });
         });
+        
+        activeOrders.sort((a, b) => a.timestamp - b.timestamp);
         renderOrders();
     });
 }
