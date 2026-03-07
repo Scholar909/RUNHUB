@@ -164,8 +164,9 @@ signupForm.addEventListener('submit', async (e) => {
                 accountNumber: document.getElementById('accountNumber').value
             },
             profilePhoto: photoURL,
-            walletBalance: 0,
-            platformFeesOwing: 0,
+            totalPaid: 0,
+            feeAccrued: 0,
+            walletDueSince: null,
             rating: 5.0,
             status: "active",
             isSessionOn: false,
@@ -175,6 +176,7 @@ signupForm.addEventListener('submit', async (e) => {
                 expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
             },
             createdAt: serverTimestamp()
+            walletLastUpdated: serverTimestamp()
         });
 
         alert(`Registration successful! ${email} can now log in to the Merchant Dashboard.`);

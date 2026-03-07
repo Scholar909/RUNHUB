@@ -81,7 +81,6 @@ async function fetchUserDetails() {
 
         if (userSnap.exists()) {
             const userData = userSnap.data();
-            const walletResetAt = userData.walletResetAt?.toDate?.() || new Date(0); // default to 1970
             
             // If the user is a merchant, calculate the wallet from the orders collection
             let calculatedWallet = 0;
@@ -104,52 +103,19 @@ async function fetchUserDetails() {
  */
 async function calculateMerchantWallet(merchantId) {
     try {
-        // 1. Get User Data for totalPaid and walletResetAt
         const userRef = doc(db, "users", merchantId);
         const userSnap = await getDoc(userRef);
-        
         if (!userSnap.exists()) return 0;
-        
+
         const userData = userSnap.data();
+
+        // Simply mirror the merchant dashboard
         const totalPaid = userData.totalPaid || 0;
-        
-        // Helper to match dashboard timestamp logic
-        const toJSDate = (val) => {
-            if (!val) return new Date(0);
-            if (typeof val.toDate === 'function') return val.toDate();
-            if (val instanceof Date) return val;
-            return new Date(val);
-        };
-        
-        const walletResetAt = toJSDate(userData.walletResetAt);
+        const feeAccrued = userData.feeAccrued || 0;
 
-        // 2. Fetch Orders
-        const q = query(
-            collection(db, "orders"),
-            where("merchantId", "==", merchantId)
-        );
-        const querySnapshot = await getDocs(q);
-        
-        let feeEligibleCount = 0;
-        
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            // Use same fallback for processedAt or timestamp
-            const orderTime = toJSDate(data.processedAt || data.timestamp);
-        
-            // Only count if it happened AFTER the reset
-            if (orderTime > walletResetAt) {
-                if (data.status === 'delivered' || data.status === 'declined') {
-                    feeEligibleCount++;
-                }
-            }
-        });
-
-        // 3. Final Calculation: Paid - (Count * 50)
-        const totalFeesOwed = feeEligibleCount * ADMIN_FEE_PER_ORDER;
-        const currentBalance = totalPaid - totalFeesOwed;
-        
+        const currentBalance = totalPaid - feeAccrued;
         return currentBalance;
+
     } catch (err) {
         console.error("Error calculating wallet:", err);
         return 0;
