@@ -1,7 +1,7 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
-    collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy
+    collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy, increment
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 // --- State Management ---
@@ -70,7 +70,7 @@ async function renderOrders() {
                     <label>Order Detail</label>
                     <ul>
                         ${order.hasPack ? '<li>1x Food Pack (Standard)</li>' : ''}
-                        ${order.items.map(item => `<li>${item.qty}x ${item.name}</li>`).join('')}
+                        ${(order.items || []).map(item => `<li>${item.qty}x ${item.name}</li>`).join('')}
                     </ul>
                 </div>
 
@@ -100,6 +100,11 @@ window.approveOrder = async (orderId) => {
         await updateDoc(orderRef, {
             status: "approved",
             approvedAt: serverTimestamp()
+        });
+        
+        // Increment platform fee
+        await updateDoc(doc(db, "users", currentMerchantId), {
+            feeAccrued: increment(50)
         });
         alert("Order Approved! It has moved to your Pending History tab.");
     } catch (error) {
@@ -146,9 +151,14 @@ window.confirmRefund = async () => {
         // As per RUNHub doc: Status moves to declined, and we track manual refund
         await updateDoc(orderRef, {
             status: "declined",
-            refundStatus: "completed", // Merchant confirmed manual transfer
+            refundStatus: "completed",
             processedAt: serverTimestamp(),
             declinedAt: serverTimestamp()
+        });
+        
+        // Increment platform fee
+        await updateDoc(doc(db, "users", currentMerchantId), {
+            feeAccrued: increment(50)
         });
 
         closeModal();

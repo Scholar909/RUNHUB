@@ -22,64 +22,45 @@ const toJSDate = (val) => {
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentMerchantId = user.uid;
+    
+        checkIfBlocked(user.uid);
+    
         initWalletAndStatsListener();
         initActiveOrdersBadge();
     }
 });
 
-function startDashboardListeners() {
-    initWalletAndStatsListener();
-    initActiveOrdersBadge();
+async function checkIfBlocked(uid) {
+
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    const balance = (data.totalPaid || 0) - (data.feeAccrued || 0);
+
+    if (balance <= -500) {
+        const debt = Math.abs(balance);
+        window.location.href = `./plans.html?action=pay&amount=${debt}`;
+    }
 }
 
-// ... (Keep existing imports and helpers)
-
-async function initWalletAndStatsListener() {
+function initWalletAndStatsListener() {
     const userRef = doc(db, "users", currentMerchantId);
-    
+
     onSnapshot(userRef, (userDoc) => {
         if (!userDoc.exists()) return;
-        
+
         const userData = userDoc.data();
+
         const totalPaid = userData.totalPaid || 0;
-        // If walletResetAt is missing, we count ALL history
-        const walletResetAt = userData.walletResetAt ? toJSDate(userData.walletResetAt) : new Date(0);
+        const feeAccrued = userData.feeAccrued || 0;
 
-        const q = query(
-            collection(db, "orders"),
-            where("merchantId", "==", currentMerchantId)
-        );
+        const balance = totalPaid - feeAccrued;
 
-        onSnapshot(q, (snapshot) => {
-            let deliveredCount = 0; 
-            let awaitingDelivery = 0; 
-            let feeEligibleCount = 0; // This counts both delivered and declined for the fee
-
-            snapshot.forEach(orderDoc => {
-                const data = orderDoc.data();
-                const status = data.status;
-                const orderTime = toJSDate(data.processedAt || data.timestamp);
-                
-                // 1. STATS LOGIC (History Cards)
-                if (status === 'approved') awaitingDelivery++;
-                if (status === 'delivered') deliveredCount++;
-
-                // 2. FEE LOGIC (Wallet Debt)
-                // We count if order is delivered OR declined AND happened after the last payment/reset
-                if (orderTime > walletResetAt) {
-                    if (status === 'delivered' || status === 'declined') {
-                        feeEligibleCount++;
-                    }
-                }
-            });
-
-            // If 0 paid and 5 feeEligible, balance = -250
-            const totalFeesOwed = feeEligibleCount * ADMIN_FEE_PER_ORDER;
-            const currentBalance = totalPaid - totalFeesOwed;
-
-            updateWalletUI(currentBalance);
-            updateStatsUI(awaitingDelivery, deliveredCount);
-        });
+        updateWalletUI(balance);
     });
 }
 

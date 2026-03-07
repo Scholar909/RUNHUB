@@ -17,7 +17,7 @@ onAuthStateChanged(auth, async (user) => {
     // Check URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const action = urlParams.get('action');
-    const amount = urlParams.get('amount');
+    const amount = Number(urlParams.get('amount') || 0);
 
     if (action === 'pay' || action === 'deposit') {
         showDebtPaymentUI(action, amount);
@@ -83,18 +83,10 @@ async function finalizeWalletPayment(paidAmount, action) {
     const userData = userSnap.data();
 
     // 1. Get current debt one last time
-    const ordersQuery = query(collection(db, "orders"), where("merchantId", "==", currentUser.uid));
-    const ordersSnap = await getDocs(ordersQuery);
+    const totalPaid = userData.totalPaid || 0;
+    const feeAccrued = userData.feeAccrued || 0;
     
-    const resetTime = (userData.walletResetAt?.toDate?.() || new Date(0));
-    let debtOrders = 0;
-    ordersSnap.forEach(d => {
-        const data = d.data();
-        const ot = (data.processedAt?.toDate?.() || data.timestamp?.toDate?.() || new Date(0));
-        if (ot > resetTime && (data.status === 'delivered' || data.status === 'declined')) debtOrders++;
-    });
-
-    const currentDebt = debtOrders * ADMIN_FEE_PER_ORDER;
+    const currentDebt = Math.max(0, feeAccrued - totalPaid);
 
     // 2. Determine the new totalPaid and Reset logic
     if (action === 'pay') {
@@ -103,7 +95,7 @@ async function finalizeWalletPayment(paidAmount, action) {
         
         await updateDoc(userRef, {
             totalPaid: excess, // Will be 0 if they paid exactly the debt
-            walletResetAt: serverTimestamp(), // This clears the "history" for the next calculation
+            feeAccrued: 0, // This clears the "history" for the next calculation
             walletDueSince: null
         });
     } else {

@@ -96,8 +96,13 @@ async function renderHistoryList(orders) {
         const customerSnap = await getDoc(doc(db, "users", order.customerId));
         const customerData = customerSnap.exists() ? customerSnap.data() : { fullName: "User" };
         
-        const dateString = new Date(order.timestamp).toLocaleString('en-US', {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        const dateString = new Date(
+            order.timestamp?.toDate ? order.timestamp.toDate() : order.timestamp
+        ).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
 
         const statusStyle = getStatusLabel(order.status);
@@ -145,6 +150,6 @@ window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggl
 window.handleLogout = async () => {
     try {
         await signOut(auth);
-        window.location.href = "sign-login.html";
+        window.location.href = "./sign-login.html";
     } catch (e) { console.error(e); }
 };

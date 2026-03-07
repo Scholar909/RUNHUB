@@ -89,7 +89,7 @@ async function loadOrderDetails(user) {
         const listContainer = document.getElementById('itemList');
         let itemsHtml = '';
         if (order.hasPack) itemsHtml += `<div class="item-row"><span>1x Food Pack (Standard)</span><span>₦200</span></div>`;
-        order.items.forEach(item => {
+        (order.items || []).forEach(item => {
             itemsHtml += `<div class="item-row"><span>${item.qty}x ${item.name}</span><span>₦${(item.price * item.qty).toLocaleString()}</span></div>`;
         });
         listContainer.innerHTML = itemsHtml;
@@ -165,7 +165,7 @@ window.markOrderDelivered = async () => {
             deliveredAt: serverTimestamp()
         });
         alert("Order completed! Moving to Completed tab.");
-        window.location.href = "history.html"; 
+        window.location.href = "./history.html"; 
     } catch (e) {
         alert("Error updating order.");
     }

@@ -125,7 +125,9 @@ async function enforceRules(uid) {
 
     const userData = userSnap.data();
     
-    if ((userData.role || "").toLowerCase() === "admin" || "customer") return;
+    const role = (userData.role || "").toLowerCase();
+    
+    if (role === "admin" || role === "customer") return;
     
     const now = new Date();
 
@@ -149,21 +151,10 @@ async function enforceRules(uid) {
     }
 
     // 3. Wallet Debt Check
-    const q = query(collection(db, "orders"), where("merchantId", "==", uid));
-    const snap = await getDocs(q);
+    const totalPaid = userData.totalPaid || 0;
+    const feeAccrued = userData.feeAccrued || 0;
     
-    let feeCount = 0;
-    const resetTime = toJSDate(userData.walletResetAt);
-    
-    snap.forEach(d => {
-        const data = d.data();
-        const orderTime = toJSDate(data.processedAt || data.timestamp);
-        if (orderTime > resetTime && (data.status === "delivered" || data.status === "declined")) {
-            feeCount++;
-        }
-    });
-
-    const balance = (userData.totalPaid || 0) - (feeCount * ADMIN_FEE);
+    const balance = totalPaid - feeAccrued;
 
     if (balance <= -WAL_THRESHOLD) {
         if (!userData.walletDueSince) {
@@ -171,9 +162,13 @@ async function enforceRules(uid) {
         } else {
             const dueSince = toJSDate(userData.walletDueSince);
             const hoursPassed = (now - dueSince) / (1000 * 60 * 60);
+    
             if (hoursPassed >= GRACE_HOURS) {
-                await deactivateActiveSession(uid); // SHUTDOWN SESSIONS
-                window.location.href = "./plans.html?reason=debt";
+                await deactivateActiveSession(uid);
+    
+                const debtAmount = Math.abs(balance);
+    
+                window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
             }
         }
     } else if (userData.walletDueSince) {
@@ -184,8 +179,15 @@ async function enforceRules(uid) {
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         startLocationMonitoring();
+
         await enforceRules(user.uid);
-    } else {
+
+        // Run every 5 minutes
+        setInterval(() => {
+            enforceRules(user.uid);
+        }, 5 * 60 * 1000);
+    } 
+    else {
         const protectedPages = ["dashboard.html", "profile.html", "orders.html", "history.html"];
         if (protectedPages.some(p => window.location.pathname.includes(p))) {
             window.location.href = "./sign-login.html";
