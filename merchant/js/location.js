@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase-config.js";
 import { 
-    doc, getDoc, collection, query, where, getDocs, updateDoc, serverTimestamp 
+    doc, getDoc, collection, query, where, getDocs, updateDoc, serverTimestamp, onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
@@ -151,46 +151,41 @@ async function enforceRules(uid) {
     }
 
     // 3. Wallet Debt Check
+    // 3. Wallet Debt Check
     const totalPaid = userData.totalPaid || 0;
     const feeAccrued = userData.feeAccrued || 0;
     
     const balance = totalPaid - feeAccrued;
-
+    
     if (balance <= -WAL_THRESHOLD) {
+        // Ensure walletDueSince is set
         if (!userData.walletDueSince) {
             await updateDoc(userRef, { walletDueSince: serverTimestamp() });
-        } else {
-            const dueSince = toJSDate(userData.walletDueSince);
-            const hoursPassed = (now - dueSince) / (1000 * 60 * 60);
-    
-            if (hoursPassed >= GRACE_HOURS) {
-                await deactivateActiveSession(uid);
-    
-                const debtAmount = Math.abs(balance);
-    
-                window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
-            }
         }
+    
+        // Immediately deactivate sessions
+        await deactivateActiveSession(uid);
+    
+        // Redirect to plans page with debt amount
+        const debtAmount = Math.abs(balance);
+        window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
     } else if (userData.walletDueSince) {
         await updateDoc(userRef, { walletDueSince: null });
     }
 }
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        startLocationMonitoring();
-
-        await enforceRules(user.uid);
-
-        // Run every 3 minutes
-        setInterval(() => {
-            enforceRules(user.uid);
-        }, 3 * 60 * 1000);
-    } 
-    else {
-        const protectedPages = ["./dashboard.html", "./profile.html", "./orders.html", "./history.html", "./merch-ser.html", "./session.html"];
+onAuthStateChanged(auth, user => {
+    if (!user) {
+        const protectedPages = ["./dashboard.html","./profile.html","./orders.html","./history.html","./merch-ser.html","./session.html"];
         if (protectedPages.some(p => window.location.pathname.includes(p))) {
             window.location.href = "./sign-login.html";
         }
+        return;
     }
+
+    // Real-time enforcement
+    const userRef = doc(db, "users", user.uid);
+    onSnapshot(userRef, async () => {
+        await enforceRules(user.uid);
+    });
 });
