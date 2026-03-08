@@ -61,6 +61,21 @@ let allUsers = []; // Source of truth for filtering
 function initDashboard() {
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("fullName", "asc"));
+    
+    // Wrap in a check for admin
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            user.getIdTokenResult().then(idToken => {
+                if (idToken.claims.role === "admin") {
+                    onSnapshot(q, (snapshot) => {
+                        snapshot.forEach(doc => {
+                            console.log(doc.id, doc.data());
+                        });
+                    });
+                }
+            });
+        }
+    });
 
     // Real-time listener for the entire users collection
     onSnapshot(q, (snapshot) => {
