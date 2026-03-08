@@ -174,6 +174,8 @@ async function enforceRules(uid) {
     }
 }
 
+let enforcementListener = null;
+
 onAuthStateChanged(auth, user => {
     if (!user) {
         const protectedPages = ["./dashboard.html","./profile.html","./orders.html","./history.html","./merch-ser.html","./session.html"];
@@ -183,9 +185,10 @@ onAuthStateChanged(auth, user => {
         return;
     }
 
-    // Real-time enforcement
-    const userRef = doc(db, "users", user.uid);
-    onSnapshot(userRef, async () => {
-        await enforceRules(user.uid);
-    });
+    if (!enforcementListener) {
+        const userRef = doc(db, "users", user.uid);
+        enforcementListener = onSnapshot(userRef, async () => {
+            await enforceRules(user.uid);
+        });
+    }
 });
