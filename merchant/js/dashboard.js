@@ -27,6 +27,7 @@ onAuthStateChanged(auth, (user) => {
     
         initWalletAndStatsListener();
         initActiveOrdersBadge();
+        initOrderStats();
     }
 });
 
@@ -135,6 +136,24 @@ function updateStatsUI(pendingCount, completedCount) {
         statsValues[0].innerText = pendingCount.toString().padStart(2, '0');
         statsValues[1].innerText = completedCount.toString().padStart(2, '0');
     }
+}
+
+function initOrderStats() {
+    const ordersRef = collection(db, "orders");
+    const q = query(ordersRef, where("merchantId", "==", currentMerchantId));
+
+    onSnapshot(q, (snapshot) => {
+        let pendingCount = 0;
+        let completedCount = 0;
+
+        snapshot.forEach(doc => {
+            const status = doc.data().status;
+            if (status === "approved") pendingCount++;
+            if (status === "delivered") completedCount++;
+        });
+
+        updateStatsUI(pendingCount, completedCount);
+    });
 }
 
 // --- 5. Global Helpers ---
