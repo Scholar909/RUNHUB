@@ -7,11 +7,8 @@ import {
 import { 
     doc, 
     setDoc, 
-    getDoc, 
-    query, 
-    collection, 
-    where, 
-    getDocs 
+    getDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 // --- State Tracking ---
@@ -70,10 +67,11 @@ const debounce = (func, delay = 500) => {
 };
 
 const checkUniqueness = async (field, value, statusId) => {
+
     const statusEl = document.getElementById(statusId);
+
     if (!value || value.length < 3) {
         statusEl.innerText = "";
-        statusEl.className = "validation-msg";
         return;
     }
 
@@ -81,29 +79,44 @@ const checkUniqueness = async (field, value, statusId) => {
     statusEl.style.color = "gray";
 
     try {
-        const queryValue = field === "username" ? value.toLowerCase() : value;
-        
-        const q = query(collection(db, "users"), where(field, "==", queryValue));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
+
+        const id = field === "username"
+            ? value.toLowerCase()
+            : value;
+
+        const collectionName =
+            field === "username"
+            ? "usernames"
+            : "matricNumbers";
+
+        const docSnap = await getDoc(doc(db, collectionName, id));
+
+        if (!docSnap.exists()) {
+
             statusEl.innerText = "✓ Available";
-            statusEl.className = "validation-msg status-available";
             statusEl.style.color = "#34c759";
+
             if (field === "username") isUsernameValid = true;
             if (field === "matricNo") isMatricValid = true;
+            
         } else {
+
             statusEl.innerText = "✕ Already Taken";
-            statusEl.className = "validation-msg status-taken";
             statusEl.style.color = "#ff3b30";
+
             if (field === "username") isUsernameValid = false;
             if (field === "matricNo") isMatricValid = false;
+
         }
+
     } catch (err) {
-        console.error("Validation error:", err);
-        statusEl.innerText = err.message;
+
+        console.error(err);
+        statusEl.innerText = "Network error";
         statusEl.style.color = "orange";
+
     }
+
 };
 
 const signupForm = document.getElementById('customer-signup');
@@ -183,7 +196,17 @@ signupForm.addEventListener('submit', async (e) => {
             bankDetails: { bankName, accName, accNo },
             role: "customer",
             status: "Active",
-            createdAt: new Date().toISOString()
+            createdAt: serverTimestamp()
+        });
+        
+        // Reserve username
+        await setDoc(doc(db, "usernames", username), {
+            uid: user.uid
+        });
+        
+        // Reserve matric number
+        await setDoc(doc(db, "matricNumbers", matricNo), {
+            uid: user.uid
         });
 
         alert("Account created successfully!");
@@ -212,10 +235,13 @@ loginForm.addEventListener('submit', async (e) => {
         let email = identifier;
 
         if (!identifier.includes('@')) {
-            const q = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) throw new Error("Username not found.");
-            email = querySnapshot.docs[0].data().email;
+            const usernameDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
+            
+            if (!usernameDoc.exists()) throw new Error("Username not found.");
+            
+            const uid = usernameDoc.data().uid;
+            const userDoc = await getDoc(doc(db, "users", uid));
+            email = userDoc.data().email;
         }
 
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
