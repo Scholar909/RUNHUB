@@ -175,7 +175,7 @@ signupForm.addEventListener('submit', async (e) => {
                 startDate: serverTimestamp(),
                 expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
             },
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
             walletLastUpdated: serverTimestamp()
         });
 
