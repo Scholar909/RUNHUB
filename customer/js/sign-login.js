@@ -181,9 +181,12 @@ signupForm.addEventListener('submit', async (e) => {
         // Auth Creation
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-
-        // Save Profile
-        await setDoc(doc(db, "users", user.uid), {
+        
+        // Ensure the user is fully signed in
+        await new Promise(resolve => setTimeout(resolve, 200)); // small delay
+        
+        await Promise.all([
+          setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             fullName,
             username,
@@ -197,17 +200,10 @@ signupForm.addEventListener('submit', async (e) => {
             role: "customer",
             status: "Active",
             createdAt: serverTimestamp()
-        });
-        
-        // Reserve username
-        await setDoc(doc(db, "usernames", username), {
-            uid: user.uid
-        });
-        
-        // Reserve matric number
-        await setDoc(doc(db, "matricNumbers", matricNo), {
-            uid: user.uid
-        });
+          }),
+          setDoc(doc(db, "usernames", username), { uid: user.uid }),
+          setDoc(doc(db, "matricNumbers", matricNo), { uid: user.uid })
+        ]);
 
         alert("Account created successfully!");
         window.location.href = "./home.html"; 
