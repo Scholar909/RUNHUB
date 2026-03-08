@@ -182,13 +182,13 @@ onAuthStateChanged(auth, async (user) => {
 
         await enforceRules(user.uid);
 
-        // Run every 5 minutes
+        // Run every 3 minutes
         setInterval(() => {
             enforceRules(user.uid);
-        }, 5 * 60 * 1000);
+        }, 3 * 60 * 1000);
     } 
     else {
-        const protectedPages = ["dashboard.html", "profile.html", "orders.html", "history.html"];
+        const protectedPages = ["./dashboard.html", "./profile.html", "./orders.html", "./history.html", "./merch-ser.html", "./session.html"];
         if (protectedPages.some(p => window.location.pathname.includes(p))) {
             window.location.href = "./sign-login.html";
         }
