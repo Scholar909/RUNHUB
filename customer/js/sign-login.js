@@ -81,7 +81,9 @@ const checkUniqueness = async (field, value, statusId) => {
     statusEl.style.color = "gray";
 
     try {
-        const q = query(collection(db, "users"), where(field, "==", value.toLowerCase()));
+        const queryValue = field === "username" ? value.toLowerCase() : value;
+        
+        const q = query(collection(db, "users"), where(field, "==", queryValue));
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
@@ -99,6 +101,8 @@ const checkUniqueness = async (field, value, statusId) => {
         }
     } catch (err) {
         console.error("Validation error:", err);
+        statusEl.innerText = "Error checking";
+        statusEl.style.color = "orange";
     }
 };
 
