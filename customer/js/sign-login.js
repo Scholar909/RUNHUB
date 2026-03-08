@@ -101,7 +101,7 @@ const checkUniqueness = async (field, value, statusId) => {
         }
     } catch (err) {
         console.error("Validation error:", err);
-        statusEl.innerText = "Error checking";
+        statusEl.innerText = err.message;
         statusEl.style.color = "orange";
     }
 };
