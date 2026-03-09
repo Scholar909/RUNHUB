@@ -251,7 +251,13 @@ loginForm.addEventListener('submit', async (e) => {
                 throw new Error("Your account has been BLOCKED.");
             }
             if (userData.role === "customer") {
-                window.location.href = "./home.html";
+              const savedRedirect = sessionStorage.getItem("redirectAfterLogin");
+              if (savedRedirect) {
+                  sessionStorage.removeItem("redirectAfterLogin"); // Clear memory
+                  window.location.href = savedRedirect; // Go back to the WhatsApp order link
+              } else {
+                  window.location.href = "./home.html"; // Standard site entry
+              }
             } else {
                 await signOut(auth);
                 throw new Error("Not a customer account.");

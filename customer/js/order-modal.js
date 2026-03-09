@@ -12,18 +12,31 @@ let packagingCost = 200;
 
 // --- 1. Initialization ---
 onAuthStateChanged(auth, (user) => {
+    // Check if we arrived via a WhatsApp link (?m=...&s=...)
+    const params = new URLSearchParams(window.location.search);
+    const mId = params.get('m');
+    const sId = params.get('s');
+
+    // If IDs are in URL, save them to localStorage so the rest of your code works
+    if (mId) {
+        localStorage.setItem("selectedMerchantId", mId);
+    }
+
     if (!user) {
-        window.location.href = "sign-login.html";
+        // Remember this exact page (with IDs) to return here after login
+        sessionStorage.setItem("redirectAfterLogin", window.location.href);
+        window.location.href = "./sign-login.html";
     } else {
         loadMerchantAndMenu();
     }
 });
 
+
 async function loadMerchantAndMenu() {
     const merchantId = localStorage.getItem("selectedMerchantId");
     if (!merchantId) {
         alert("No merchant selected.");
-        window.location.href = "home.html";
+        window.location.href = "./home.html";
         return;
     }
 
@@ -42,7 +55,7 @@ async function loadMerchantAndMenu() {
     } catch (error) {
         console.error(error);
         alert("Error loading order page: " + error.message);
-        window.location.href = "home.html";
+        window.location.href = "./home.html";
     }
 }
 
@@ -200,7 +213,7 @@ window.submitOrder = async () => {
         await updateDoc(sessionRef, { slotsFilled: increment(1) });
 
         alert("Order Sent! Awaiting Merchant Approval.");
-        window.location.href = "history.html";
+        window.location.href = "./history.html";
 
     } catch (e) {
         console.error(e);
@@ -214,6 +227,6 @@ window.submitOrder = async () => {
 };
 
 // --- 5. Navigation ---
-document.querySelector('.close-btn').onclick = () => window.location.href = "home.html";
-document.querySelector('.btn-outline').onclick = () => window.location.href = "home.html";
+document.querySelector('.close-btn').onclick = () => window.location.href = "./home.html";
+document.querySelector('.btn-outline').onclick = () => window.location.href = "./home.html";
 document.querySelector('.btn-filled').onclick = submitOrder;
