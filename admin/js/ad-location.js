@@ -320,3 +320,40 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById('addRestaurantBtn').onclick = window.toggleAddLocation;
+
+// --- Search Functionality ---
+const searchWrapper = document.getElementById('searchWrapper');
+const searchToggle = document.getElementById('searchToggle');
+const searchInput = document.getElementById('mapSearchInput');
+
+// 1. Toggle Animation
+searchToggle.onclick = () => {
+    searchWrapper.classList.toggle('active');
+    if (searchWrapper.classList.contains('active')) {
+        searchInput.focus();
+    } else {
+        searchInput.value = '';
+        filterCards(''); // Reset filters when closing
+    }
+};
+
+// 2. Real-time Filtering Logic
+searchInput.oninput = (e) => {
+    filterCards(e.target.value.toLowerCase());
+};
+
+function filterCards(query) {
+    // Select all cards from both trays
+    const allCards = document.querySelectorAll('.merchant-card');
+    
+    allCards.forEach(card => {
+        // Get the text inside the card (merchant name or restaurant name)
+        const name = card.innerText.toLowerCase();
+        
+        if (name.includes(query)) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
