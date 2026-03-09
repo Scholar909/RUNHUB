@@ -6,7 +6,7 @@
     <title>Live Tracking | Admin RUN HUB</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/location.css?=v29">
+    <link rel="stylesheet" href="css/location.css?=v31">
 </head>
 <body>
     <div id="loadingOverlay">
@@ -51,6 +51,15 @@
             <div id="map-container">
                 <div id="map"></div>
                 
+                <div id="searchWrapper" class="search-container">
+                    <div id="searchToggle" class="search-ball">
+                        <i class="fi-magnifying-glass"></i>
+                    </div>
+                    <input type="text" id="mapSearchInput" placeholder="Search merchants or locations..." />
+
+                </div>
+
+                
                 <div id="addRestaurantBtn" title="Add New Location">+</div>
                 <div id="confirmBtn" title="Confirm Position">✓</div>
 
@@ -81,6 +90,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script type="module" src="js/ad-location.js?=v25"></script>
+    <script type="module" src="js/ad-location.js?=v30"></script>
 </body>
 </html>
