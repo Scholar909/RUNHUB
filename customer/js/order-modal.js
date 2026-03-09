@@ -12,52 +12,80 @@ let packagingCost = 200;
 
 // --- 1. Initialization ---
 onAuthStateChanged(auth, (user) => {
-    // Check if we arrived via a WhatsApp link (?m=...&s=...)
     const params = new URLSearchParams(window.location.search);
     const mId = params.get('m');
-    const sId = params.get('s');
 
-    // If IDs are in URL, save them to localStorage so the rest of your code works
     if (mId) {
         localStorage.setItem("selectedMerchantId", mId);
     }
 
     if (!user) {
-        // Remember this exact page (with IDs) to return here after login
         sessionStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
     } else {
-        loadMerchantAndMenu();
+        // Only run if we have both IDs
+        if(params.get('m') && params.get('s')) {
+            loadMerchantAndMenu();
+        } else {
+            window.location.href = "./home.html";
+        }
     }
 });
 
 
+
 async function loadMerchantAndMenu() {
+    const params = new URLSearchParams(window.location.search);
+    const urlSessionId = params.get('s'); // The session ID from the WhatsApp link
     const merchantId = localStorage.getItem("selectedMerchantId");
-    if (!merchantId) {
-        alert("No merchant selected.");
+
+    if (!merchantId || !urlSessionId) {
+        alert("Invalid order link.");
         window.location.href = "./home.html";
         return;
     }
 
     try {
-        // Fetch Merchant Global Info
+        // 1. Fetch Merchant Global Info
         const merchantDoc = await getDoc(doc(db, "users", merchantId));
         if (!merchantDoc.exists()) throw new Error("Merchant not found");
         merchantData = merchantDoc.data();
 
-        // Fetch the specific Live Session
-        const sessionDoc = await getDoc(doc(db, "merchants", merchantId, "sessions", merchantData.currentSessionId));
-        if (!sessionDoc.exists()) throw new Error("Session is no longer active");
+        // 2. CRITICAL CHECK: 
+        // Is the merchant active AND is the link's session the one currently running?
+        const isSessionValid = merchantData.isActive === true && merchantData.currentSessionId === urlSessionId;
+
+        if (!isSessionValid) {
+            // This triggers if the merchant turned off the session or started a new one
+            alert("This delivery session has ended or is no longer available.");
+            window.location.href = "./home.html";
+            return;
+        }
+
+        // 3. Fetch the specific Session Data
+        const sessionDoc = await getDoc(doc(db, "merchants", merchantId, "sessions", urlSessionId));
+        
+        if (!sessionDoc.exists()) {
+            throw new Error("Session data not found.");
+        }
+        
         activeSessionData = sessionDoc.data();
+
+        // Extra safety: Check if slots are full
+        if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
+             alert("This session is full! Try another merchant.");
+             window.location.href = "./home.html";
+             return;
+        }
 
         renderOrderUI();
     } catch (error) {
         console.error(error);
-        alert("Error loading order page: " + error.message);
+        alert("Error: " + error.message);
         window.location.href = "./home.html";
     }
 }
+
 
 // --- 2. UI Rendering ---
 function renderOrderUI() {
