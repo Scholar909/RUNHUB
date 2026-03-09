@@ -15,6 +15,7 @@ onAuthStateChanged(auth, (user) => {
     const params = new URLSearchParams(window.location.search);
     const mId = params.get('m');
 
+    // Save merchant ID if provided in URL (WhatsApp link)
     if (mId) {
         localStorage.setItem("selectedMerchantId", mId);
     }
@@ -23,8 +24,8 @@ onAuthStateChanged(auth, (user) => {
         sessionStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
     } else {
-        // Only run if we have both IDs
-        if(params.get('m') && params.get('s')) {
+        // Entry Requirement: We just need to know WHO the merchant is
+        if (localStorage.getItem("selectedMerchantId")) {
             loadMerchantAndMenu();
         } else {
             window.location.href = "./home.html";
@@ -32,18 +33,10 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-
-
 async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
-    const urlSessionId = params.get('s'); // The session ID from the WhatsApp link
+    const urlSessionId = params.get('s'); // Session from WhatsApp link
     const merchantId = localStorage.getItem("selectedMerchantId");
-
-    if (!merchantId || !urlSessionId) {
-        alert("Invalid order link.");
-        window.location.href = "./home.html";
-        return;
-    }
 
     try {
         // 1. Fetch Merchant Global Info
@@ -51,29 +44,35 @@ async function loadMerchantAndMenu() {
         if (!merchantDoc.exists()) throw new Error("Merchant not found");
         merchantData = merchantDoc.data();
 
-        // 2. CRITICAL CHECK: 
-        // Is the merchant active AND is the link's session the one currently running?
-        const isSessionValid = merchantData.isActive === true && merchantData.currentSessionId === urlSessionId;
+        // 2. Determine the Session ID to load
+        // Use the link ID if available, otherwise use the merchant's current session
+        const targetSessionId = urlSessionId || merchantData.currentSessionId;
 
-        if (!isSessionValid) {
-            // This triggers if the merchant turned off the session or started a new one
-            alert("This delivery session has ended or is no longer available.");
+        // 3. The "Safety" Check
+        // Kick them out if: 
+        // - Merchant is offline (isActive is false)
+        // - OR they came from a WhatsApp link that is no longer the "current" one
+        const isSessionStillLive = merchantData.isActive === true && 
+                                   (urlSessionId ? urlSessionId === merchantData.currentSessionId : true);
+
+        if (!isSessionStillLive || !targetSessionId) {
+            alert("This delivery session is no longer active.");
             window.location.href = "./home.html";
             return;
         }
 
-        // 3. Fetch the specific Session Data
-        const sessionDoc = await getDoc(doc(db, "merchants", merchantId, "sessions", urlSessionId));
+        // 4. Fetch the actual Session Data (Menu, Slots, etc.)
+        const sessionDoc = await getDoc(doc(db, "merchants", merchantId, "sessions", targetSessionId));
         
         if (!sessionDoc.exists()) {
-            throw new Error("Session data not found.");
+            throw new Error("Session information missing.");
         }
         
         activeSessionData = sessionDoc.data();
 
-        // Extra safety: Check if slots are full
+        // 5. Check if slots filled up while they were loading
         if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
-             alert("This session is full! Try another merchant.");
+             alert("Sorry, all slots for this session are now full.");
              window.location.href = "./home.html";
              return;
         }
@@ -81,12 +80,10 @@ async function loadMerchantAndMenu() {
         renderOrderUI();
     } catch (error) {
         console.error(error);
-        alert("Error: " + error.message);
+        alert("Unable to load menu: " + error.message);
         window.location.href = "./home.html";
     }
 }
-
-
 // --- 2. UI Rendering ---
 function renderOrderUI() {
     // Header Info
