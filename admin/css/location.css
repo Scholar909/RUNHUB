@@ -201,6 +201,61 @@ height: 100%; width: 100%;
     background: rgba(255, 59, 48, 0.2);
 }
 
+/* --- Search Ball & Input (Left Aligned) --- */
+.search-container {
+    position: absolute;
+    top: 20px;
+    left: 20px; /* Anchored to left */
+    display: flex;
+    align-items: center;
+    z-index: 2001;
+    pointer-events: none;
+}
+
+.search-ball {
+    width: 50px;
+    height: 50px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
+    transition: transform 0.3s ease;
+    z-index: 2;
+    flex-shrink: 0; /* Prevents ball from squishing */
+}
+
+#mapSearchInput {
+    width: 0;
+    opacity: 0;
+    padding: 0;
+    height: 50px;
+    border-radius: 25px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    color: white;
+    outline: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+    /* Slide out from under the ball to the right */
+    margin-left: -50px; 
+}
+
+.search-container.active #mapSearchInput {
+    width: 250px;
+    opacity: 1;
+    /* Padding-left is higher to clear the ball overlapping the start */
+    padding: 0 20px 0 60px; 
+    margin-left: -50px;
+}
+
+.search-ball:active { transform: scale(0.9); }
+.search-ball i { color: white; font-size: 1.2rem; }
+
 
 .status-indicator { font-size: 0.65rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
 .dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); }
