@@ -102,7 +102,7 @@ function renderMerchantGrid() {
 window.handleStartClick = (phone) => {
     longClickTimer = setTimeout(() => {
         alert(`Merchant Contact: ${phone}\n(Use for urgent coordination only)`);
-    }, 800); // 800ms for long press
+    }, 3000); // 3s for long press
 };
 
 window.handleEndClick = () => {
