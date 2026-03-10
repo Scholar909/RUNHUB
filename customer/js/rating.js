@@ -81,7 +81,7 @@ async function loadReviews(merchantUid = null, searchTerm = "") {
             card.className = 'public-review-card';
             card.innerHTML = `
                 <div class="review-header">
-                    <span class="reviewer-name">${data.customerName || 'Anonymous'}</span>
+                    <span class="reviewer-name">${data.customerUsername || 'Anonymous'}</span>
                     <span class="merchant-tag">@${data.merchantUsername || 'Merchant'}</span>
                 </div>
                 <div class="review-stars">${stars}</div>
@@ -168,7 +168,7 @@ window.submitReview = async () => {
             merchantUid: selectedMerchantUid,
             merchantUsername: merchantUsername,
             customerUid: auth.currentUser.uid,
-            customerName: currentCustomerData.fullName || "Anonymous",
+            customerUsername: currentCustomerData.username || "Anonymous",
             stars: parseInt(starInput.value),
             review: reviewText,
             timestamp: serverTimestamp()
