@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runhub-cache-v1';
+const CACHE_NAME = 'runhub-cache-v5';
 const OFFLINE_URL = '/start/offline.html';
 
 // Files to cache
@@ -34,13 +34,22 @@ self.addEventListener('activate', event => {
 
 // Fetch handler
 self.addEventListener('fetch', event => {
+
   if (event.request.mode === 'navigate') {
+
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+      fetch(event.request)
+        .then(response => response)
+        .catch(() => caches.match(OFFLINE_URL))
     );
+
   } else {
+
     event.respondWith(
-      caches.match(event.request).then(resp => resp || fetch(event.request))
+      caches.match(event.request)
+        .then(response => response || fetch(event.request))
     );
+
   }
+
 });
