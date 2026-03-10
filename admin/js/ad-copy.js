@@ -6,7 +6,7 @@ import {
 
 // --- State ---
 let activeTab = 'sessions';
-const copyCounts = JSON.parse(localStorage.getItem('runhub_copy_counts') || '{}');
+let copyCounts = JSON.parse(localStorage.getItem('runhub_copy_counts') || '{}');
 
 // --- Auth Guard ---
 onAuthStateChanged(auth, (user) => {
@@ -53,8 +53,8 @@ function renderSessions(merchants) {
     }
 
     container.innerHTML = merchants.map(m => {
-        const storageKey = `session_${m.id}_${m.currentSessionId}`;
-        const count = m.slotsFilled === 0 ? 0 : (copyCounts[storageKey] || 0);
+        const storageKey = `session_${m.id}`;
+        const count = copyCounts[storageKey] || 0;
         
         // CORRECTED LINK: Added /customer/ to the path
         const waText = `*AVAILABLE DELIVERIES*\n` +
@@ -69,8 +69,11 @@ function renderSessions(merchants) {
             <div class="copy-card">
                 <div class="copy-title">@${m.username} Session</div>
                 <div class="copy-line">${m.fromLocation} → ${m.toLocation}</div>
-                <button class="copy-btn" onclick="copyToClipboard(\`${waText}\`, '${storageKey}', this)">
-                    Copy for WhatsApp ${count > 0 ? `(${count})` : ''}
+                <button class="copy-btn"
+                data-text="${encodeURIComponent(waText)}"
+                data-key="${storageKey}"
+                onclick="copyToClipboard(this)">
+                Copy for WhatsApp (${count})
                 </button>
             </div>
         `;
@@ -97,9 +100,12 @@ function renderRatings(ratings) {
             <div class="copy-card">
                 <div class="copy-title">Review for @${r.merchantUsername}</div>
                 <div class="copy-line">"${r.review || 'No comment'}" - ${r.stars} Stars</div>
-                <button class="copy-btn" onclick="copyToClipboard(\`${waText}\`, '${storageKey}', this)">
-                    Copy Review ${count > 0 ? `(${count})` : ''}
-                </button>
+              <button class="copy-btn"
+              data-text="${encodeURIComponent(waText)}"
+              data-key="${storageKey}"
+              onclick="copyToClipboard(this)">
+              Copy Review (${count})
+              </button>
             </div>
         `;
     }).join('');
@@ -107,24 +113,34 @@ function renderRatings(ratings) {
 
 // --- Actions ---
 
-window.copyToClipboard = (text, storageKey, btn) => {
+window.copyToClipboard = (btn) => {
+
+    const text = decodeURIComponent(btn.dataset.text);
+    const storageKey = btn.dataset.key;
+
     navigator.clipboard.writeText(text).then(() => {
-        // Update Count
+
         copyCounts[storageKey] = (copyCounts[storageKey] || 0) + 1;
         localStorage.setItem('runhub_copy_counts', JSON.stringify(copyCounts));
-        
-        // Visual Feedback
-        const originalText = btn.innerText;
+
+        const newCount = copyCounts[storageKey];
+
         btn.innerText = "COPIED!";
         btn.style.background = "var(--success)";
-        
+
         setTimeout(() => {
-            btn.innerText = `Copy for WhatsApp (${copyCounts[storageKey]})`;
+            if(storageKey.startsWith("rating")){
+                btn.innerText = `Copy Review (${newCount})`;
+            }else{
+                btn.innerText = `Copy for WhatsApp (${newCount})`;
+            }
             btn.style.background = "var(--accent)";
-        }, 1500);
+        }, 1200);
+
     }).catch(err => {
-        console.error('Failed to copy: ', err);
+        console.error('Copy failed:', err);
     });
+
 };
 
 window.switchTab = (tab, btn) => {
