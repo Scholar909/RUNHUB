@@ -99,10 +99,16 @@ function renderMerchantGrid() {
 /**
  * Long click on merchant name reveals WhatsApp number for coordination.
  */
+
 window.handleStartClick = (phone) => {
     longClickTimer = setTimeout(() => {
+
+        // small vibration feedback (if supported)
+        if (navigator.vibrate) navigator.vibrate(80);
+
         alert(`Merchant Contact: ${phone}\n(Use for urgent coordination only)`);
-    }, 3000); // 3s for long press
+
+    }, 3000); // 3 seconds
 };
 
 window.handleEndClick = () => {
