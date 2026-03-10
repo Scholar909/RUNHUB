@@ -20,12 +20,24 @@ const rtdb = getDatabase();
 /** * 1. AUTH GUARD
  * Kicks unauthorized users back to login page immediately
  */
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        initDashboard(); // user is logged in, continue
-    } else {
-        // Only redirect if this is after login attempt
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
         window.location.href = "./admin-login.html";
+        return;
+    }
+
+    try {
+        const idToken = await user.getIdTokenResult();
+        if (idToken.claims.role !== "admin") {
+            alert("Access denied: You are not an admin.");
+            signOut(auth);
+            return;
+        }
+
+        // User is admin, continue
+        initDashboard();
+    } catch (err) {
+        console.error("Auth check failed:", err);
     }
 });
 
@@ -61,47 +73,27 @@ let allUsers = []; // Source of truth for filtering
 function initDashboard() {
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("fullName", "asc"));
-    
-    // Wrap in a check for admin
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            user.getIdTokenResult().then(idToken => {
-                if (idToken.claims.role === "admin") {
-                    onSnapshot(q, (snapshot) => {
-                        snapshot.forEach(doc => {
-                            console.log(doc.id, doc.data());
-                        });
-                    });
-                }
-            });
-        }
-    });
 
-    // Real-time listener for the entire users collection
     onSnapshot(q, (snapshot) => {
         allUsers = [];
         let customerCount = 0;
         let merchantCount = 0;
 
-        snapshot.forEach((doc) => {
+        snapshot.forEach(doc => {
             const userData = { id: doc.id, ...doc.data() };
             allUsers.push(userData);
 
-            // Handle stats using the 'role' field from your signup scripts
             const role = (userData.role || "").toLowerCase();
             if (role === 'customer') customerCount++;
             if (role === 'merchant') merchantCount++;
         });
 
-        // Update Counter UI
         customerCountEl.textContent = customerCount.toLocaleString();
         merchantCountEl.textContent = merchantCount.toLocaleString();
 
-        // Initial render (or update render if search is empty)
         if (!searchInput.value.trim()) {
             renderUserTable(allUsers);
         } else {
-            // If admin was typing while a background update happened, refresh the filtered list
             triggerSearch();
         }
     });
