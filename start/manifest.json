@@ -1,0 +1,21 @@
+{
+  "name": "RUN Delivery Hub",
+  "short_name": "RUNHUB",
+  "description": "Premium delivery connection for the RUN ecosystem.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "/start/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/start/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

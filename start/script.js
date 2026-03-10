@@ -17,3 +17,38 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { auth, db };
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/start/sw.js')
+      .then(reg => console.log('Service Worker registered:', reg))
+      .catch(err => console.log('Service Worker registration failed:', err));
+  });
+}
+
+// PWA Install Prompt
+let deferredPrompt;
+const installBtn = document.createElement('button');
+installBtn.textContent = 'Install RUNHUB';
+installBtn.className = 'btn btn-filled';
+installBtn.style.position = 'fixed';
+installBtn.style.bottom = '20px';
+installBtn.style.right = '20px';
+installBtn.style.zIndex = '1000';
+installBtn.style.display = 'none';
+document.body.appendChild(installBtn);
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'block';
+});
+
+installBtn.addEventListener('click', async () => {
+  installBtn.style.display = 'none';
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log('User response to install prompt:', outcome);
+  deferredPrompt = null;
+});

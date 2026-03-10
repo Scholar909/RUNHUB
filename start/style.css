@@ -205,6 +205,24 @@ h1 {
     margin-left: 10px;
 }
 
+.whatsapp-card {
+    display: block;
+    text-decoration: none;
+    color: var(--text-main);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.whatsapp-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(37, 211, 102, 0.2); /* WhatsApp green glow */
+    border-color: #25D366;
+}
+
+.whatsapp-card i {
+    color: #25D366; /* WhatsApp green */
+    font-size: 1.2rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .main-wrapper { padding: 0 5%; }
