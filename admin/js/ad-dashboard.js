@@ -27,15 +27,19 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     try {
-        const idToken = await user.getIdTokenResult();
-        if (idToken.claims.role !== "admin") {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        const role = userSnap.data().role;
+
+        if (role !== "admin") {
             alert("Access denied: You are not an admin.");
-            signOut(auth);
+            await signOut(auth);
             return;
         }
 
         // User is admin, continue
         initDashboard();
+
     } catch (err) {
         console.error("Auth check failed:", err);
     }
