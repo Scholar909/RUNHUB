@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runhub-cache-v3';
+const CACHE_NAME = 'runhub-cache-v1';
 const OFFLINE_URL = '/start/offline.html';
 
 // Files to cache
