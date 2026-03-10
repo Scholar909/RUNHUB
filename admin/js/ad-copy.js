@@ -90,7 +90,7 @@ function renderRatings(ratings) {
         const count = copyCounts[storageKey] || 0;
 
         const waText = `*REVIEWS*\n` +
-                       `By: ${r.customerName}\n` +
+                       `By: ${r.customerUsername}\n` +
                        `On: @${r.merchantUsername}\n` +
                        `Stars: ${r.stars}/5\n` +
                        `Review: ${r.review || 'No comment'}\n` +
