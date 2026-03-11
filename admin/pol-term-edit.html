@@ -5,7 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Policies | Admin RUN HUB</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-    <link rel="stylesheet" href="css/pol-term-edit.css?=v4">
+    <link rel="stylesheet" href="css/pol-term-edit.css?=v7">
+<!-- Main Quill Stylesheet (Snow Theme) -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet" />
+
+<!-- Main Quill Library -->
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+
+
 </head>
 <body>
     <div class="main-wrapper">
@@ -63,7 +70,7 @@
 
                     <div class="form-group">
                         <label>Last Updated: <span id="lastUpdate">Oct 24, 2023</span></label>
-                        <textarea class="policy-textarea" placeholder="Paste your legal content here..."></textarea>
+                        <div id="editor" class="policy-textarea"></div>
                     </div>
 
                     <div class="alert-box-info">
@@ -84,7 +91,7 @@
             <a href="pol-term-edit.html" class="nav-icon-box active"><i class="fi-page-filled"></i></a>
         </footer>
     </div>
+<script src="js/pol-term-edit.js?=v8" type="module"></script>
 
-    <script src="js/pol-term-edit.js?=v2" type="module"></script>
 </body>
 </html>
