@@ -63,11 +63,29 @@ body {
     font-size: 0.9rem; outline: none; appearance: none;
 }
 
-.policy-textarea {
-    width: 100%; height: 350px; background: rgba(255,255,255,0.01); border: 1px solid var(--border);
-    border-radius: 16px; padding: 18px; color: var(--text-main);
-    font-size: 0.9rem; outline: none; transition: 0.3s; resize: vertical; line-height: 1.6;
+/* Change this selector from .policy-textarea to #editor */
+#editor {
+    height: 350px; /* Quill needs a specific height on the container */
+    background: rgba(255,255,255,0.01);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
 }
+
+/* Add this to style the toolbar to match your dark theme */
+.ql-toolbar {
+    background: #1a1b23 !important;
+    border-color: var(--border) !important;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.ql-container {
+    border-color: var(--border) !important;
+    font-family: inherit;
+}
+
 .policy-textarea:focus { border-color: var(--accent); background: var(--glass); }
 
 .alert-box-info {
