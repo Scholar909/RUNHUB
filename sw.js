@@ -1,5 +1,5 @@
 const CACHE_NAME = 'runhub-cache-v5';
-const OFFLINE_URL = '/start/offline.html';
+const OFFLINE_URL = '/offline.html';
 
 // Files to cache
 const FILES_TO_CACHE = [
@@ -8,7 +8,7 @@ const FILES_TO_CACHE = [
   '/start/style.css',
   '/start/script.js',
   '/start/icon.png',
-  '/start/offline.html',
+  '/offline.html',
 ];
 
 // Install Service Worker
