@@ -2,15 +2,33 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+// ... existing imports ...
+
+onAuthStateChanged(auth, (user) => {
+    if (!user) window.location.href = "./admin-login.html";
+});
+
+// Initialize Quill (Ensure this runs after the DOM is ready)
+const quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: {
+        toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline'],
+            ['link', 'blockquote'],
+            [{ list: 'ordered'}, { list: 'bullet' }],
+            ['clean']
+        ]
+    }
+});
+
+// ... rest of your code ...
+
+
 const categorySelect = document.querySelector('.admin-select');
 const policyTextarea = document.querySelector('.policy-textarea');
 const updateBtn = document.querySelector('.btn-filled');
 const lastUpdateSpan = document.getElementById('lastUpdate');
-
-// --- Auth Protection ---
-onAuthStateChanged(auth, (user) => {
-    if (!user) window.location.href = "index.html";
-});
 
 // --- Fetch Content on Change ---
 categorySelect.addEventListener('change', async (e) => {
@@ -27,7 +45,7 @@ categorySelect.addEventListener('change', async (e) => {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            policyTextarea.value = docSnap.data().content;
+            quill.root.innerHTML = docSnap.data().content;
             const date = docSnap.data().updatedAt?.toDate();
             lastUpdateSpan.innerText = date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Recently";
         } else {
@@ -42,7 +60,7 @@ categorySelect.addEventListener('change', async (e) => {
 // --- Update Content ---
 updateBtn.addEventListener('click', async () => {
     const category = categorySelect.value;
-    const content = policyTextarea.value.trim();
+    const content = quill.root.innerHTML.trim();
 
     if (!category) return alert("Please select a category first.");
     if (!content) return alert("Content cannot be empty.");
