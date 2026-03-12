@@ -17,10 +17,18 @@ onAuthStateChanged(auth, async (user) => {
             // Show the generated ID in the input field
             document.getElementById('auto-ref').value = ticketId;
         }
+    } else {
+        window.location.href = "./sign-login.html";
     }
 });
 
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
+
+window.contactSupport = () => {
+    const adminPhone = "2349168873680"; 
+    const message = encodeURIComponent("Hello RUNHUB Admin, I am a merchant and I need assistance with my account.");
+    window.location.href = `https://wa.me/${adminPhone}?text=${message}`;
+};
 
 /**
  * FEATURE: Dispute Submission with CallMeBot Notification
