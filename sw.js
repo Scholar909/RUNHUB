@@ -1,55 +1,71 @@
-const CACHE_NAME = 'runhub-cache-v5';
-const OFFLINE_URL = '/offline.html';
+const CACHE_NAME = "runhub-cache-v1";
 
-// Files to cache
-const FILES_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/start/style.css',
-  '/start/script.js',
-  '/start/icon.png',
-  '/offline.html',
+const urlsToCache = [
+"/",
+"/index.html",
+"/offline.html",
+"/start/style.css",
+"/start/script.js",
+"/start/icon-192.png",
+"/start/icon-512.png"
 ];
 
-// Install Service Worker
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(FILES_TO_CACHE))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener("install", event => {
+
+event.waitUntil(
+caches.open(CACHE_NAME)
+.then(cache => {
+return cache.addAll(urlsToCache);
+})
+);
+
+self.skipWaiting();
+
 });
 
-// Activate Service Worker
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      })
-    ))
-  );
-  self.clients.claim();
+
+self.addEventListener("activate", event => {
+
+event.waitUntil(
+caches.keys().then(keys => {
+return Promise.all(
+keys.filter(key => key !== CACHE_NAME)
+.map(key => caches.delete(key))
+);
+})
+);
+
+self.clients.claim();
+
 });
 
-// Fetch handler
-self.addEventListener('fetch', event => {
 
-  if (event.request.mode === 'navigate') {
+self.addEventListener("fetch", event => {
 
-    event.respondWith(
-      fetch(event.request)
-        .then(response => response)
-        .catch(() => caches.match(OFFLINE_URL))
-    );
+event.respondWith(
 
-  } else {
+fetch(event.request)
+.then(response => {
 
-    event.respondWith(
-      caches.match(event.request)
-        .then(response => response || fetch(event.request))
-    );
+const clone = response.clone();
 
-  }
+caches.open(CACHE_NAME)
+.then(cache => cache.put(event.request, clone));
+
+return response;
+
+})
+.catch(() => {
+
+return caches.match(event.request)
+.then(res => {
+
+return res || caches.match("/offline.html");
+
+});
+
+})
+
+);
 
 });
