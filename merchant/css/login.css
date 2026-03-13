@@ -42,3 +42,49 @@ body {
 .disabled { opacity: 0.5; cursor: not-allowed; }
 
 .footer { padding: 40px 0; text-align: center; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.85rem; }
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    padding: 30px;
+    border-radius: 24px;
+    max-width: 400px;
+    width: 90%;
+    text-align: left;
+}
+
+.requirements-list {
+    margin: 20px 0;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+
+.requirements-list ul { padding-left: 20px; }
+.requirements-list li { margin-bottom: 10px; }
+
+.checkbox-container {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-main);
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.btn-text {
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    margin-top: 10px;
+    width: 100%;
+    cursor: pointer;
+}
