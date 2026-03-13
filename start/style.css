@@ -232,3 +232,49 @@ h1 {
     .hero-description { margin: 0 auto 40px; }
     .navbar { height: 80px; }
 }
+
+/* PLATFORM STATS */
+
+.platform-stats {
+    margin-top: 70px;
+    text-align: center;
+}
+
+.stats-text {
+    color: var(--text-dim);
+    font-size: 1rem;
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: 500px;
+    margin: auto;
+}
+
+.stat-box {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    padding: 35px 20px;
+    border-radius: 22px;
+    backdrop-filter: blur(20px);
+}
+
+.stat-box h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.stat-box p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+
+.stats-footer {
+    margin-top: 25px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
