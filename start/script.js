@@ -52,3 +52,30 @@ installBtn.addEventListener('click', async () => {
   console.log('User response to install prompt:', outcome);
   deferredPrompt = null;
 });
+
+const merchantBtn = document.getElementById("merchantAccess");
+
+if (merchantBtn) {
+  merchantBtn.addEventListener("click", (e) => {
+    e.preventDefault(); // stop immediate navigation
+
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your device.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("Latitude:", position.coords.latitude);
+        console.log("Longitude:", position.coords.longitude);
+
+        // permission granted → go to merchant login
+        window.location.href = "./merchant/sign-login.html";
+      },
+      (error) => {
+        alert("Location permission is required for merchant access.");
+        console.error(error);
+      }
+    );
+  });
+}
