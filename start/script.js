@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC7onB0OptTyu-J6J1PwU6zX799tQIjh4k",
     authDomain: "affiliate-app-dab95.firebaseapp.com",
@@ -11,12 +11,41 @@ const firebaseConfig = {
     appId: "1:510180440268:web:99be47162857f635d8ea69"
 };
 
-// Check if Firebase is already initialized to prevent the duplicate-app error
+// Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { auth, db };
+const customerCountEl = document.getElementById("customerCount");
+const merchantCountEl = document.getElementById("merchantCount");
+
+function loadPlatformStats() {
+    const usersRef = collection(db, "users");
+
+    onSnapshot(usersRef, (snapshot) => {
+        let customers = 0;
+        let merchants = 0;
+
+        snapshot.forEach(doc => {
+            const role = (doc.data().role || "").toLowerCase();
+            if (role === "customer") customers++;
+            if (role === "merchant") merchants++;
+        });
+
+        if(customerCountEl) customerCountEl.textContent = customers.toLocaleString();
+        if(merchantCountEl) merchantCountEl.textContent = merchants.toLocaleString();
+    }, (error) => {
+        console.error("Error fetching platform stats:", error);
+    });
+}
+
+loadPlatformStats();
+
+// Optional: show today's date
+const dateEl = document.getElementById("todayDate");
+if(dateEl){
+    const today = new Date();
+    dateEl.textContent = today.toDateString();
+}
 
 // Register service worker
 if ('serviceWorker' in navigator) {
