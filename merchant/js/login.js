@@ -144,4 +144,40 @@ if (isMonitoringActive && "geolocation" in navigator) {
     );
 }
 
+// Modal Toggle Logic
+window.openConsentModal = function() {
+    document.getElementById('consent-modal').style.display = 'flex';
+};
+
+window.closeConsentModal = function() {
+    document.getElementById('consent-modal').style.display = 'none';
+};
+
+// Consent Checkbox Logic
+const consentBox = document.getElementById('consent-checkbox');
+const proceedBtn = document.getElementById('proceed-btn');
+
+consentBox.addEventListener('change', function() {
+    if (this.checked) {
+        proceedBtn.disabled = false;
+        proceedBtn.classList.remove('disabled');
+    } else {
+        proceedBtn.disabled = true;
+        proceedBtn.classList.add('disabled');
+    }
+});
+
+window.redirectToSignUp = function() {
+    // Directs user to the verification form page
+    window.location.href = "./sign-up.html";
+};
+
+window.switchTab = function(tab) {
+    if(tab === 'login') {
+        // Ensure UI stays on login or reloads to clear states
+        window.location.reload();
+    }
+};
+
+
 document.getElementById('year').textContent = new Date().getFullYear();
