@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Verification | RUNHUB</title>
+    <link rel="stylesheet" href="css/sign-up.css?=v3">
+</head>
+<body>
+
+<div class="main-wrapper">
+    <header class="navbar">
+        <div class="logo">RUN<span class="accent">HUB</span></div>
+        <div class="status-indicator">
+            <div class="dot animate-flicker"></div>
+            SECURE VERIFICATION
+        </div>
+    </header>
+
+    <div class="registration-section">
+        <div class="report-card">
+            <div id="step-indicator" class="card-tag">Step 1 of 5: ID Document Scans</div>
+            
+            <form id="verificationForm">
+                
+                <div class="form-step active" id="step1">
+                    <h3>ID Card Verification</h3>
+                    <p class="hero-description">Please capture clear live photos of your Student ID.</p>
+                    
+                    <div class="camera-container">
+                        <video id="videoPreview" autoplay playsinline muted></video>
+                        <canvas id="captureCanvas" style="display:none;"></canvas>
+                        <div class="camera-controls">
+                            <button type="button" class="btn-capture" id="captureBtn">Take Photo</button>
+                            <button type="button" class="btn-retake" id="retakeBtn" style="display:none;">Retake</button>
+                        </div>
+                    </div>
+
+                    <div class="upload-slots">
+                        <div class="slot" id="slot-idFront">
+                            <span class="label">ID FRONT</span>
+                            <img id="preview-idFront" src="" alt="Front Preview" style="display:none;">
+                        </div>
+                        <div class="slot" id="slot-idBack">
+                            <span class="label">ID BACK</span>
+                            <img id="preview-idBack" src="" alt="Back Preview" style="display:none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step" id="step2">
+                    <h3>Identity Confirmation</h3>
+                    <p class="hero-description">Hold your ID card next to your face. This will be your <b>Profile Picture</b>.</p>
+                    <div class="camera-container">
+                        <div class="slot-large" id="slot-selfie">
+                            <img id="preview-selfie" src="" alt="Selfie Preview" style="display:none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step" id="step3">
+                    <h3>Live Video Verification</h3>
+                    <div class="alert-box-info">
+                        <p>Record a 15-second video. State clearly: <br>
+                        <i id="scriptText">"I, [Full Name], am applying to be a merchant on RUNHUB and confirm all my details are authentic."</i></p>
+                    </div>
+                    <div class="video-container">
+                        <video id="recordingPreview" autoplay playsinline muted></video>
+                        <div class="timer" id="videoTimer">00:15</div>
+                        <button type="button" class="btn-filled w-100" id="recordBtn">Start Recording</button>
+                    </div>
+                </div>
+
+                <div class="form-step" id="step4">
+                    <h3>Personal & Bank Details</h3>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="fullName" placeholder="As seen on ID" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="username" required>
+                            <span id="username-status" class="validation-msg"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Matric Number</label>
+                            <input type="text" id="matricNumber" required>
+                            <span id="matric-status" class="validation-msg"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phoneNumber" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Level</label>
+                            <select id="level">
+                                <option>100</option><option>200</option><option>300</option><option>400</option><option>500</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select id="gender">
+                                <option>Male</option><option>Female</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Block</label>
+                            <select id="block"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Room</label>
+                            <select id="room"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hostel Name</label>
+                        <input type="text" id="hostel" placeholder="e.g. Peter Hall" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bank Name</label>
+                        <input type="text" id="bankName" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Account Number</label>
+                            <input type="number" id="accountNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Account Name</label>
+                            <input type="text" id="accountName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            <input type="password" id="confirm-password" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step" id="step5">
+                    <h3>Final Pledge</h3>
+                    <div class="pledge-card">
+                        <p>I hereby solemnly declare that the documents and information provided are true and belong to me. I understand that any false submission will lead to a permanent ban and potential disciplinary action.</p>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="pledgeCheck" required>
+                            I agree to RUNHUB Merchant Terms
+                        </label>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button type="button" class="btn btn-outline" id="prevBtn" style="display:none;">Previous</button>
+                    <button type="button" class="btn btn-filled" id="nextBtn">Next</button>
+                    <button type="submit" class="btn btn-filled" id="submitBtn" style="display:none;">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="success-icon">✔️</div>
+            <h2>Application Submitted!</h2>
+            <p>Please screenshot and save your unique <b>Catch Phrase</b>.</p>
+            <div class="catchphrase-box" id="displayCatchphrase">---</div>
+            <button class="btn btn-filled w-100" onclick="location.reload()">I Have Saved It</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/sign-up.js?=v3"></script>
+</body>
+</html>
