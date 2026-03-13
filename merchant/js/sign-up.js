@@ -29,14 +29,29 @@ const collectedData = {
 
 // --- CAMERA LOGIC ---
 const video = document.getElementById('videoPreview');
+const flipCameraBtn = document.getElementById('flipCameraBtn');
+
+let currentFacingMode = "user";
+let currentStream = null;
 const canvas = document.getElementById('captureCanvas');
 const captureBtn = document.getElementById('captureBtn');
 const retakeBtn = document.getElementById('retakeBtn');
 
 async function startCamera() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode },
+            audio: false
+        });
+
+        currentStream = stream;
         video.srcObject = stream;
+
     } catch (err) {
         alert("Camera access denied or unavailable.");
     }
@@ -145,6 +160,14 @@ captureBtn.addEventListener('click', () => {
     }
 });
 
+flipCameraBtn.addEventListener('click', () => {
+
+    currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+
+    startCamera();
+
+});
+
 recordBtn.addEventListener('click', startRecording);
 
 // --- UNIQUE CHECKS ---
@@ -236,3 +259,20 @@ for(let i=0; i<=100; i++) bSelect.innerHTML += `<option value="${i}">${i.toStrin
 for(let i=1; i<=100; i++) rSelect.innerHTML += `<option value="${i}">${i}</option>`;
 
 updateStep();
+
+document.querySelectorAll('.remove-btn, .remove-btn-large').forEach(btn => {
+
+    btn.addEventListener('click', () => {
+
+        const target = btn.dataset.target;
+
+        collectedData[target] = null;
+
+        const img = document.getElementById(`preview-${target}`);
+
+        img.src = "";
+        img.style.display = "none";
+
+    });
+
+});
