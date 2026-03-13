@@ -30,20 +30,23 @@
                     <div class="camera-container">
                         <video id="videoPreview" autoplay playsinline muted></video>
                         <canvas id="captureCanvas" style="display:none;"></canvas>
-                        <div class="camera-controls">
-                            <button type="button" class="btn-capture" id="captureBtn">Take Photo</button>
-                            <button type="button" class="btn-retake" id="retakeBtn" style="display:none;">Retake</button>
-                        </div>
+                      <div class="camera-controls">
+                          <button type="button" class="btn-capture" id="captureBtn">Take Photo</button>
+                          <button type="button" class="btn-retake" id="retakeBtn" style="display:none;">Retake</button>
+                          <button type="button" class="btn-flip" id="flipCameraBtn">Flip Camera</button>
+                      </div>
                     </div>
 
                     <div class="upload-slots">
-                        <div class="slot" id="slot-idFront">
-                            <span class="label">ID FRONT</span>
-                            <img id="preview-idFront" src="" alt="Front Preview" style="display:none;">
-                        </div>
+                      <div class="slot" id="slot-idFront">
+                          <span class="label">ID FRONT</span>
+                          <img id="preview-idFront" src="" alt="Front Preview" style="display:none;">
+                          <button type="button" class="remove-btn" data-target="idFront">✕</button>
+                      </div>
                         <div class="slot" id="slot-idBack">
                             <span class="label">ID BACK</span>
                             <img id="preview-idBack" src="" alt="Back Preview" style="display:none;">
+                            <button type="button" class="remove-btn" data-target="idBack">✕</button>
                         </div>
                     </div>
                 </div>
@@ -52,9 +55,10 @@
                     <h3>Identity Confirmation</h3>
                     <p class="hero-description">Hold your ID card next to your face. This will be your <b>Profile Picture</b>.</p>
                     <div class="camera-container">
-                        <div class="slot-large" id="slot-selfie">
-                            <img id="preview-selfie" src="" alt="Selfie Preview" style="display:none;">
-                        </div>
+                      <div class="slot-large" id="slot-selfie">
+                          <img id="preview-selfie" src="" alt="Selfie Preview" style="display:none;">
+                          <button type="button" class="remove-btn-large" data-target="selfie">✕</button>
+                      </div>
                     </div>
                 </div>
 
