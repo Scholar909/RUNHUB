@@ -106,18 +106,14 @@
 </div>
 
 <!-- SECTION 5: Facial Scan -->
-<div class="form-section" data-requires-files="facr">
+<div class="form-section" data-requires-files="face">
     <div class="report-card">
         <div class="card-tag">STEP 4</div>
         <h3>Facial Scan</h3>
-        <p class="info-text">Position your face in the frame and stay still for 3 seconds.</p>
+        <p class="info-text">Position your face in the frame and stay still. Auto capture will occur in 5 seconds.</p>
         <div class="camera-wrapper">
             <video id="faceScanPreview" autoplay playsinline></video>
-            <div class="camera-controls">
-                <button type="button" class="icon-btn" id="flipFace"><i class="fas fa-sync-alt"></i></button>
-                <button type="button" class="icon-btn capture-btn" id="captureFace"><i class="fas fa-camera"></i></button>
-                <button type="button" class="icon-btn remove-btn" id="removeFace"><i class="fas fa-trash"></i></button>
-            </div>
+            <!-- Removed camera-controls div completely -->
         </div>
         <img id="faceScanImg" class="preview-img" />
     </div>
