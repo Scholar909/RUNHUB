@@ -452,60 +452,76 @@ startFacialScan();
 
 /* ---------------- FORM SUBMIT ---------------- */
 
-document.getElementById("merchantVerificationForm").addEventListener("submit",async e=>{
+document.getElementById("merchantVerificationForm").addEventListener("submit", async e => {
 
-e.preventDefault();
+  e.preventDefault();
 
-if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
-alert("Please capture all required files.");
-return;
+  if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
+    alert("Please capture all required files.");
+    return;
+  }
+
+  if(!isUsernameValid || !isMatricValid){
+    alert("Username or Matric already exists.");
+    return;
+  }
+
+  const data = {
+    fullName: fullName.value,
+    email: email.value.trim().toLowerCase(),
+    username: username.value.trim().toLowerCase(),
+    phoneNumber: phoneNumber.value,
+    matricNumber: matricNumber.value,
+    department: department.value,
+    level: level.value,
+    gender: gender.value,
+    hostel: hostel.value,
+    block: block.value,
+    room: room.value,
+    bankName: bankName.value,
+    accountName: accountName.value,
+    accountNumber: accountNumber.value
+  };
+
+  // Generate random catch phrase
+  const catchPhrase = generateCatchPhrase();
+
+  // Save application with catch phrase in Firestore
+  await addDoc(collection(db, "merchant_applications"), {
+    ...data,
+    files: {
+      idFront: urls.idFront,
+      idBack: urls.idBack,
+      selfie: urls.selfie,
+      faceScan: urls.face,
+      verificationVideo: urls.video
+    },
+    catchPhrase: catchPhrase,  // <-- included
+    status: "pending",
+    submittedAt: serverTimestamp()
+  });
+
+  // Show catch phrase to merchant
+  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
+
+  // Redirect
+  window.location.href = "./sign-login.html";
+
+});
+
+});
+
+function generateCatchPhrase() {
+    const phrases = [
+        "Silver Mango 82",
+        "Library Falcon Window",
+        "The river flows east today",
+        "Crimson Tiger Jump",
+        "Sunny Orange Sky",
+        "Quiet Mountain Echo",
+        "Blue Horizon Run",
+        "Golden Leaf Whisper"
+    ];
+    return phrases[Math.floor(Math.random() * phrases.length)];
 }
 
-if(!isUsernameValid || !isMatricValid){
-alert("Username or Matric already exists.");
-return;
-}
-
-const data={
-
-fullName:fullName.value,
-email:email.value.trim().toLowerCase(),
-username:username.value.trim().toLowerCase(),
-phoneNumber:phoneNumber.value,
-matricNumber:matricNumber.value,
-department:department.value,
-level:level.value,
-gender:gender.value,
-hostel:hostel.value,
-block:block.value,
-room:room.value,
-bankName:bankName.value,
-accountName:accountName.value,
-accountNumber:accountNumber.value
-
-};
-
-await addDoc(collection(db,"merchant_applications"),{
-
-...data,
-
-files:{
-idFront:urls.idFront,
-idBack:urls.idBack,
-selfie:urls.selfie,
-faceScan:urls.face,
-verificationVideo:urls.video
-},
-
-status:"pending",
-submittedAt:serverTimestamp()
-
-});
-
-alert("Application submitted successfully");
-
-window.location.href = "./sign-login.html";
-
-});
-
-});
