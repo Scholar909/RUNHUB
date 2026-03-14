@@ -137,10 +137,6 @@ function showSection(index) {
   currentSection = index;
 }
 
-document.getElementById("startVerificationBtn").addEventListener("click", () => {
-  showSection(1);
-});
-
 document.querySelectorAll(".next").forEach(btn => {
   btn.addEventListener("click", () => {
     const section = sections[currentSection];
@@ -180,7 +176,7 @@ if(currentSection>0) showSection(currentSection-1);
 
 const facingModes={};
 
-async function startCamera(video,facingMode="user"){
+async function startCamera(video, facingMode="user", withAudio=false){
 
 try{
 
@@ -191,12 +187,12 @@ video.srcObject=null;
 
 await new Promise(res=>setTimeout(res,300));
 
-const stream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode:{ideal:facingMode}},
-audio:true
+const stream = await navigator.mediaDevices.getUserMedia({
+  video: { facingMode: { ideal: facingMode } },
+  audio: withAudio
 });
 
-video.srcObject=stream;
+video.srcObject = stream;
 await video.play();
 
 return stream;
@@ -317,7 +313,7 @@ async function startVideoCamera(){
 
 if(videoStream) return;
 
-videoStream=await startCamera(videoPreview);
+videoStream = await startCamera(videoPreview, "user", true);
 startVideoBtn.disabled=false;
 
 }
