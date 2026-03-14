@@ -179,6 +179,24 @@ color:var(--text-main);
 outline:none;
 }
 
+.validation-msg {
+    display: block;
+    font-size: 0.65rem;
+    margin-top: 5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.status-available { color: var(--success); }
+.status-taken { color: var(--error); }
+
+
+/* --- UI Components --- */
+.alert-box-info {
+    background: rgba(0, 122, 255, 0.08); border: 1px solid rgba(0, 122, 255, 0.2);
+    padding: 15px; border-radius: 12px; display: flex; gap: 12px; align-items: flex-start;
+    font-size: 0.8rem; color: var(--text-main); margin: 20px 0;
+}
+
 input:focus,select:focus{
 border-color:var(--accent);
 }
@@ -215,4 +233,39 @@ color:white;
 display:flex;
 justify-content:space-between;
 margin-top:20px;
+}
+
+.camera-wrapper{
+    position: relative;
+}
+
+.camera-controls{
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display:flex;
+    gap:8px;
+}
+
+.icon-btn{
+    border:none;
+    background:rgba(0,0,0,0.5);
+    color:white;
+    padding:10px;
+    border-radius:50%;
+    font-size:1rem;
+    cursor:pointer;
+}
+
+.preview-img, .preview-video{
+    width:100%;
+    margin-top:10px;
+    border-radius:12px;
+    border:1px solid var(--border);
+}
+
+.video-timer{
+    font-size:0.8rem;
+    color:var(--text-dim);
+    margin-top:5px;
 }
