@@ -79,16 +79,31 @@ function showSection(index){
 }
 
 document.querySelectorAll(".next").forEach(btn => {
-    btn.addEventListener("click", ()=>{
-        const requiredFiles = ["idFront","idBack","selfie","face","video"];
-        const currentRequired = sections[currentSection].dataset.requiresFiles?.split(",") || [];
-        if(currentRequired.some(f=>!urls[f])){
-            alert("Please capture and upload required files before proceeding.");
-            return;
+    btn.addEventListener("click", () => {
+        const currentSectionEl = sections[currentSection];
+        
+        // 1. Check for required files
+        const currentRequired = currentSectionEl.dataset.requiresFiles?.split(",") || [];
+        if(currentRequired.some(f => !urls[f])) {
+            alert("Please capture and upload all required files before proceeding.");
+            return; // stop navigation
         }
+
+        // 2. Check for required form fields
+        const inputs = currentSectionEl.querySelectorAll("input[required], select[required]");
+        for (let input of inputs) {
+            if (!input.value.trim()) {
+                alert(`Please fill in the required field: ${input.previousElementSibling.innerText}`);
+                input.focus();
+                return;
+            }
+        }
+
+        // If all good, show next section
         if(currentSection < sections.length - 1) showSection(currentSection + 1);
     });
 });
+
 document.querySelectorAll(".prev").forEach(btn => {
     btn.addEventListener("click", ()=>{
         if(currentSection > 0) showSection(currentSection - 1);
@@ -100,13 +115,10 @@ const facingModes = {}; // track current facing mode per video
 
 async function startCamera(video, facingMode = "user"){
     try {
-        if (video.srcObject) {
+        if(video.srcObject){
             video.srcObject.getTracks().forEach(track => track.stop());
         }
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode },
-            audio: false
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
         video.srcObject = stream;
         await video.play();
         return stream;
@@ -118,11 +130,28 @@ async function startCamera(video, facingMode = "user"){
 function setupFlip(flipBtnId, videoId) {
     const video = document.getElementById(videoId);
     const btn = document.getElementById(flipBtnId);
-    facingModes[videoId] = "user";
+    if(!facingModes[videoId]) facingModes[videoId] = "user";
 
     btn.onclick = async () => {
+        // Stop current stream
+        if(video.srcObject){
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+
+        // Toggle facing mode
         facingModes[videoId] = facingModes[videoId] === "user" ? "environment" : "user";
-        await startCamera(video, facingModes[videoId]);
+
+        // Start camera with new facing mode
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: facingModes[videoId] } },
+            audio: false
+        }).catch(async ()=>{
+            // fallback for devices that don’t support exact constraint
+            return await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingModes[videoId] } });
+        });
+
+        video.srcObject = stream;
+        await video.play();
     };
 }
 
@@ -180,11 +209,22 @@ const videoPlayback = document.getElementById("videoPlayback");
 const timerEl = document.getElementById("videoTimer");
 let mediaRecorder, recordedChunks=[], videoStream;
 
-startCamera(videoPreview).then(s=>videoStream=s);
+const startVideoBtn = document.getElementById("startVideoRecording");
+startVideoBtn.disabled = true;
+startVideoBtn.onclick = () => {
+    recordedChunks = [];
+    if(videoPlayback.src) videoPlayback.src = ""; // clear old playback
+    // ... continue with MediaRecorder
+}
+
+startCamera(videoPreview).then(stream => {
+    videoStream = stream;
+    startVideoBtn.disabled = false; // enable recording only when camera is ready
+});
 
 document.getElementById("startVideoRecording").onclick = ()=>{
     recordedChunks=[];
-    mediaRecorder = new MediaRecorder(videoStream);
+    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm" });
     mediaRecorder.ondataavailable = e=>{
         if(e.data.size>0) recordedChunks.push(e.data);
     };
