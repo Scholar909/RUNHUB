@@ -113,7 +113,9 @@
         <p class="info-text">Position your face in the frame and stay still. Auto capture will occur in 5 seconds.</p>
         <div class="camera-wrapper">
             <video id="faceScanPreview" autoplay playsinline></video>
-            <!-- Removed camera-controls div completely -->
+            <button id="removeFace" class="icon-btn remove-btn" style="display:none">
+              <i class="fas fa-trash"></i>
+            </button>
         </div>
         <img id="faceScanImg" class="preview-img" />
     </div>
