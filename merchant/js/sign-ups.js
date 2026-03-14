@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -52,47 +52,31 @@ timeout=setTimeout(()=>func.apply(this,args),delay);
 
 const checkUniqueness = async (field, value, statusId) => {
   const statusEl = document.getElementById(statusId);
-
   if (!value || value.length < 3) {
     statusEl.innerText = "";
     return;
   }
 
-  statusEl.innerText = "Checking...";
+  const collectionName = field === "username" ? "usernames" : "matricNumbers";
+  const docId = field === "username" ? value.toLowerCase() : value;
 
   try {
-    let docRef;
-
-    if (field === "username") {
-      docRef = doc(db, "usernames", value.toLowerCase());
-    } else if (field === "matricNumber") {
-      docRef = doc(db, "matricNumbers", value);
-    } else {
-      statusEl.innerText = "";
-      return;
-    }
-
-    const snap = await getDoc(docRef);
-
-    if (!snap.exists()) {
+    const docSnap = await getDoc(doc(db, collectionName, docId));
+    if (!docSnap.exists()) {
       statusEl.innerText = "✓ Available";
-      statusEl.className = "validation-msg status-available";
-
+      statusEl.style.color = "#34c759";
       if (field === "username") isUsernameValid = true;
       if (field === "matricNumber") isMatricValid = true;
     } else {
       statusEl.innerText = "✕ Already Taken";
-      statusEl.className = "validation-msg status-taken";
-
+      statusEl.style.color = "#ff3b30";
       if (field === "username") isUsernameValid = false;
       if (field === "matricNumber") isMatricValid = false;
     }
-
   } catch (err) {
     console.error(err);
-    statusEl.innerText = "Error checking";
-    if (field === "username") isUsernameValid = false;
-    if (field === "matricNumber") isMatricValid = false;
+    statusEl.innerText = "Network error";
+    statusEl.style.color = "orange";
   }
 };
 
@@ -488,8 +472,11 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   // Generate random catch phrase
   const catchPhrase = generateCatchPhrase();
 
-  // Save application with catch phrase in Firestore
-  // After adding the application doc
+// Create Auth User first
+const userCredential = await createUserWithEmailAndPassword(auth, data.email, password);
+const uid = userCredential.user.uid;
+
+// Then save merchant application
 const appRef = await addDoc(collection(db, "merchant_applications"), {
   ...data,
   files: {
@@ -499,18 +486,35 @@ const appRef = await addDoc(collection(db, "merchant_applications"), {
     faceScan: urls.face,
     verificationVideo: urls.video
   },
-  catchPhrase: catchPhrase,
+  catchPhrase,
   status: "pending",
-  submittedAt: serverTimestamp()
+  submittedAt: serverTimestamp(),
+  uid // <- Save UID for reference
 });
 
-try {
-  await setDoc(doc(db, "usernames", data.username.toLowerCase()), { uid: appRef.id });
-  await setDoc(doc(db, "matricNumbers", data.matricNumber), { uid: appRef.id });
-} catch (err) {
-  alert("Username or Matric number was just taken. Please choose another.");
-  return;
-}
+// Save uniqueness correctly
+await setDoc(doc(db, "usernames", data.username.toLowerCase()), { uid });
+await setDoc(doc(db, "matricNumbers", data.matricNumber), { uid });
+
+// Save basic user record for admin / auth
+await setDoc(doc(db, "users", uid), {
+  uid,
+  fullName: data.fullName,
+  username: data.username.toLowerCase(),
+  email: data.email,
+  phoneNumber: data.phoneNumber,
+  matricNumber: data.matricNumber,
+  gender: data.gender,
+  hostelLocation: `Block ${data.block}, Room ${data.room}, ${data.hostel}`,
+  bankDetails: {
+    bankName: data.bankName,
+    accountName: data.accountName,
+    accountNumber: data.accountNumber
+  },
+  role: "merchant",
+  status: "pending",
+  createdAt: serverTimestamp()
+});
 
   // Show catch phrase to merchant
   alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
