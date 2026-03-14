@@ -87,11 +87,11 @@ document.querySelectorAll(".next").forEach(btn => {
     btn.addEventListener("click", () => {
         const currentSectionEl = sections[currentSection];
         
-        // 1. Check for required files
+        // Only check required files if the section has data-requires-files
         const currentRequired = currentSectionEl.dataset.requiresFiles?.split(",") || [];
-        if(currentRequired.some(f => !urls[f])) {
+        if(currentRequired.length && currentRequired.some(f => !urls[f])) {
             alert("Please capture and upload all required files before proceeding.");
-            return; // stop navigation
+            return;
         }
 
         // 2. Check for required form fields
@@ -118,17 +118,23 @@ document.querySelectorAll(".prev").forEach(btn => {
 // ---------------- CAMERA ----------------
 const facingModes = {}; // track current facing mode per video
 
-async function startCamera(video, facingMode = "user"){
+async function startCamera(video, facingMode = "user") {
     try {
-        if(video.srcObject){
+        // Stop any existing tracks
+        if (video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());
         }
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+        // Get user media
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode },
+            audio: false
+        });
         video.srcObject = stream;
         await video.play();
         return stream;
-    } catch(e){
-        alert("Camera permission required for verification.");
+    } catch (e) {
+        console.error(e);
+        alert("Camera permission required or device doesn't support requested camera.");
     }
 }
 
@@ -149,24 +155,6 @@ async function setupFlip(flipBtnId, videoId) {
         // Start camera without exact constraint
         await startCamera(video, facingModes[videoId]);
     };
-}
-
-async function startCamera(video, facingMode = "user"){
-    try {
-        if(video.srcObject){
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode }, 
-            audio: false 
-        });
-        video.srcObject = stream;
-        await video.play();
-        return stream;
-    } catch(e){
-        console.error(e);
-        alert("Camera permission required or device doesn't support requested camera.");
-    }
 }
 
 // ---------------- CAPTURE ----------------
@@ -204,17 +192,17 @@ const setupCapture = (vidId, captureBtnId, removeBtnId, previewId, key)=>{
     }
 };
 
+document.querySelectorAll(".btn-filled.next").forEach(btn => btn.disabled = false);
+
 // ---------------- SETUP CAPTURES ----------------
 setupCapture("idFrontPreview","captureIdFront","removeIdFront","idFrontImg","idFront");
 setupCapture("idBackPreview","captureIdBack","removeIdBack","idBackImg","idBack");
 setupCapture("selfiePreview","captureSelfie","removeSelfie","selfieImg","selfie");
-setupCapture("faceScanPreview","captureFace","removeFace","faceScanImg","face");
 
 // ---------------- SETUP FLIPS ----------------
 setupFlip("flipIdFront","idFrontPreview");
 setupFlip("flipIdBack","idBackPreview");
 setupFlip("flipSelfie","selfiePreview");
-setupFlip("flipFace","faceScanPreview");
 setupFlip("flipVideo","videoPreview");
 
 // ---------------- VIDEO ----------------
@@ -311,7 +299,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
     const data = {
         fullName: document.getElementById("fullName").value,
-        email: document.getElementById("email").value,
+        email: document.getElementById("email").value.trim().toLowerCase(),
         username: document.getElementById("username").value.trim().toLowerCase(),
         phoneNumber: document.getElementById("phoneNumber").value,
         matricNumber: document.getElementById("matricNumber").value.trim(),
