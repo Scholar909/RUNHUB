@@ -449,6 +449,14 @@ return `${words[Math.floor(Math.random()*words.length)]} ${words[Math.floor(Math
 
 }
 
+function stopAllCameras(){
+document.querySelectorAll("video").forEach(v=>{
+if(v.srcObject){
+v.srcObject.getTracks().forEach(t=>t.stop());
+v.srcObject=null;
+}
+});
+}
 
 /* ---------------- FORM SUBMIT ---------------- */
 
@@ -566,13 +574,4 @@ startFacialScan();
 
 };
 
-}
-
-function stopAllCameras(){
-document.querySelectorAll("video").forEach(v=>{
-if(v.srcObject){
-v.srcObject.getTracks().forEach(t=>t.stop());
-v.srcObject=null;
-}
-});
 }
