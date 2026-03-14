@@ -321,58 +321,55 @@ startVideoBtn.disabled=false;
 
 }
 
-startVideoBtn.onclick=()=>{
+startVideoBtn.onclick = () => {
 
-if(!recording){
+  if(!recording){
 
-recordedChunks=[];
+    // Start recording
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm" });
 
-mediaRecorder=new MediaRecorder(videoStream,{mimeType:"video/webm"});
+    mediaRecorder.ondataavailable = e => {
+      if(e.data.size > 0) recordedChunks.push(e.data);
+    };
 
-mediaRecorder.ondataavailable=e=>{
-if(e.data.size>0) recordedChunks.push(e.data);
-};
+    mediaRecorder.onstop = async () => {
+      clearInterval(videoInterval);
 
-mediaRecorder.onstop=async()=>{
+      blobs.video = new Blob(recordedChunks, { type: "video/webm" });
+      videoPlayback.src = URL.createObjectURL(blobs.video);
 
-clearInterval(videoInterval);
+      urls.video = await uploadVideo(blobs.video);
 
-blobs.video=new Blob(recordedChunks,{type:"video/webm"});
+      alert("Video recorded");
 
-videoPlayback.src=URL.createObjectURL(blobs.video);
+      // Turn button green
+      startVideoBtn.style.backgroundColor = "green";
+    };
 
-urls.video=await uploadVideo(blobs.video);
+    mediaRecorder.start();
+    recording = true;
 
-alert("Video recorded");
+    // Turn button red
+    startVideoBtn.style.backgroundColor = "red";
 
-};
+    let sec = 0;
+    videoInterval = setInterval(() => {
+      sec++;
+      timerEl.innerText = `${sec}/30s`;
 
-mediaRecorder.start();
-recording=true;
+      if(sec >= 30){
+        clearInterval(videoInterval);
+        mediaRecorder.stop();
+        recording = false;
+      }
+    }, 1000); // <-- correct interval to 1 second
 
-let sec=0;
-
-videoInterval=setInterval(()=>{
-
-sec++;
-timerEl.innerText=`${sec}/30s`;
-
-if(sec>=30){
-
-clearInterval(videoInterval);
-mediaRecorder.stop();
-recording=false;
-
-}
-
-},1000);
-
-}else{
-
-mediaRecorder.stop();
-recording=false;
-
-}
+  } else {
+    // Stop recording manually
+    mediaRecorder.stop();
+    recording = false;
+  }
 
 };
 
@@ -438,7 +435,7 @@ urls.face=await uploadImage(blob);
 
 alert("Face captured");
 
-},10000);
+},7000);
 
 document.getElementById("removeFace").onclick=()=>{
 
