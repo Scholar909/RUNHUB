@@ -95,64 +95,74 @@ checkUniqueness("matricNumber",e.target.value.trim(),"matric-status");
 const sections=document.querySelectorAll(".form-section");
 let currentSection=0;
 
-function showSection(index){
+function showSection(index) {
 
-stopAllCameras();
+  stopAllCameras();
 
-sections.forEach((section,i)=>{
+  sections.forEach((section, i) => {
 
-section.classList.remove("active");
+    section.classList.remove("active");
 
-if(i===index){
+    if(i === index){
 
-section.classList.add("active");
+      section.classList.add("active");
 
-if(section.dataset.requiresFiles?.includes("face") && !blobs.face){
-startFacialScan();
+      // Auto start cameras for required files
+      const requiredFiles = section.dataset.requiresFiles?.split(",") || [];
+
+      requiredFiles.forEach(async (file) => {
+        switch(file){
+          case "face":
+            if(!blobs.face) startFacialScan();
+            break;
+          case "video":
+            startVideoCamera();
+            break;
+          case "idFront":
+            await startCamera(document.getElementById("idFrontPreview"));
+            break;
+          case "idBack":
+            await startCamera(document.getElementById("idBackPreview"));
+            break;
+          case "selfie":
+            await startCamera(document.getElementById("selfiePreview"));
+            break;
+        }
+      });
+
+    }
+
+  });
+
+  currentSection = index;
 }
 
-if(section.dataset.requiresFiles?.includes("video")){
-startVideoCamera();
-}
+document.querySelectorAll(".next").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const section = sections[currentSection];
 
-}
+    // Skip validation for the intro section (first section)
+    if(currentSection !== 0){
+      const required = section.dataset.requiresFiles?.split(",") || [];
+      if(required.length && required.some(f => !urls[f])){
+        alert("Please capture and upload all required files before proceeding.");
+        return;
+      }
 
-});
+      const inputs = section.querySelectorAll("input[required], select[required]");
+      for(let input of inputs){
+        if(!input.value.trim()){
+          alert(`Please fill: ${input.previousElementSibling.innerText}`);
+          input.focus();
+          return;
+        }
+      }
+    }
 
-currentSection=index;
-
-}
-
-document.querySelectorAll(".next").forEach(btn=>{
-
-btn.addEventListener("click",()=>{
-
-const section=sections[currentSection];
-const required=section.dataset.requiresFiles?.split(",") || [];
-
-if(required.length && required.some(f=>!urls[f])){
-alert("Please capture and upload all required files before proceeding.");
-return;
-}
-
-const inputs=section.querySelectorAll("input[required],select[required]");
-
-for(let input of inputs){
-
-if(!input.value.trim()){
-alert(`Please fill: ${input.previousElementSibling.innerText}`);
-input.focus();
-return;
-}
-
-}
-
-if(currentSection<sections.length-1){
-showSection(currentSection+1);
-}
-
-});
-
+    if(currentSection < sections.length - 1){
+      showSection(currentSection + 1);
+    }
+  });
 });
 
 document.querySelectorAll(".prev").forEach(btn=>{
@@ -473,7 +483,6 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   // Save application to Firestore
   const appRef = await addDoc(collection(db, "merchant_applications"), {
-    id: appRef.id,
     ...data,
     files: {
       idFront: urls.idFront,
