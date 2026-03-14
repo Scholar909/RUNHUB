@@ -63,10 +63,14 @@ window.toggleDrawer = () => {
 };
 
 window.handleLogout = async () => {
-  if(confirm("Logout?")){
-    await signOut(auth);
-    window.location.href="admin-login.html";
-  }
+    if(confirm("Are you sure you want to logout?")) {
+        try {
+            await signOut(auth);
+            window.location.href = "./admin-login.html";
+        } catch (error) {
+            console.error("Logout Error:", error);
+        }
+    }
 };
 
 /* -----------------------------
