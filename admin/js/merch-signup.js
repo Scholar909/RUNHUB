@@ -81,6 +81,28 @@ const searchInput = document.getElementById("searchInput");
 let applications = [];
 
 /* -----------------------------
+FORMAT NIGERIAN PHONE NUMBER
+----------------------------- */
+function formatNGNumber(phone){
+
+  let digits = phone.replace(/\D/g,"");
+
+  if(digits.startsWith("234")){
+    return digits;
+  }
+
+  if(digits.startsWith("0")){
+    return "234" + digits.slice(1);
+  }
+
+  if(digits.length === 10){
+    return "234" + digits;
+  }
+
+  return digits;
+}
+
+/* -----------------------------
 LOAD APPLICATIONS
 ----------------------------- */
 function initMerchantQueue(){
@@ -124,7 +146,7 @@ function renderTable(data){
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
           <i class="fi-eye"></i>
         </a>
-        <button class="action-btn approve-btn" title="Approve Merchant" onclick="approveMerchant('${app.id}')">
+        <button class="action-btn approve-btn" id="approve-${app.id}" title="Approve Merchant" onclick="approveMerchant('${app.id}')">
           <i class="fi-check"></i>
         </button>
         <button class="action-btn block-btn" title="Block Application" onclick="blockMerchant('${app.id}')">
@@ -259,18 +281,59 @@ window.approveMerchant = async(id)=>{
   }
 };
 
-window.blockMerchant = async(id)=>{
-  if(!confirm("Block this application?")) return;
-  try{
+window.blockMerchant = async (id) => {
+
+  const app = applications.find(a => a.id === id);
+  if(!app) return;
+
+  const modal = document.getElementById("rejectModal");
+  const reasonInput = document.getElementById("rejectReason");
+  const sendBtn = document.getElementById("sendReject");
+
+  reasonInput.value = "";
+  modal.style.display = "flex";
+
+  sendBtn.onclick = async () => {
+
+    const reason = reasonInput.value.trim();
+
+    if(!reason){
+      alert("Please type a rejection reason");
+      return;
+    }
+
+    const message = `RUNHUB MERCHANT REQUEST REJECTION NOTICE
+
+Hello ${app.fullName},
+
+This is to inform you that your request to join RUNHUB as a merchant was rejected due to the reason below:
+
+${reason}
+
+You may resubmit your merchant application again with the correct details.
+
+If you believe this message was sent in error, you may ignore it.
+
+We hope to see you join the RUNHUB merchant community soon.
+
+— RUNHUB Team`;
+
+    const encoded = encodeURIComponent(message);
+
+    const phone = formatNGNumber(app.phoneNumber);
+
+    const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
+
+    window.open(whatsappURL, "_blank");
+
     await updateDoc(doc(db,"merchant_applications",id),{
       status:"blocked",
-      blockedAt:new Date().toISOString()
+      blockedAt:new Date().toISOString(),
+      rejectionReason: reason
     });
-    alert("Application blocked");
-  } catch(err){
-    console.error(err);
-    alert("Block failed");
-  }
+
+    modal.style.display = "none";
+  };
 };
 
 window.deleteApplication = async(id)=>{
@@ -282,4 +345,8 @@ window.deleteApplication = async(id)=>{
     console.error(err);
     alert("Deletion failed");
   }
+};
+
+document.getElementById("cancelReject").onclick = () => {
+  document.getElementById("rejectModal").style.display = "none";
 };
