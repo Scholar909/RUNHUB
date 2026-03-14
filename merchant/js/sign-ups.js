@@ -50,48 +50,42 @@ timeout=setTimeout(()=>func.apply(this,args),delay);
 };
 };
 
-const checkUniqueness=async(field,value,statusId)=>{
+const checkUniqueness = async (field, value, statusId) => {
+    const statusEl = document.getElementById(statusId);
 
-const statusEl=document.getElementById(statusId);
+    if (!value || value.length < 3) {
+        statusEl.innerText = "";
+        return;
+    }
 
-if(!value || value.length<3){
-statusEl.innerText="";
-return;
-}
+    statusEl.innerText = "Checking...";
+    statusEl.style.color = "gray";
 
-statusEl.innerText="Checking...";
+    try {
+        const id = field === "username" ? value.toLowerCase() : value.toLowerCase();
+        const collectionName = field === "username" ? "usernames" : "matricNumbers";
 
-try{
+        const docSnap = await getDoc(doc(db, collectionName, id));
 
-const q=query(collection(db,"users"),where(field,"==",value));
-const snap=await getDocs(q);
+        if (!docSnap.exists()) {
+            statusEl.innerText = "✓ Available";
+            statusEl.style.color = "#34c759";
 
-if(snap.empty){
+            if (field === "username") isUsernameValid = true;
+            if (field === "matricNumber") isMatricValid = true; // reuse matric variable for email
 
-statusEl.innerText="✓ Available";
-statusEl.className="validation-msg status-available";
+        } else {
+            statusEl.innerText = "✕ Already Taken";
+            statusEl.style.color = "#ff3b30";
 
-if(field==="username") isUsernameValid=true;
-if(field==="matricNumber") isMatricValid=true;
-
-}else{
-
-statusEl.innerText="✕ Already Taken";
-statusEl.className="validation-msg status-taken";
-
-if(field==="username") isUsernameValid=false;
-if(field==="matricNumber") isMatricValid=false;
-
-}
-
-}catch{
-
-statusEl.innerText="✓ Available";
-isUsernameValid=true;
-isMatricValid=true;
-
-}
-
+            if (field === "username") isUsernameValid = false;
+            if (field === "matricNumber") isMatricValid = false;
+        }
+    } catch (err) {
+        console.error(err);
+        statusEl.innerText = "Network error";
+        statusEl.style.color = "orange";
+    }
 };
 
 document.getElementById("username").addEventListener("input",debounce(e=>{
@@ -524,4 +518,3 @@ function generateCatchPhrase() {
     ];
     return phrases[Math.floor(Math.random() * phrases.length)];
 }
-
