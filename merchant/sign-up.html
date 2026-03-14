@@ -4,358 +4,222 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Merchant Verification | RUNHUB</title>
-
-<link rel="stylesheet" href="css/sign-ups.css">
-
+<link rel="stylesheet" href="css/sign-ups.css?v=5">
 </head>
 
 <body>
-
 <div class="main-wrapper">
 
 <nav class="navbar">
-<div class="logo">RUN<span class="accent">HUB</span></div>
-
-<div class="status-indicator">
-<span class="dot animate-flicker"></span>
-Verification
-</div>
+    <div class="logo">RUN<span class="accent">HUB</span></div>
+    <div class="status-indicator"><span class="dot animate-flicker"></span> Verification</div>
 </nav>
 
-
 <header class="section-header">
-<h1>Merchant <span class="highlight">Verification</span></h1>
-<p class="hero-description">
-Complete identity verification to become a RUNHUB merchant.
-</p>
+    <h1>Merchant <span class="highlight">Verification</span></h1>
+    <p class="hero-description">Complete identity verification to become a RUNHUB merchant.</p>
 </header>
-
-
 
 <form id="merchantVerificationForm">
 
-<!-- SECTION 1 -->
-
+<!-- SECTION 1: Intro -->
 <div class="form-section active">
-
-<div class="report-card">
-
-<div class="card-tag">INTRODUCTION</div>
-
-<p class="info-text">
-You will complete identity verification before becoming a merchant.
-Please ensure:
-</p>
-
-<ul class="bullet">
-<li>Your ID card is available</li>
-<li>You are in a well lit environment</li>
-<li>Your camera is working</li>
-</ul>
-
+    <div class="report-card">
+        <div class="card-tag">INTRODUCTION</div>
+        <p class="info-text">You will complete identity verification before becoming a merchant.</p>
+        <ul class="bullet">
+            <li>Your ID card is available</li>
+            <li>You are in a well-lit environment</li>
+            <li>Your camera is working</li>
+        </ul>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn btn-filled next">Start Verification</button>
+    </div>
 </div>
 
-<div class="nav-buttons">
-<button type="button" class="btn btn-filled next">Start Verification</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 2 -->
-
+<!-- SECTION 2: ID Front -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">STEP 1</div>
-
-<h3>ID Card Front</h3>
-
-<p class="info-text">
-Place the FRONT of your student ID inside the frame and take a photo.
-</p>
-
-<video id="idFrontPreview" autoplay playsinline></video>
-
-<button type="button" class="btn capture-btn">Capture Photo</button>
-
+    <div class="report-card">
+        <div class="card-tag">STEP 1</div>
+        <h3>ID Card Front</h3>
+        <p class="info-text">Place the FRONT of your student ID inside the frame and take a photo.</p>
+        <video id="idFrontPreview" autoplay playsinline></video>
+        <button type="button" class="btn capture-btn" id="captureIdFront">Capture Photo</button>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 3 -->
-
+<!-- SECTION 3: ID Back -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">STEP 2</div>
-
-<h3>ID Card Back</h3>
-
-<p class="info-text">
-Flip the card and capture the BACK side.
-</p>
-
-<video id="idBackPreview" autoplay playsinline></video>
-
-<button type="button" class="btn capture-btn">Capture Photo</button>
-
+    <div class="report-card">
+        <div class="card-tag">STEP 2</div>
+        <h3>ID Card Back</h3>
+        <p class="info-text">Flip the card and capture the BACK side.</p>
+        <video id="idBackPreview" autoplay playsinline></video>
+        <button type="button" class="btn capture-btn" id="captureIdBack">Capture Photo</button>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 4 -->
-
+<!-- SECTION 4: Selfie -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">STEP 3</div>
-
-<h3>Selfie Holding ID</h3>
-
-<p class="info-text">
-Take a selfie while holding your student ID clearly beside your face.
-</p>
-
-<video id="selfiePreview" autoplay playsinline></video>
-
-<button type="button" class="btn capture-btn">Capture Selfie</button>
-
+    <div class="report-card">
+        <div class="card-tag">STEP 3</div>
+        <h3>Selfie Holding ID</h3>
+        <p class="info-text">Take a selfie while holding your student ID clearly beside your face.</p>
+        <video id="selfiePreview" autoplay playsinline></video>
+        <button type="button" class="btn capture-btn" id="captureSelfie">Capture Selfie</button>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 5 -->
-
+<!-- SECTION 5: Facial Scan -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">STEP 4</div>
-
-<h3>Facial Scan</h3>
-
-<p class="info-text">
-Position your face in the frame and stay still for 3 seconds.
-</p>
-
-<video id="faceScanPreview" autoplay playsinline></video>
-
+    <div class="report-card">
+        <div class="card-tag">STEP 4</div>
+        <h3>Facial Scan</h3>
+        <p class="info-text">Position your face in the frame and stay still for 3 seconds.</p>
+        <video id="faceScanPreview" autoplay playsinline></video>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 6 -->
-
+<!-- SECTION 6: Verification Video -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">STEP 5</div>
-
-<h3>Verification Video</h3>
-
-<p class="info-text">
-Record a short video reading the script below.
-</p>
-
-<div class="script-box">
-
-Hello RUNHUB,
-
-My name is <b>[Say your full name]</b>.
-
-I am applying to become a RUNHUB merchant.
-
-This verification confirms that I personally submitted this application.
-
+    <div class="report-card">
+        <div class="card-tag">STEP 5</div>
+        <h3>Verification Video</h3>
+        <p class="info-text">Record a short video reading the script below.</p>
+        <div class="script-box">
+            Hello RUNHUB,<br>
+            My name is <b>[Say your full name]</b>.<br>
+            I am applying to become a RUNHUB merchant.<br>
+            This verification confirms that I personally submitted this application.
+        </div>
+        <video id="videoPreview" autoplay playsinline></video>
+        <button type="button" class="btn capture-btn" id="startVideoRecording">Start Recording</button>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<video id="videoPreview" autoplay playsinline></video>
-
-<button type="button" class="btn capture-btn">Start Recording</button>
-
-</div>
-
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 7 -->
-
+<!-- SECTION 7: Personal Info -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">PERSONAL INFORMATION</div>
-
-<div class="form-group">
-<label>Full Name</label>
-<input type="text" required>
+    <div class="report-card">
+        <div class="card-tag">PERSONAL INFORMATION</div>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="fullName" required>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" required>
+            <span id="username-status" class="validation-msg"></span>
+        </div>
+        <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="phoneNumber" required>
+        </div>
+        <div class="form-group">
+            <label>Matric Number</label>
+            <input type="text" id="matricNumber" required>
+            <span id="matric-status" class="validation-msg"></span>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Department</label>
+                <input type="text" id="department">
+            </div>
+            <div class="form-group">
+                <label>Level</label>
+                <input type="number" id="level">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Gender</label>
+            <select id="gender">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+        </div>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<div class="form-group">
-<label>Email</label>
-<input type="email" required>
-</div>
-
-<div class="form-group">
-<label>Phone Number</label>
-<input type="tel" required>
-</div>
-
-<div class="form-group">
-<label>Matric Number</label>
-<input type="text" required>
-</div>
-
-<div class="form-row">
-
-<div class="form-group">
-<label>Department</label>
-<input type="text">
-</div>
-
-<div class="form-group">
-<label>Level</label>
-<input type="number">
-</div>
-
-</div>
-
-<div class="form-group">
-<label>Gender</label>
-<select>
-<option>Male</option>
-<option>Female</option>
-</select>
-</div>
-
-</div>
-
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 8 -->
-
+<!-- SECTION 8: Hostel Info -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">HOSTEL DETAILS</div>
-
-<div class="form-group">
-<label>Hostel</label>
-<input type="text">
+    <div class="report-card">
+        <div class="card-tag">HOSTEL DETAILS</div>
+        <div class="form-group">
+            <label>Hostel</label>
+            <input type="text" id="hostel">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Block</label>
+                <input type="text" id="block">
+            </div>
+            <div class="form-group">
+                <label>Room</label>
+                <input type="text" id="room">
+            </div>
+        </div>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="button" class="btn btn-filled next">Next</button>
+    </div>
 </div>
 
-<div class="form-row">
-
-<div class="form-group">
-<label>Block</label>
-<input type="text">
-</div>
-
-<div class="form-group">
-<label>Room</label>
-<input type="text">
-</div>
-
-</div>
-
-</div>
-
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="button" class="btn btn-filled next">Next</button>
-</div>
-
-</div>
-
-
-
-<!-- SECTION 9 -->
-
+<!-- SECTION 9: Bank Info -->
 <div class="form-section">
-
-<div class="report-card">
-
-<div class="card-tag">BANK DETAILS</div>
-
-<div class="form-group">
-<label>Bank Name</label>
-<input type="text">
+    <div class="report-card">
+        <div class="card-tag">BANK DETAILS</div>
+        <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" id="bankName">
+        </div>
+        <div class="form-group">
+            <label>Account Name</label>
+            <input type="text" id="accountName">
+        </div>
+        <div class="form-group">
+            <label>Account Number</label>
+            <input type="text" id="accountNumber">
+        </div>
+    </div>
+    <div class="nav-buttons">
+        <button type="button" class="btn prev">Previous</button>
+        <button type="submit" class="btn btn-filled">Submit Application</button>
+    </div>
 </div>
-
-<div class="form-group">
-<label>Account Name</label>
-<input type="text">
-</div>
-
-<div class="form-group">
-<label>Account Number</label>
-<input type="text">
-</div>
-
-</div>
-
-<div class="nav-buttons">
-<button type="button" class="btn prev">Previous</button>
-<button type="submit" class="btn btn-filled">Submit Application</button>
-</div>
-
-</div>
-
-
 
 </form>
-
 </div>
 
-<script src="js/sign-ups.js" type="module"></script>
-
+<script type="module" src="js/sign-ups.js?v=5"></script>
 </body>
 </html>
