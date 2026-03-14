@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Merchant Verification | RUNHUB Admin</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+<link rel="stylesheet" href="css/view-verify.css?v=2">
+
+</head>
+
+<body>
+
+<div class="main-wrapper">
+
+<nav class="navbar">
+
+<div class="menu-trigger" onclick="toggleDrawer()">
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+</div>
+
+<div class="logo">RUN<span class="accent">HUB</span></div>
+
+<div class="status-indicator">
+<span class="dot animate-flicker"></span>
+VERIFY APPLICATION
+</div>
+
+</nav>
+
+
+
+<main class="content-body">
+
+<header class="profile-header">
+
+<div class="profile-avatar-wrapper">
+
+<img id="profilePhoto" class="profile-img">
+
+<div class="badge">MERCHANT</div>
+
+</div>
+
+<h1 id="displayName">Loading...</h1>
+<p id="handle">@merchant</p>
+
+</header>
+
+
+
+<section class="details-grid">
+
+<div class="trust-card">
+
+<div class="card-tag">PERSONAL DETAILS</div>
+
+<div id="personalDetails"></div>
+
+</div>
+
+
+
+<div class="trust-card">
+
+<div class="card-tag">HOSTEL INFORMATION</div>
+
+<div id="hostelDetails"></div>
+
+</div>
+
+
+
+<div class="trust-card">
+
+<div class="card-tag">BANK DETAILS</div>
+
+<div id="bankDetails"></div>
+
+</div>
+
+
+
+<div class="trust-card">
+
+<div class="card-tag">VERIFICATION FILES</div>
+
+<div class="file-grid">
+
+<img id="idFront" class="file-img">
+<img id="idBack" class="file-img">
+<img id="faceScan" class="file-img">
+
+<video id="verifyVideo" controls></video>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<div class="action-footer-btns">
+
+<button class="btn btn-outline" onclick="history.back()">
+Back to Applications
+</button>
+
+</div>
+
+</main>
+
+</div>
+
+<script type="module" src="js/view-verify.js?v=3"></script>
+
+</body>
+</html>
