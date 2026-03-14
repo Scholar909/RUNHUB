@@ -192,7 +192,7 @@ await new Promise(res=>setTimeout(res,300));
 
 const stream=await navigator.mediaDevices.getUserMedia({
 video:{facingMode:{ideal:facingMode}},
-audio:false
+audio:true
 });
 
 video.srcObject=stream;
@@ -310,6 +310,7 @@ let mediaRecorder;
 let recordedChunks=[];
 let videoStream;
 let recording=false;
+let videoInterval;
 
 async function startVideoCamera(){
 
@@ -334,6 +335,8 @@ if(e.data.size>0) recordedChunks.push(e.data);
 
 mediaRecorder.onstop=async()=>{
 
+clearInterval(videoInterval);
+
 blobs.video=new Blob(recordedChunks,{type:"video/webm"});
 
 videoPlayback.src=URL.createObjectURL(blobs.video);
@@ -349,14 +352,14 @@ recording=true;
 
 let sec=0;
 
-const interval=setInterval(()=>{
+videoInterval=setInterval(()=>{
 
 sec++;
 timerEl.innerText=`${sec}/30s`;
 
 if(sec>=30){
 
-clearInterval(interval);
+clearInterval(videoInterval);
 mediaRecorder.stop();
 recording=false;
 
@@ -429,6 +432,7 @@ const blob=await captureImage(faceVideo);
 
 blobs.face=blob;
 faceImg.src=URL.createObjectURL(blob);
+document.getElementById("removeFace").style.display="inline-block";
 
 urls.face=await uploadImage(blob);
 
@@ -436,6 +440,75 @@ alert("Face captured");
 
 },10000);
 
+document.getElementById("removeFace").onclick=()=>{
+
+blobs.face=null;
+urls.face=null;
+
+faceImg.src="";
+
+startFacialScan();
+
+};
+
 }
+
+/* ---------------- FORM SUBMIT ---------------- */
+
+document.getElementById("merchantVerificationForm").addEventListener("submit",async e=>{
+
+e.preventDefault();
+
+if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
+alert("Please capture all required files.");
+return;
+}
+
+if(!isUsernameValid || !isMatricValid){
+alert("Username or Matric already exists.");
+return;
+}
+
+const data={
+
+fullName:fullName.value,
+email:email.value.trim().toLowerCase(),
+username:username.value.trim().toLowerCase(),
+phoneNumber:phoneNumber.value,
+matricNumber:matricNumber.value,
+department:department.value,
+level:level.value,
+gender:gender.value,
+hostel:hostel.value,
+block:block.value,
+room:room.value,
+bankName:bankName.value,
+accountName:accountName.value,
+accountNumber:accountNumber.value
+
+};
+
+await addDoc(collection(db,"merchant_applications"),{
+
+...data,
+
+files:{
+idFront:urls.idFront,
+idBack:urls.idBack,
+selfie:urls.selfie,
+faceScan:urls.face,
+verificationVideo:urls.video
+},
+
+status:"pending",
+submittedAt:serverTimestamp()
+
+});
+
+alert("Application submitted successfully");
+
+location.reload();
+
+});
 
 });
