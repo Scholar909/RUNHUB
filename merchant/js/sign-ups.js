@@ -120,18 +120,32 @@ const facingModes = {}; // track current facing mode per video
 
 async function startCamera(video, facingMode = "user") {
     try {
-        // Stop any existing tracks
-        if (video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
-        }
-        // Get user media
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode },
+        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+
+        const constraints = {
+            video: {
+                facingMode: facingMode // try "user" or "environment"
+            },
             audio: false
-        });
+        };
+
+        // On iOS/older browsers, fallback to deviceId if facingMode fails
+        let stream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cam = devices.find(d => d.kind === "videoinput" && 
+                ((facingMode === "user" && d.label.toLowerCase().includes("front")) ||
+                 (facingMode === "environment" && d.label.toLowerCase().includes("back"))));
+            if (!cam) throw new Error("No matching camera found");
+            stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: cam.deviceId }, audio: false });
+        }
+
         video.srcObject = stream;
         await video.play();
         return stream;
+
     } catch (e) {
         console.error(e);
         alert("Camera permission required or device doesn't support requested camera.");
@@ -145,10 +159,10 @@ async function setupFlip(flipBtnId, videoId) {
 
     btn.onclick = async () => {
         try {
-            if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
             facingModes[videoId] = facingModes[videoId] === "user" ? "environment" : "user";
             await startCamera(video, facingModes[videoId]);
-        } catch {
+        } catch (err) {
+            console.error(err);
             alert("Camera permission required or camera not available.");
         }
     };
