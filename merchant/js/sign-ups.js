@@ -81,10 +81,6 @@ const checkUniqueness = async (field, value, statusId) => {
   }
 };
 
-document.getElementById("startVerificationBtn").addEventListener("click", () => {
-  showSection(currentSection + 1);
-});
-
 document.getElementById("username").addEventListener("input",debounce(e=>{
 checkUniqueness("username",e.target.value.trim().toLowerCase(),"username-status");
 },500));
@@ -140,6 +136,10 @@ function showSection(index) {
 
   currentSection = index;
 }
+
+document.getElementById("startVerificationBtn").addEventListener("click", () => {
+  showSection(1);
+});
 
 document.querySelectorAll(".next").forEach(btn => {
   btn.addEventListener("click", () => {
