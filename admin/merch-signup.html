@@ -6,7 +6,7 @@
 <title>Merchant Verification | RUNHUB Admin</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-<link rel="stylesheet" href="css/merch-signup.css?v=72">
+<link rel="stylesheet" href="css/merch-signup.css?v=73">
 
 </head>
 
@@ -121,7 +121,17 @@ Review merchant verification requests before approval.
 
 </section>
 
+<div id="rejectModal" class="reject-modal">
+  <div class="reject-box">
+    <h3>Reject Merchant</h3>
+    <textarea id="rejectReason" placeholder="Type reason for rejecting merchant"></textarea>
 
+    <div class="reject-actions">
+      <button id="cancelReject">Cancel</button>
+      <button id="sendReject">Send</button>
+    </div>
+  </div>
+</div>
 
 <!-- Bottom Nav -->
 
@@ -141,7 +151,7 @@ Review merchant verification requests before approval.
 
 </div>
 
-<script src="js/merch-signup.js?v=70" type="module"></script>
+<script src="js/merch-signup.js?v=71" type="module"></script>
 
 </body>
 </html>
