@@ -96,6 +96,8 @@ let currentSection=0;
 
 function showSection(index){
 
+stopAllCameras();
+
 sections.forEach((section,i)=>{
 
 section.classList.remove("active");
@@ -166,44 +168,55 @@ if(currentSection>0) showSection(currentSection-1);
 
 const facingModes={};
 
-async function startCamera(video,facingMode="user"){
+async function startCamera(video, facingMode = "user") {
 
-try{
+try {
 
-if(video.srcObject){
-video.srcObject.getTracks().forEach(t=>t.stop());
-video.srcObject=null;
-await new Promise(res=>setTimeout(res,400));
+if (video.srcObject) {
+
+video.srcObject.getTracks().forEach(track => track.stop());
+video.srcObject = null;
+
 }
+
+await new Promise(res => setTimeout(res, 500));
 
 let stream;
 
-try{
+try {
 
-stream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode},
-audio:false
+stream = await navigator.mediaDevices.getUserMedia({
+video: { facingMode: { ideal: facingMode } },
+audio: false
 });
 
-}catch{
+} catch (err) {
 
-const devices=await navigator.mediaDevices.enumerateDevices();
+const devices = await navigator.mediaDevices.enumerateDevices();
+const cams = devices.filter(d => d.kind === "videoinput");
 
-const cam=devices.find(d=>d.kind==="videoinput");
+let cam;
 
-stream=await navigator.mediaDevices.getUserMedia({
-video:{deviceId:cam.deviceId},
-audio:false
+if (facingMode === "user") {
+cam = cams.find(d => d.label.toLowerCase().includes("front")) || cams[0];
+} else {
+cam = cams.find(d => d.label.toLowerCase().includes("back")) || cams[cams.length - 1];
+}
+
+stream = await navigator.mediaDevices.getUserMedia({
+video: { deviceId: cam.deviceId },
+audio: false
 });
 
 }
 
-video.srcObject=stream;
+video.srcObject = stream;
+
 await video.play();
 
 return stream;
 
-}catch(err){
+} catch (err) {
 
 console.error(err);
 alert("Camera not available or permission denied.");
@@ -261,7 +274,7 @@ const video=document.getElementById(videoId);
 
 document.getElementById(captureBtn).onclick=async()=>{
 
-if(!video.srcObject) await startCamera(video);
+if(!video.srcObject) await startCamera(video, "user");
 
 blobs[key]=await captureImage(video);
 
@@ -518,6 +531,11 @@ removeBtn.className="icon-btn remove-btn remove-face-btn";
 
 faceVideo.parentElement.appendChild(removeBtn);
 
+if(faceVideo.srcObject){
+faceVideo.srcObject.getTracks().forEach(t=>t.stop());
+faceVideo.srcObject=null;
+}
+
 await startCamera(faceVideo,"user");
 
 const timeout=setTimeout(async()=>{
@@ -533,6 +551,15 @@ urls.face=await uploadImage(blob);
 alert("Face captured");
 
 },10000);
+
+function stopAllCameras(){
+document.querySelectorAll("video").forEach(v=>{
+if(v.srcObject){
+v.srcObject.getTracks().forEach(t=>t.stop());
+v.srcObject=null;
+}
+});
+}
 
 removeBtn.onclick=()=>{
 
