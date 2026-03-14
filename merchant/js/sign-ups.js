@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, doc, setDoc, getDoc } 
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -439,7 +440,6 @@ startFacialScan();
 /* ---------------- FORM SUBMIT ---------------- */
 
 document.getElementById("merchantVerificationForm").addEventListener("submit", async e => {
-
   e.preventDefault();
 
   if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
@@ -469,61 +469,31 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     accountNumber: accountNumber.value
   };
 
-  // Generate random catch phrase
   const catchPhrase = generateCatchPhrase();
 
-// Create Auth User first
-const userCredential = await createUserWithEmailAndPassword(auth, data.email, password);
-const uid = userCredential.user.uid;
+  // Save application to Firestore
+  const appRef = await addDoc(collection(db, "merchant_applications"), {
+    id: appRef.id,
+    ...data,
+    files: {
+      idFront: urls.idFront,
+      idBack: urls.idBack,
+      selfie: urls.selfie,
+      faceScan: urls.face,
+      verificationVideo: urls.video
+    },
+    catchPhrase,
+    status: "pending",
+    submittedAt: serverTimestamp()
+  });
 
-// Then save merchant application
-const appRef = await addDoc(collection(db, "merchant_applications"), {
-  ...data,
-  files: {
-    idFront: urls.idFront,
-    idBack: urls.idBack,
-    selfie: urls.selfie,
-    faceScan: urls.face,
-    verificationVideo: urls.video
-  },
-  catchPhrase,
-  status: "pending",
-  submittedAt: serverTimestamp(),
-  uid // <- Save UID for reference
-});
+  // Save uniqueness for username & matric number
+  await setDoc(doc(db, "usernames", data.username.toLowerCase()), { applicationId: appRef.id });
+  await setDoc(doc(db, "matricNumbers", data.matricNumber), { applicationId: appRef.id });
 
-// Save uniqueness correctly
-await setDoc(doc(db, "usernames", data.username.toLowerCase()), { uid });
-await setDoc(doc(db, "matricNumbers", data.matricNumber), { uid });
-
-// Save basic user record for admin / auth
-await setDoc(doc(db, "users", uid), {
-  uid,
-  fullName: data.fullName,
-  username: data.username.toLowerCase(),
-  email: data.email,
-  phoneNumber: data.phoneNumber,
-  matricNumber: data.matricNumber,
-  gender: data.gender,
-  hostelLocation: `Block ${data.block}, Room ${data.room}, ${data.hostel}`,
-  bankDetails: {
-    bankName: data.bankName,
-    accountName: data.accountName,
-    accountNumber: data.accountNumber
-  },
-  role: "merchant",
-  status: "pending",
-  createdAt: serverTimestamp()
-});
-
-  // Show catch phrase to merchant
   alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
 
-  // Redirect
   window.location.href = "./sign-login.html";
-
-});
-
 });
 
 function generateCatchPhrase() {
