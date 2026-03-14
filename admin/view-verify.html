@@ -84,6 +84,11 @@ VERIFY APPLICATION
 
 </div>
 
+<div id="catchPhraseContainer" class="trust-card">
+  <span class="label">Catch Phrase</span>
+  <span id="catchPhrase"></span>
+</div>
+
 
 
 <div class="trust-card">
@@ -92,11 +97,27 @@ VERIFY APPLICATION
 
 <div class="file-grid">
 
-<img id="idFront" class="file-img">
-<img id="idBack" class="file-img">
-<img id="faceScan" class="file-img">
+  <div class="file-item">
+    <span class="file-label">ID Front</span>
+    <img id="idFront" class="file-img">
+  </div>
 
-<video id="verifyVideo" controls></video>
+  <div class="file-item">
+    <span class="file-label">ID Back</span>
+    <img id="idBack" class="file-img">
+  </div>
+  
+  <div class="file-item">
+    <span class="file-label">Profile Selfie</span>
+    <img id="profileBottom" class="file-img">
+  </div>
+
+  <div class="file-item">
+    <span class="file-label">Face Scan</span>
+    <img id="faceScan" class="file-img">
+  </div>
+
+  <video id="verifyVideo" controls></video>
 
 </div>
 
@@ -118,7 +139,7 @@ Back to Applications
 
 </div>
 
-<script type="module" src="js/view-verify.js?v=3"></script>
+<script type="module" src="js/view-verify.js?v=9"></script>
 
 </body>
 </html>
