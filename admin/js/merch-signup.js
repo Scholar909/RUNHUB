@@ -72,7 +72,7 @@ LOAD APPLICATIONS
 ----------------------------- */
 function initMerchantQueue(){
   const ref = collection(db,"merchant_applications");
-  const q = query(ref, orderBy("createdAt","desc"));
+  const q = query(ref, orderBy("submittedAt","desc"));
   onSnapshot(q,(snapshot)=>{
     applications=[];
     snapshot.forEach(docSnap=>{
