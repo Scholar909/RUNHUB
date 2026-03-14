@@ -552,14 +552,6 @@ alert("Face captured");
 
 },10000);
 
-function stopAllCameras(){
-document.querySelectorAll("video").forEach(v=>{
-if(v.srcObject){
-v.srcObject.getTracks().forEach(t=>t.stop());
-v.srcObject=null;
-}
-});
-}
 
 removeBtn.onclick=()=>{
 
@@ -574,4 +566,13 @@ startFacialScan();
 
 };
 
+}
+
+function stopAllCameras(){
+document.querySelectorAll("video").forEach(v=>{
+if(v.srcObject){
+v.srcObject.getTracks().forEach(t=>t.stop());
+v.srcObject=null;
+}
+});
 }
