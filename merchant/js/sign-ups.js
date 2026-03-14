@@ -145,24 +145,24 @@ document.querySelectorAll(".next").forEach(btn => {
   btn.addEventListener("click", () => {
     const section = sections[currentSection];
 
-    // Skip validation for the intro section (first section)
-    if(currentSection !== 0){
-      const required = section.dataset.requiresFiles?.split(",") || [];
-      if(required.length && required.some(f => !urls[f])){
-        alert("Please capture and upload all required files before proceeding.");
-        return;
-      }
+    // Validate required file uploads if section specifies them
+    const required = section.dataset.requiresFiles?.split(",") || [];
+    if(required.length && required.some(f => !urls[f])){
+      alert("Please capture and upload all required files before proceeding.");
+      return;
+    }
 
-      const inputs = section.querySelectorAll("input[required], select[required]");
-      for(let input of inputs){
-        if(!input.value.trim()){
-          alert(`Please fill: ${input.previousElementSibling.innerText}`);
-          input.focus();
-          return;
-        }
+    // Validate required inputs
+    const inputs = section.querySelectorAll("input[required], select[required]");
+    for(let input of inputs){
+      if(!input.value.trim()){
+        alert(`Please fill: ${input.previousElementSibling.innerText}`);
+        input.focus();
+        return;
       }
     }
 
+    // Move to next section
     if(currentSection < sections.length - 1){
       showSection(currentSection + 1);
     }
