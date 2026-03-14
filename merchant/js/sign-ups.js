@@ -504,7 +504,7 @@ submittedAt:serverTimestamp()
 
 alert("Application submitted successfully");
 
-location.reload();
+window.location.href = "./sign-login.html";
 
 });
 
