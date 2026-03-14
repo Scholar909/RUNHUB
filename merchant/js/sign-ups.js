@@ -1,6 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, doc, setDoc, getDoc } 
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { 
+getFirestore, 
+collection, 
+addDoc, 
+serverTimestamp, 
+query, 
+where, 
+getDocs,
+doc,
+getDoc,
+setDoc
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -18,7 +28,6 @@ appId: "1:510180440268:web:99be47162857f635d8ea69"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-
 /* ---------------- STOP ALL CAMERAS ---------------- */
 
 function stopAllCameras(){
@@ -30,13 +39,11 @@ v.srcObject=null;
 });
 }
 
-
 /* ---------------- CLOUDINARY ---------------- */
 
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
 const CLOUDINARY_VIDEO = "https://api.cloudinary.com/v1_1/dltoup0cz/video/upload";
 const UPLOAD_PRESET = "runhub_uploads";
-
 
 /* ---------------- VALIDATION ---------------- */
 
@@ -52,117 +59,137 @@ timeout=setTimeout(()=>func.apply(this,args),delay);
 };
 
 const checkUniqueness = async (field, value, statusId) => {
-  const statusEl = document.getElementById(statusId);
-  if (!value || value.length < 3) {
-    statusEl.innerText = "";
-    return;
-  }
 
-  const collectionName = field === "username" ? "usernames" : "matricNumbers";
-  const docId = field === "username" ? value.toLowerCase() : value;
+const statusEl = document.getElementById(statusId);
+if(!statusEl) return;
 
-  try {
-    const docSnap = await getDoc(doc(db, collectionName, docId));
-    if (!docSnap.exists()) {
-      statusEl.innerText = "✓ Available";
-      statusEl.style.color = "#34c759";
-      if (field === "username") isUsernameValid = true;
-      if (field === "matricNumber") isMatricValid = true;
-    } else {
-      statusEl.innerText = "✕ Already Taken";
-      statusEl.style.color = "#ff3b30";
-      if (field === "username") isUsernameValid = false;
-      if (field === "matricNumber") isMatricValid = false;
-    }
-  } catch (err) {
-    console.error(err);
-    statusEl.innerText = "Network error";
-    statusEl.style.color = "orange";
-  }
+if (!value || value.length < 3) {
+statusEl.innerText = "";
+return;
+}
+
+statusEl.innerText = "Checking...";
+
+try {
+
+let docRef;
+
+if (field === "username") {
+docRef = doc(db, "usernames", value.toLowerCase());
+} 
+else if (field === "matricNumber") {
+docRef = doc(db, "matricNumbers", value);
+}
+
+const snap = await getDoc(docRef);
+
+if (!snap.exists()) {
+
+statusEl.innerText = "✓ Available";
+statusEl.className = "validation-msg status-available";
+
+if (field === "username") isUsernameValid = true;
+if (field === "matricNumber") isMatricValid = true;
+
+} else {
+
+statusEl.innerText = "✕ Already Taken";
+statusEl.className = "validation-msg status-taken";
+
+if (field === "username") isUsernameValid = false;
+if (field === "matricNumber") isMatricValid = false;
+
+}
+
+} catch (err) {
+
+console.error(err);
+statusEl.innerText = "Error checking";
+
+if (field === "username") isUsernameValid = false;
+if (field === "matricNumber") isMatricValid = false;
+
+}
+
 };
 
-document.getElementById("username").addEventListener("input",debounce(e=>{
+const usernameInput = document.getElementById("username");
+if(usernameInput){
+usernameInput.addEventListener("input",debounce(e=>{
 checkUniqueness("username",e.target.value.trim().toLowerCase(),"username-status");
 },500));
+}
 
-document.getElementById("matricNumber").addEventListener("input",debounce(e=>{
+const matricInput = document.getElementById("matricNumber");
+if(matricInput){
+matricInput.addEventListener("input",debounce(e=>{
 checkUniqueness("matricNumber",e.target.value.trim(),"matric-status");
 },500));
-
+}
 
 /* ---------------- MULTI STEP FORM ---------------- */
 
 const sections=document.querySelectorAll(".form-section");
 let currentSection=0;
 
-function showSection(index) {
+function showSection(index){
 
-  stopAllCameras();
+stopAllCameras();
 
-  sections.forEach((section, i) => {
+sections.forEach((section,i)=>{
 
-    section.classList.remove("active");
+section.classList.remove("active");
 
-    if(i === index){
+if(i===index){
 
-      section.classList.add("active");
+section.classList.add("active");
 
-      // Auto start cameras for required files
-      const requiredFiles = section.dataset.requiresFiles?.split(",") || [];
-
-      requiredFiles.forEach(async (file) => {
-        switch(file){
-          case "face":
-            if(!blobs.face) startFacialScan();
-            break;
-          case "video":
-            startVideoCamera();
-            break;
-          case "idFront":
-            await startCamera(document.getElementById("idFrontPreview"));
-            break;
-          case "idBack":
-            await startCamera(document.getElementById("idBackPreview"));
-            break;
-          case "selfie":
-            await startCamera(document.getElementById("selfiePreview"));
-            break;
-        }
-      });
-
-    }
-
-  });
-
-  currentSection = index;
+if(section.dataset.requiresFiles?.includes("face") && !blobs.face){
+startFacialScan();
 }
 
-document.querySelectorAll(".next").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const section = sections[currentSection];
+if(section.dataset.requiresFiles?.includes("video")){
+startVideoCamera();
+}
 
-    // Validate required file uploads if section specifies them
-    const required = section.dataset.requiresFiles?.split(",") || [];
-    if(required.length && required.some(f => !urls[f])){
-      alert("Please capture and upload all required files before proceeding.");
-      return;
-    }
+}
 
-    // Validate required inputs
-    const inputs = section.querySelectorAll("input[required], select[required]");
-    for(let input of inputs){
-      if(!input.value.trim()){
-        alert(`Please fill: ${input.previousElementSibling.innerText}`);
-        input.focus();
-        return;
-      }
-    }
+});
 
-    // Move to next section
-    if(currentSection < sections.length - 1){
-      showSection(currentSection + 1);
-    }
-  });
+currentSection=index;
+
+}
+
+document.querySelectorAll(".next").forEach(btn=>{
+
+btn.addEventListener("click",()=>{
+
+const section=sections[currentSection];
+const required=section.dataset.requiresFiles?.split(",") || [];
+
+if(required.length && required.some(f=>!urls[f])){
+alert("Please capture and upload all required files before proceeding.");
+return;
+}
+
+const inputs=section.querySelectorAll("input[required],select[required]");
+
+for(let input of inputs){
+
+if(!input.value.trim()){
+alert(`Please fill: ${input.previousElementSibling.innerText}`);
+input.focus();
+return;
+}
+
+}
+
+if(currentSection<sections.length-1){
+showSection(currentSection+1);
+}
+
+});
+
 });
 
 document.querySelectorAll(".prev").forEach(btn=>{
@@ -171,12 +198,11 @@ if(currentSection>0) showSection(currentSection-1);
 });
 });
 
-
 /* ---------------- CAMERA ---------------- */
 
 const facingModes={};
 
-async function startCamera(video, facingMode="user", withAudio=false){
+async function startCamera(video,facingMode="user"){
 
 try{
 
@@ -187,12 +213,12 @@ video.srcObject=null;
 
 await new Promise(res=>setTimeout(res,300));
 
-const stream = await navigator.mediaDevices.getUserMedia({
-  video: { facingMode: { ideal: facingMode } },
-  audio: withAudio
+const stream=await navigator.mediaDevices.getUserMedia({
+video:{facingMode:{ideal:facingMode}},
+audio:true
 });
 
-video.srcObject = stream;
+video.srcObject=stream;
 await video.play();
 
 return stream;
@@ -205,26 +231,6 @@ alert("Camera permission denied");
 }
 
 }
-
-function setupFlip(btnId,videoId){
-
-const btn=document.getElementById(btnId);
-const video=document.getElementById(videoId);
-
-if(!btn || !video) return;
-
-facingModes[videoId]="user";
-
-btn.onclick=async()=>{
-
-facingModes[videoId]=facingModes[videoId]==="user"?"environment":"user";
-
-await startCamera(video,facingModes[videoId]);
-
-};
-
-}
-
 
 /* ---------------- IMAGE CAPTURE ---------------- */
 
@@ -243,16 +249,17 @@ canvas.toBlob(blob=>resolve(blob),"image/jpeg");
 
 }
 
-
 let blobs={idFront:null,idBack:null,selfie:null,face:null,video:null};
 let urls={idFront:null,idBack:null,selfie:null,face:null,video:null};
-
 
 function setupCapture(videoId,captureBtn,removeBtn,previewId,key){
 
 const video=document.getElementById(videoId);
+const capture=document.getElementById(captureBtn);
 
-document.getElementById(captureBtn).onclick=async()=>{
+if(!video || !capture) return;
+
+capture.onclick=async()=>{
 
 if(!video.srcObject) await startCamera(video);
 
@@ -268,33 +275,25 @@ alert(`${key} captured`);
 
 if(removeBtn){
 
-document.getElementById(removeBtn).onclick=()=>{
+const remove=document.getElementById(removeBtn);
 
+if(remove){
+remove.onclick=()=>{
 blobs[key]=null;
 urls[key]=null;
 document.getElementById(previewId).src="";
-
 };
-
 }
 
 }
 
+}
 
 /* ---------------- CAPTURE SETUP ---------------- */
 
 setupCapture("idFrontPreview","captureIdFront","removeIdFront","idFrontImg","idFront");
 setupCapture("idBackPreview","captureIdBack","removeIdBack","idBackImg","idBack");
 setupCapture("selfiePreview","captureSelfie","removeSelfie","selfieImg","selfie");
-
-
-/* ---------------- CAMERA FLIP ---------------- */
-
-setupFlip("flipIdFront","idFrontPreview");
-setupFlip("flipIdBack","idBackPreview");
-setupFlip("flipSelfie","selfiePreview");
-setupFlip("flipVideo","videoPreview");
-
 
 /* ---------------- VIDEO RECORDING ---------------- */
 
@@ -311,74 +310,72 @@ let videoInterval;
 
 async function startVideoCamera(){
 
-if(videoStream) return;
+if(videoStream || !videoPreview) return;
 
-videoStream = await startCamera(videoPreview, "user", true);
-startVideoBtn.disabled=false;
+videoStream=await startCamera(videoPreview);
+
+if(startVideoBtn) startVideoBtn.disabled=false;
 
 }
 
+if(startVideoBtn){
+
 startVideoBtn.onclick = () => {
 
-  if(!recording){
+if(!recording){
 
-    // Start recording
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm" });
+recordedChunks = [];
+mediaRecorder = new MediaRecorder(videoStream,{mimeType:"video/webm"});
 
-    mediaRecorder.ondataavailable = e => {
-      if(e.data.size > 0) recordedChunks.push(e.data);
-    };
+mediaRecorder.ondataavailable=e=>{
+if(e.data.size>0) recordedChunks.push(e.data);
+};
 
-    mediaRecorder.onstop = async () => {
-      clearInterval(videoInterval);
+mediaRecorder.onstop=async()=>{
 
-      blobs.video = new Blob(recordedChunks, { type: "video/webm" });
-      videoPlayback.src = URL.createObjectURL(blobs.video);
+clearInterval(videoInterval);
 
-      urls.video = await uploadVideo(blobs.video);
+blobs.video=new Blob(recordedChunks,{type:"video/webm"});
+videoPlayback.src=URL.createObjectURL(blobs.video);
 
-      alert("Video recorded");
+urls.video=await uploadVideo(blobs.video);
 
-      // Turn button green
-      startVideoBtn.style.backgroundColor = "green";
-    };
+alert("Video recorded");
 
-    mediaRecorder.start();
-    recording = true;
-
-    // Turn button red
-    startVideoBtn.style.backgroundColor = "red";
-
-    let sec = 0;
-    videoInterval = setInterval(() => {
-      sec++;
-      timerEl.innerText = `${sec}/30s`;
-
-      if(sec >= 30){
-        clearInterval(videoInterval);
-        mediaRecorder.stop();
-        recording = false;
-      }
-    }, 1000); // <-- correct interval to 1 second
-
-  } else {
-    // Stop recording manually
-    mediaRecorder.stop();
-    recording = false;
-  }
+startVideoBtn.style.backgroundColor="green";
 
 };
 
-document.getElementById("removeVideo").onclick=()=>{
+mediaRecorder.start();
+recording=true;
 
-blobs.video=null;
-urls.video=null;
-videoPlayback.src="";
-timerEl.innerText="";
+startVideoBtn.style.backgroundColor="red";
+
+let sec=0;
+
+videoInterval=setInterval(()=>{
+
+sec++;
+timerEl.innerText=`${sec}/30s`;
+
+if(sec>=30){
+clearInterval(videoInterval);
+mediaRecorder.stop();
+recording=false;
+}
+
+},1000);
+
+}else{
+
+mediaRecorder.stop();
+recording=false;
+
+}
 
 };
 
+}
 
 /* ---------------- CLOUDINARY ---------------- */
 
@@ -410,7 +407,6 @@ return data.secure_url;
 
 }
 
-
 /* ---------------- FACE SCAN ---------------- */
 
 async function startFacialScan(){
@@ -426,7 +422,6 @@ const blob=await captureImage(faceVideo);
 
 blobs.face=blob;
 faceImg.src=URL.createObjectURL(blob);
-document.getElementById("removeFace").style.display="inline-block";
 
 urls.face=await uploadImage(blob);
 
@@ -434,88 +429,81 @@ alert("Face captured");
 
 },7000);
 
-document.getElementById("removeFace").onclick=()=>{
-
-blobs.face=null;
-urls.face=null;
-
-faceImg.src="";
-
-startFacialScan();
-
-};
-
 }
 
 /* ---------------- FORM SUBMIT ---------------- */
 
 document.getElementById("merchantVerificationForm").addEventListener("submit", async e => {
-  e.preventDefault();
 
-  if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
-    alert("Please capture all required files.");
-    return;
-  }
+e.preventDefault();
 
-  if(!isUsernameValid || !isMatricValid){
-    alert("Username or Matric already exists.");
-    return;
-  }
-
-  const data = {
-    fullName: fullName.value,
-    email: email.value.trim().toLowerCase(),
-    username: username.value.trim().toLowerCase(),
-    phoneNumber: phoneNumber.value,
-    matricNumber: matricNumber.value,
-    department: department.value,
-    level: level.value,
-    gender: gender.value,
-    hostel: hostel.value,
-    block: block.value,
-    room: room.value,
-    bankName: bankName.value,
-    accountName: accountName.value,
-    accountNumber: accountNumber.value
-  };
-
-  const catchPhrase = generateCatchPhrase();
-
-  // Save application to Firestore
-  const appRef = await addDoc(collection(db, "merchant_applications"), {
-    ...data,
-    files: {
-      idFront: urls.idFront,
-      idBack: urls.idBack,
-      selfie: urls.selfie,
-      faceScan: urls.face,
-      verificationVideo: urls.video
-    },
-    catchPhrase,
-    status: "pending",
-    submittedAt: serverTimestamp()
-  });
-
-  // Save uniqueness for username & matric number
-  await setDoc(doc(db, "usernames", data.username.toLowerCase()), { applicationId: appRef.id });
-  await setDoc(doc(db, "matricNumbers", data.matricNumber), { applicationId: appRef.id });
-
-  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
-
-  window.location.href = "./sign-login.html";
-});
-
-function generateCatchPhrase() {
-    const phrases = [
-        "Silver Mango 82",
-        "Library Falcon Window",
-        "The river flows east today",
-        "Crimson Tiger Jump",
-        "Sunny Orange Sky",
-        "Quiet Mountain Echo",
-        "Blue Horizon Run",
-        "Golden Leaf Whisper"
-    ];
-    return phrases[Math.floor(Math.random() * phrases.length)];
+if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
+alert("Please capture all required files.");
+return;
 }
 
+if(!isUsernameValid || !isMatricValid){
+alert("Username or Matric already exists.");
+return;
+}
+
+const data = {
+fullName: fullName.value,
+email: email.value.trim().toLowerCase(),
+username: username.value.trim().toLowerCase(),
+phoneNumber: phoneNumber.value,
+matricNumber: matricNumber.value,
+department: department.value,
+level: level.value,
+gender: gender.value,
+hostel: hostel.value,
+block: block.value,
+room: room.value,
+bankName: bankName.value,
+accountName: accountName.value,
+accountNumber: accountNumber.value
+};
+
+const catchPhrase = generateCatchPhrase();
+
+const appRef = await addDoc(collection(db,"merchant_applications"),{
+...data,
+files:{
+idFront:urls.idFront,
+idBack:urls.idBack,
+selfie:urls.selfie,
+faceScan:urls.face,
+verificationVideo:urls.video
+},
+catchPhrase,
+status:"pending",
+submittedAt:serverTimestamp()
+});
+
+await setDoc(doc(db,"usernames",data.username.toLowerCase()),{uid:appRef.id});
+await setDoc(doc(db,"matricNumbers",data.matricNumber),{uid:appRef.id});
+
+alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
+
+window.location.href="./sign-login.html";
+
+});
+
+});
+
+function generateCatchPhrase(){
+
+const phrases=[
+"Silver Mango 82",
+"Library Falcon Window",
+"The river flows east today",
+"Crimson Tiger Jump",
+"Sunny Orange Sky",
+"Quiet Mountain Echo",
+"Blue Horizon Run",
+"Golden Leaf Whisper"
+];
+
+return phrases[Math.floor(Math.random()*phrases.length)];
+
+}
