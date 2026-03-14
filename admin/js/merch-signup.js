@@ -1,196 +1,263 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { auth, db } from './firebase-config.js';
 
-// Cloudinary Constants
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
-const UPLOAD_PRESET = "runhub_uploads"; 
+import {
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyC7onB0OptTyu-J6J1PwU6zX799tQIjh4k",
-    authDomain: "affiliate-app-dab95.firebaseapp.com",
-    databaseURL: "https://affiliate-app-dab95-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "affiliate-app-dab95",
-    storageBucket: "affiliate-app-dab95.firebasestorage.app",
-    messagingSenderId: "510180440268",
-    appId: "1:510180440268:web:99be47162857f635d8ea69"
-};
+import {
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-let isUsernameValid = false;
-let isMatricValid = false;
-
-// --- LOCATION DROPDOWN GENERATOR ---
-
-const blockSelect = document.getElementById("block");
-const roomSelect = document.getElementById("room");
-
-// Generate Blocks 00 - 100
-for (let i = 0; i <= 100; i++) {
-    const option = document.createElement("option");
-    const value = i.toString().padStart(2, "0");
-    option.value = value;
-    option.textContent = "Block " + value;
-    blockSelect.appendChild(option);
-}
-
-// Generate Rooms 1 - 100
-for (let i = 1; i <= 100; i++) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = "Room " + i;
-    roomSelect.appendChild(option);
-}
-
-// --- AUTH GUARD ---
-onAuthStateChanged(auth, (user) => {
-    // Ensuring the logged-in user is actually an admin could be added here
-    if (!user) window.location.href = "admin-login.html"; 
+/* -----------------------------
+AUTH GUARD (ADMIN ONLY)
+----------------------------- */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "./admin-login.html";
+    return;
+  }
+  try {
+    const userRef = doc(db,"users",user.uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+      window.location.href="admin-login.html";
+      return;
+    }
+    const role = snap.data().role;
+    if(role !== "admin"){
+      alert("Access denied: Admins only.");
+      await signOut(auth);
+      return;
+    }
+    initMerchantQueue();
+  } catch(err){
+    console.error("Auth error:",err);
+  }
 });
 
-window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
+/* -----------------------------
+UI UTILITIES
+----------------------------- */
+window.toggleDrawer = () => {
+  document.getElementById("navDrawer").classList.toggle("active");
+};
 
 window.handleLogout = async () => {
-    if(confirm("Logout from Admin Panel?")) {
-        try {
-            await signOut(auth);
-            window.location.href = "admin-login.html";
-        } catch (error) {
-            alert("Error: " + error.message);
-        }
-    }
+  if(confirm("Logout?")){
+    await signOut(auth);
+    window.location.href="admin-login.html";
+  }
 };
 
-// --- VALIDATION ---
-const debounce = (func, delay) => {
-    let timeout;
-    return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-    };
-};
+/* -----------------------------
+ELEMENTS
+----------------------------- */
+const tableBody = document.getElementById("merchantTable");
+const searchInput = document.getElementById("searchInput");
+let applications = [];
 
-const checkUniqueness = async (field, value, statusId) => {
-    const statusEl = document.getElementById(statusId);
-    if (!value || value.length < 3) {
-        statusEl.innerText = "";
-        return;
+/* -----------------------------
+LOAD APPLICATIONS
+----------------------------- */
+function initMerchantQueue(){
+  const ref = collection(db,"merchant_applications");
+  const q = query(ref, orderBy("createdAt","desc"));
+  onSnapshot(q,(snapshot)=>{
+    applications=[];
+    snapshot.forEach(docSnap=>{
+      applications.push({
+        id:docSnap.id,
+        ...docSnap.data()
+      });
+    });
+    renderTable(applications);
+  });
+}
+
+/* -----------------------------
+RENDER TABLE
+----------------------------- */
+function renderTable(data){
+  tableBody.innerHTML="";
+  if(data.length===0){
+    tableBody.innerHTML=`
+      <tr>
+        <td colspan="5" style="text-align:center;padding:20px;color:#86868b">
+          No merchant applications
+        </td>
+      </tr>`;
+    return;
+  }
+  data.forEach(app=>{
+    const status = (app.status || "pending").toLowerCase();
+    let statusClass="pending";
+    if(status==="approved") statusClass="approved";
+    if(status==="blocked") statusClass="blocked";
+
+    let actionButtons = "";
+    if(status === "pending"){
+      actionButtons = `
+        <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
+          <i class="fi-eye"></i>
+        </a>
+        <button class="action-btn approve-btn" title="Approve Merchant" onclick="approveMerchant('${app.id}')">
+          <i class="fi-check"></i>
+        </button>
+        <button class="action-btn block-btn" title="Block Application" onclick="blockMerchant('${app.id}')">
+          <i class="fi-x-circle"></i>
+        </button>
+        <button class="action-btn delete-btn" title="Delete Application" onclick="deleteApplication('${app.id}')">
+          <i class="fi-trash"></i>
+        </button>
+      `;
+    } else {
+      actionButtons = `
+        <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
+          <i class="fi-eye"></i>
+        </a>
+        <button class="action-btn delete-btn" title="Delete Application" onclick="deleteApplication('${app.id}')">
+          <i class="fi-trash"></i>
+        </button>
+      `;
     }
-    statusEl.innerText = "Checking...";
-    try {
-        const q = query(collection(db, "users"), where(field, "==", value));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-            statusEl.innerText = "✓ Available";
-            statusEl.className = "validation-msg status-available";
-            if (field === "username") isUsernameValid = true;
-            if (field === "matricNumber") isMatricValid = true;
-        } else {
-            statusEl.innerText = "✕ Already Taken";
-            statusEl.className = "validation-msg status-taken";
-            if (field === "username") isUsernameValid = false;
-            if (field === "matricNumber") isMatricValid = false;
-        }
-    } catch (err) {
-        statusEl.innerText = "✓ Available";
-        isUsernameValid = true; isMatricValid = true;
-    }
-};
 
-document.getElementById('username').addEventListener('input', debounce((e) => {
-    checkUniqueness("username", e.target.value.trim().toLowerCase(), "username-status");
-}, 500));
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${app.fullName || "Unknown"}</td>
+      <td>${app.email || "N/A"}</td>
+      <td>${app.phoneNumber || "N/A"}</td>
+      <td><span class="status-pill ${statusClass}">${status}</span></td>
+      <td class="action-cell">${actionButtons}</td>`;
+    tableBody.appendChild(tr);
+  });
+}
 
-document.getElementById('matricNumber').addEventListener('input', debounce((e) => {
-    checkUniqueness("matricNumber", e.target.value.trim(), "matric-status");
-}, 500));
-
-// --- FORM SUBMISSION ---
-const signupForm = document.getElementById('merchantSignupForm');
-
-signupForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-
-    if (!isUsernameValid || !isMatricValid) {
-        alert("Username or Matric Number is already in use.");
-        return;
-    }
-
-    const email = document.getElementById('email').value.trim();
-    const pass = document.getElementById('password').value;
-    const confirmPass = document.getElementById('confirm-password').value;
-    const photoFile = document.getElementById('profilePhoto').files[0];
-
-    if (pass !== confirmPass) { alert("Passwords do not match!"); return; }
-    if (!photoFile) { alert("Please upload an ID photo."); return; }
-
-    btn.disabled = true;
-    btn.innerText = "Uploading & Registering...";
-
-    try {
-        // 1. Upload ID to Cloudinary
-        const formData = new FormData();
-        formData.append('file', photoFile);
-        formData.append('upload_preset', UPLOAD_PRESET);
-
-        const cloudRes = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
-        const cloudData = await cloudRes.json();
-        const photoURL = cloudData.secure_url;
-
-        // 2. Create Firebase Auth Account using the MERCHANT'S OWN EMAIL
-        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-        const user = userCredential.user;
-
-        // 3. Save Merchant Data to Firestore
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            role: "merchant",
-            fullName: document.getElementById('fullName').value,
-            username: document.getElementById('username').value.trim().toLowerCase(),
-            email: email, // Merchant's actual email for login
-            level: document.getElementById('level').value,
-            matricNumber: document.getElementById('matricNumber').value.trim(),
-            phoneNumber: document.getElementById('phoneNumber').value,
-            gender: document.getElementById('gender').value,
-            
-            hostelLocation: `Block ${document.getElementById('block').value}, Room ${document.getElementById('room').value}, ${document.getElementById('hostel').value}`,
-            bankDetails: {
-                bankName: document.getElementById('bankName').value,
-                accountName: document.getElementById('accountName').value,
-                accountNumber: document.getElementById('accountNumber').value
-            },
-            profilePhoto: photoURL,
-            totalPaid: 0,
-            feeAccrued: 0,
-            walletDueSince: null,
-            rating: 5.0,
-            status: "active",
-            isSessionOn: false,
-            subscription: {
-                type: "trial",
-                startDate: serverTimestamp(),
-                expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-            },
-            createdAt: serverTimestamp(),
-            walletLastUpdated: serverTimestamp()
-        });
-
-        alert(`Registration successful! ${email} can now log in to the Merchant Dashboard.`);
-        signupForm.reset();
-        
-        // Clear validation labels
-        document.getElementById('username-status').innerText = "";
-        document.getElementById('matric-status').innerText = "";
-
-    } catch (error) {
-        console.error(error);
-        alert("Error: " + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Register & Verify Merchant";
-    }
+/* -----------------------------
+SEARCH
+----------------------------- */
+searchInput.addEventListener("input",()=>{
+  const term=searchInput.value.toLowerCase().trim();
+  const filtered=applications.filter(app=>{
+    const name=(app.fullName||"").toLowerCase();
+    const email=(app.email||"").toLowerCase();
+    const phone=(app.phoneNumber||"").toLowerCase();
+    return(
+      name.includes(term) ||
+      email.includes(term) ||
+      phone.includes(term)
+    );
+  });
+  renderTable(filtered);
 });
+
+/* -----------------------------
+ADMIN ACTIONS
+----------------------------- */
+window.approveMerchant = async(id)=>{
+  if(!confirm("Approve this merchant?")) return;
+  try{
+    /* get application data */
+    const appRef = doc(db,"merchant_applications",id);
+    const snap = await getDoc(appRef);
+    if(!snap.exists()){
+      alert("Application not found");
+      return;
+    }
+    const data = snap.data();
+
+    /* create firebase auth account with temp password (user resets it) */
+    const tempPassword = Math.random().toString(36).slice(-8) + "A1";
+    const cred = await createUserWithEmailAndPassword(auth, data.email, tempPassword);
+    const user = cred.user;
+
+    /* save merchant profile */
+    await setDoc(doc(db,"users",user.uid),{
+      uid:user.uid,
+      role:"merchant",
+      fullName:data.fullName || "",
+      username:(data.fullName || "").toLowerCase().replace(/\s+/g,""),
+      email:data.email,
+      level:data.level || "",
+      matricNumber:data.matricNumber || "",
+      phoneNumber:data.phone || "",
+      gender:data.gender || "",
+      hostelLocation:`Block ${data.block}, Room ${data.room}, ${data.hostel}`,
+      bankDetails:{
+        bankName:data.bankName || "",
+        accountName:data.accountName || "",
+        accountNumber:data.accountNumber || ""
+      },
+      profilePhoto:data.files?.selfie || "",
+      totalPaid:0,
+      feeAccrued:0,
+      walletDueSince:null,
+      rating:5.0,
+      status:"active",
+      isSessionOn:false,
+      subscription:{
+        type:"trial",
+        startDate:serverTimestamp(),
+        expiryDate:new Date(Date.now() + 14*24*60*60*1000)
+      },
+      createdAt:serverTimestamp(),
+      walletLastUpdated:serverTimestamp()
+    });
+
+    /* update application status */
+    await updateDoc(appRef,{
+      status:"approved",
+      approvedAt:new Date().toISOString(),
+      merchantUid:user.uid
+    });
+
+    /* send password reset email so merchant sets their own password */
+    await sendPasswordResetEmail(auth, data.email)
+      .then(() => {
+        alert(`Merchant approved successfully.\nA password reset email has been sent to ${data.email}.\nMerchant can now set their own password.`);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Failed to send password reset email: " + err.message);
+      });
+
+  } catch(err){
+    console.error(err);
+    alert("Approval failed: " + err.message);
+  }
+};
+
+window.blockMerchant = async(id)=>{
+  if(!confirm("Block this application?")) return;
+  try{
+    await updateDoc(doc(db,"merchant_applications",id),{
+      status:"blocked",
+      blockedAt:new Date().toISOString()
+    });
+    alert("Application blocked");
+  } catch(err){
+    console.error(err);
+    alert("Block failed");
+  }
+};
+
+window.deleteApplication = async(id)=>{
+  if(!confirm("Delete this application permanently?")) return;
+  try{
+    await deleteDoc(doc(db,"merchant_applications",id));
+    alert("Application deleted");
+  } catch(err){
+    console.error(err);
+    alert("Deletion failed");
+  }
+};
