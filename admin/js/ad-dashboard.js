@@ -121,7 +121,7 @@ function renderUserTable(users) {
         // Data mapping with fallbacks
         const role = (user.role || "User").toLowerCase();
         const status = user.status || "Active";
-        const phone = user.phoneNumber || user.phone || "N/A";
+        const phone = user.phoneNumber || "N/A";
         
         const statusClass = status.toLowerCase() === 'locked' ? 'locked' : 'active';
         const badgeClass = role;

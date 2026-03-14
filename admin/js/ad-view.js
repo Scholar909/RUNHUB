@@ -184,7 +184,7 @@ async function renderProfile(data, walletAmt) {
             ${createInfoRow("Email", data.email)}
             ${createInfoRow("Username", data.username)}
             ${createInfoRow("Gender", data.gender)}
-            ${createInfoRow("Phone", data.phoneNumber || data.phone)}
+            ${createInfoRow("Phone", data.phoneNumber || N/A)}
             ${createInfoRow("Level", data.level)}
             ${createInfoRow("Matric No", data.matricNumber || data.matricNo)}
             ${role === 'merchant' ? createInfoRow("Closest To", staticLocation) : ""}

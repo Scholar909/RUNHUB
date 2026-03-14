@@ -12,7 +12,7 @@ import {
 
 // --- Auth Protection ---
 onAuthStateChanged(auth, (user) => {
-    if (!user) window.location.href = "index.html";
+    if (!user) window.location.href = "./admin-login.html";
     // In a real app, verify if user.uid is the admin UID here
 });
 

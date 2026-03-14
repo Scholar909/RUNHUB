@@ -196,7 +196,7 @@ window.approveMerchant = async(id)=>{
       uid:user.uid,
       role:"merchant",
       fullName:data.fullName || "",
-      username:(data.fullName || "").toLowerCase().replace(/\s+/g,""),
+      username:(data.username || "").toLowerCase().replace(/\s+/g,""),
       email:data.email,
       level:data.level || "",
       matricNumber:data.matricNumber || "",
@@ -230,6 +230,14 @@ window.approveMerchant = async(id)=>{
       approvedAt:new Date().toISOString(),
       merchantUid:user.uid
     });
+    
+    // after updateDoc(appRef, {...})
+    const index = applications.findIndex(a => a.id === id);
+    if(index !== -1) {
+        applications[index].status = "approved";
+        applications[index].merchantUid = user.uid;
+        renderTable(applications);
+    }
 
     /* send password reset email so merchant sets their own password */
     await sendPasswordResetEmail(secondaryAuth, data.email)
