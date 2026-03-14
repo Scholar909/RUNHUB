@@ -1,4 +1,4 @@
-import { auth, db } from './firebase-config.js';
+import { auth, db, firebaseConfig } from './firebase-config.js';
 
 import {
   collection,
@@ -18,6 +18,15 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+// Secondary app to create merchant without logging out admin
+const secondaryApp = !getApps().some(a => a.name === "Secondary")
+  ? initializeApp(firebaseConfig, "Secondary")
+  : getApp("Secondary");
+
+const secondaryAuth = getAuth(secondaryApp);
 
 /* -----------------------------
 AUTH GUARD (ADMIN ONLY)
@@ -178,7 +187,8 @@ window.approveMerchant = async(id)=>{
 
     /* create firebase auth account with temp password (user resets it) */
     const tempPassword = Math.random().toString(36).slice(-8) + "A1";
-    const cred = await createUserWithEmailAndPassword(auth, data.email, tempPassword);
+    // Create merchant using secondary auth instance
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, data.email, tempPassword);
     const user = cred.user;
 
     /* save merchant profile */
@@ -222,7 +232,7 @@ window.approveMerchant = async(id)=>{
     });
 
     /* send password reset email so merchant sets their own password */
-    await sendPasswordResetEmail(auth, data.email)
+    await sendPasswordResetEmail(secondaryAuth, data.email)
       .then(() => {
         alert(`Merchant approved successfully.\nA password reset email has been sent to ${data.email}.\nMerchant can now set their own password.`);
       })
