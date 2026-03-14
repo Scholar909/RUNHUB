@@ -141,19 +141,16 @@ async function startCamera(video, facingMode = "user") {
 async function setupFlip(flipBtnId, videoId) {
     const video = document.getElementById(videoId);
     const btn = document.getElementById(flipBtnId);
-    if(!facingModes[videoId]) facingModes[videoId] = "user";
+    if (!facingModes[videoId]) facingModes[videoId] = "user";
 
     btn.onclick = async () => {
-        // Stop current stream
-        if(video.srcObject){
-            video.srcObject.getTracks().forEach(track => track.stop());
+        try {
+            if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+            facingModes[videoId] = facingModes[videoId] === "user" ? "environment" : "user";
+            await startCamera(video, facingModes[videoId]);
+        } catch {
+            alert("Camera permission required or camera not available.");
         }
-
-        // Toggle facing mode
-        facingModes[videoId] = facingModes[videoId] === "user" ? "environment" : "user";
-
-        // Start camera without exact constraint
-        await startCamera(video, facingModes[videoId]);
     };
 }
 
@@ -205,56 +202,56 @@ setupFlip("flipIdBack","idBackPreview");
 setupFlip("flipSelfie","selfiePreview");
 setupFlip("flipVideo","videoPreview");
 
-// ---------------- VIDEO ----------------
 const videoPreview = document.getElementById("videoPreview");
 const videoPlayback = document.getElementById("videoPlayback");
 const timerEl = document.getElementById("videoTimer");
-let mediaRecorder, recordedChunks=[], videoStream;
-
 const startVideoBtn = document.getElementById("startVideoRecording");
-startVideoBtn.disabled = true;
-startVideoBtn.onclick = () => {
-    recordedChunks = [];
-    if(videoPlayback.src) videoPlayback.src = ""; // clear old playback
-    // ... continue with MediaRecorder
-}
+let mediaRecorder, recordedChunks = [], videoStream, recording = false;
 
 startCamera(videoPreview).then(stream => {
     videoStream = stream;
-    startVideoBtn.disabled = false; // enable recording only when camera is ready
+    startVideoBtn.disabled = false;
 });
 
-document.getElementById("startVideoRecording").onclick = ()=>{
-    recordedChunks=[];
-    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm" });
-    mediaRecorder.ondataavailable = e=>{
-        if(e.data.size>0) recordedChunks.push(e.data);
-    };
-    mediaRecorder.onstop = async ()=>{
-        blobs.video = new Blob(recordedChunks,{type:"video/webm"});
-        videoPlayback.src = URL.createObjectURL(blobs.video);
-        urls.video = await uploadVideo(blobs.video);
-        alert("Video recorded and uploaded. Preview below.");
-    };
-    mediaRecorder.start();
-
-    let sec = 0;
-    timerEl.innerText = "00 / 30s";
-    const interval = setInterval(()=>{
-        sec++;
-        timerEl.innerText = `${sec<10?'0':''}${sec} / 30s`;
-        if(sec>=30){
-            mediaRecorder.stop();
-            clearInterval(interval);
-        }
-    },1000);
+startVideoBtn.onclick = () => {
+    if (!recording) {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm" });
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = async () => {
+            blobs.video = new Blob(recordedChunks, { type: "video/webm" });
+            videoPlayback.src = URL.createObjectURL(blobs.video);
+            urls.video = await uploadVideo(blobs.video);
+            startVideoBtn.style.color = "green";
+            alert("Video recorded and uploaded.");
+        };
+        mediaRecorder.start();
+        recording = true;
+        startVideoBtn.style.color = "red"; // recording
+        let sec = 0;
+        timerEl.innerText = "00 / 30s";
+        const interval = setInterval(() => {
+            sec++;
+            timerEl.innerText = `${sec < 10 ? '0' : ''}${sec} / 30s`;
+            if (sec >= 30) {
+                mediaRecorder.stop();
+                clearInterval(interval);
+                recording = false;
+            }
+        }, 1000);
+    } else {
+        mediaRecorder.stop();
+        recording = false;
+    }
 };
 
-document.getElementById("removeVideo").onclick = ()=>{
-    blobs.video=null;
-    videoPlayback.src="";
-    urls.video=null;
-    timerEl.innerText="";
+// Delete video
+document.getElementById("removeVideo").onclick = () => {
+    blobs.video = null;
+    urls.video = null;
+    videoPlayback.src = "";
+    timerEl.innerText = "";
+    startVideoBtn.style.color = "black";
 };
 
 // ---------------- CLOUDINARY UPLOAD ----------------
@@ -341,15 +338,30 @@ const faceImg = document.getElementById("faceScanImg");
 async function startFacialScan() {
     const faceVideo = document.getElementById("faceScanPreview");
     const faceImg = document.getElementById("faceScanImg");
+    const removeBtn = document.createElement("button");
+
+    removeBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+    removeBtn.className = "icon-btn remove-btn";
+    faceVideo.parentElement.appendChild(removeBtn);
 
     await startCamera(faceVideo, "user"); // front camera
 
-    setTimeout(async () => {
+    // Auto-capture after 10s
+    const captureTimeout = setTimeout(async () => {
         const blob = await captureImage(faceVideo);
         blobs.face = blob;
         faceImg.src = URL.createObjectURL(blob);
         urls.face = await uploadImage(blob);
         alert("Facial scan captured and uploaded!");
-    }, 5000); // auto capture after 5 seconds
+    }, 10000);
+
+    // Delete button functionality
+    removeBtn.onclick = () => {
+        clearTimeout(captureTimeout); // cancel auto capture if needed
+        blobs.face = null;
+        urls.face = null;
+        faceImg.src = "";
+        startFacialScan(); // restart scan
+    };
 }
 
