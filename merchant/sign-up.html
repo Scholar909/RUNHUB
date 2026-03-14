@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Merchant Verification | RUNHUB</title>
-<link rel="stylesheet" href="css/sign-ups.css?v=5">
+<link rel="stylesheet" href="css/sign-ups.css?v=7">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -43,13 +44,20 @@
     <div class="report-card">
         <div class="card-tag">STEP 1</div>
         <h3>ID Card Front</h3>
-        <p class="info-text">Place the FRONT of your student ID inside the frame and take a photo.</p>
-        <video id="idFrontPreview" autoplay playsinline></video>
-        <button type="button" class="btn capture-btn" id="captureIdFront">Capture Photo</button>
+        <p class="info-text">Place the FRONT of your ID inside the frame and take a photo.</p>
+        <div class="camera-wrapper">
+            <video id="idFrontPreview" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button type="button" class="icon-btn" id="flipIdFront"><i class="fas fa-sync-alt"></i></button>
+                <button type="button" class="icon-btn capture-btn" id="captureIdFront"><i class="fas fa-camera"></i></button>
+                <button type="button" class="icon-btn remove-btn" id="removeIdFront"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <img id="idFrontImg" class="preview-img" />
     </div>
     <div class="nav-buttons">
         <button type="button" class="btn prev">Previous</button>
-        <button type="button" class="btn btn-filled next">Next</button>
+        <button type="button" class="btn btn-filled next" id="nextIdFront">Next</button>
     </div>
 </div>
 
@@ -59,12 +67,19 @@
         <div class="card-tag">STEP 2</div>
         <h3>ID Card Back</h3>
         <p class="info-text">Flip the card and capture the BACK side.</p>
-        <video id="idBackPreview" autoplay playsinline></video>
-        <button type="button" class="btn capture-btn" id="captureIdBack">Capture Photo</button>
+        <div class="camera-wrapper">
+            <video id="idBackPreview" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button type="button" class="icon-btn" id="flipIdBack"><i class="fas fa-sync-alt"></i></button>
+                <button type="button" class="icon-btn capture-btn" id="captureIdBack"><i class="fas fa-camera"></i></button>
+                <button type="button" class="icon-btn remove-btn" id="removeIdBack"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <img id="idBackImg" class="preview-img" />
     </div>
     <div class="nav-buttons">
         <button type="button" class="btn prev">Previous</button>
-        <button type="button" class="btn btn-filled next">Next</button>
+        <button type="button" class="btn btn-filled next" id="nextIdBack">Next</button>
     </div>
 </div>
 
@@ -73,13 +88,20 @@
     <div class="report-card">
         <div class="card-tag">STEP 3</div>
         <h3>Selfie Holding ID</h3>
-        <p class="info-text">Take a selfie while holding your student ID clearly beside your face.</p>
-        <video id="selfiePreview" autoplay playsinline></video>
-        <button type="button" class="btn capture-btn" id="captureSelfie">Capture Selfie</button>
+        <p class="info-text">Take a selfie while holding your ID clearly beside your face.</p>
+        <div class="camera-wrapper">
+            <video id="selfiePreview" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button type="button" class="icon-btn" id="flipSelfie"><i class="fas fa-sync-alt"></i></button>
+                <button type="button" class="icon-btn capture-btn" id="captureSelfie"><i class="fas fa-camera"></i></button>
+                <button type="button" class="icon-btn remove-btn" id="removeSelfie"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <img id="selfieImg" class="preview-img" />
     </div>
     <div class="nav-buttons">
         <button type="button" class="btn prev">Previous</button>
-        <button type="button" class="btn btn-filled next">Next</button>
+        <button type="button" class="btn btn-filled next" id="nextSelfie">Next</button>
     </div>
 </div>
 
@@ -89,11 +111,17 @@
         <div class="card-tag">STEP 4</div>
         <h3>Facial Scan</h3>
         <p class="info-text">Position your face in the frame and stay still for 3 seconds.</p>
-        <video id="faceScanPreview" autoplay playsinline></video>
+        <div class="camera-wrapper">
+            <video id="faceScanPreview" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button type="button" class="icon-btn" id="flipFace"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+        <img id="faceScanImg" class="preview-img" />
     </div>
     <div class="nav-buttons">
         <button type="button" class="btn prev">Previous</button>
-        <button type="button" class="btn btn-filled next">Next</button>
+        <button type="button" class="btn btn-filled next" id="nextFace">Next</button>
     </div>
 </div>
 
@@ -102,19 +130,27 @@
     <div class="report-card">
         <div class="card-tag">STEP 5</div>
         <h3>Verification Video</h3>
-        <p class="info-text">Record a short video reading the script below.</p>
+        <p class="info-text">Record a short video reading the script below (max 30s).</p>
         <div class="script-box">
             Hello RUNHUB,<br>
             My name is <b>[Say your full name]</b>.<br>
             I am applying to become a RUNHUB merchant.<br>
             This verification confirms that I personally submitted this application.
         </div>
-        <video id="videoPreview" autoplay playsinline></video>
-        <button type="button" class="btn capture-btn" id="startVideoRecording">Start Recording</button>
+        <div class="camera-wrapper">
+            <video id="videoPreview" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button type="button" class="icon-btn" id="flipVideo"><i class="fas fa-sync-alt"></i></button>
+                <button type="button" class="icon-btn capture-btn" id="startVideoRecording"><i class="fas fa-circle"></i></button>
+                <button type="button" class="icon-btn remove-btn" id="removeVideo"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+        <video id="videoPlayback" controls class="preview-video"></video>
+        <div id="videoTimer" class="video-timer">00:00 / 30s</div>
     </div>
     <div class="nav-buttons">
         <button type="button" class="btn prev">Previous</button>
-        <button type="button" class="btn btn-filled next">Next</button>
+        <button type="button" class="btn btn-filled next" id="nextVideo">Next</button>
     </div>
 </div>
 
@@ -220,6 +256,6 @@
 </form>
 </div>
 
-<script type="module" src="js/sign-ups.js?v=5"></script>
+<script type="module" src="js/sign-ups.js?v=7"></script>
 </body>
 </html>
