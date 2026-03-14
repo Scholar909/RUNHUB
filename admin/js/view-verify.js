@@ -155,3 +155,4 @@ bankDetails.innerHTML = `
 </div>
 
 `;
+}
