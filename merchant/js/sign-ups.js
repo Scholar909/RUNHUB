@@ -50,48 +50,50 @@ timeout=setTimeout(()=>func.apply(this,args),delay);
 };
 };
 
-const checkUniqueness=async(field,value,statusId)=>{
+const checkUniqueness = async (field, value, statusId) => {
+  const statusEl = document.getElementById(statusId);
 
-const statusEl=document.getElementById(statusId);
+  if (!value || value.length < 3) {
+    statusEl.innerText = "";
+    return;
+  }
 
-if(!value || value.length<3){
-statusEl.innerText="";
-return;
-}
+  statusEl.innerText = "Checking...";
 
-statusEl.innerText="Checking...";
+  try {
+    let docRef;
 
-try{
+    if (field === "username") {
+      docRef = doc(db, "usernames", value.toLowerCase());
+    } else if (field === "matricNumber") {
+      docRef = doc(db, "matricNumbers", value);
+    } else {
+      statusEl.innerText = "";
+      return;
+    }
 
-const q=query(collection(db,"users"),where(field,"==",value));
-const snap=await getDocs(q);
+    const snap = await getDoc(docRef);
 
-if(snap.empty){
+    if (!snap.exists()) {
+      statusEl.innerText = "✓ Available";
+      statusEl.className = "validation-msg status-available";
 
-statusEl.innerText="✓ Available";
-statusEl.className="validation-msg status-available";
+      if (field === "username") isUsernameValid = true;
+      if (field === "matricNumber") isMatricValid = true;
+    } else {
+      statusEl.innerText = "✕ Already Taken";
+      statusEl.className = "validation-msg status-taken";
 
-if(field==="username") isUsernameValid=true;
-if(field==="matricNumber") isMatricValid=true;
+      if (field === "username") isUsernameValid = false;
+      if (field === "matricNumber") isMatricValid = false;
+    }
 
-}else{
-
-statusEl.innerText="✕ Already Taken";
-statusEl.className="validation-msg status-taken";
-
-if(field==="username") isUsernameValid=false;
-if(field==="matricNumber") isMatricValid=false;
-
-}
-
-}catch{
-
-statusEl.innerText="✓ Available";
-isUsernameValid=true;
-isMatricValid=true;
-
-}
-
+  } catch (err) {
+    console.error(err);
+    statusEl.innerText = "Error checking";
+    if (field === "username") isUsernameValid = false;
+    if (field === "matricNumber") isMatricValid = false;
+  }
 };
 
 document.getElementById("username").addEventListener("input",debounce(e=>{
@@ -487,19 +489,28 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   const catchPhrase = generateCatchPhrase();
 
   // Save application with catch phrase in Firestore
-  await addDoc(collection(db, "merchant_applications"), {
-    ...data,
-    files: {
-      idFront: urls.idFront,
-      idBack: urls.idBack,
-      selfie: urls.selfie,
-      faceScan: urls.face,
-      verificationVideo: urls.video
-    },
-    catchPhrase: catchPhrase,  // <-- included
-    status: "pending",
-    submittedAt: serverTimestamp()
-  });
+  // After adding the application doc
+const appRef = await addDoc(collection(db, "merchant_applications"), {
+  ...data,
+  files: {
+    idFront: urls.idFront,
+    idBack: urls.idBack,
+    selfie: urls.selfie,
+    faceScan: urls.face,
+    verificationVideo: urls.video
+  },
+  catchPhrase: catchPhrase,
+  status: "pending",
+  submittedAt: serverTimestamp()
+});
+
+try {
+  await setDoc(doc(db, "usernames", data.username.toLowerCase()), { uid: appRef.id });
+  await setDoc(doc(db, "matricNumbers", data.matricNumber), { uid: appRef.id });
+} catch (err) {
+  alert("Username or Matric number was just taken. Please choose another.");
+  return;
+}
 
   // Show catch phrase to merchant
   alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
