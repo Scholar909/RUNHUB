@@ -127,7 +127,7 @@ async function startCamera(video, facingMode = "user"){
     }
 }
 
-function setupFlip(flipBtnId, videoId) {
+async function setupFlip(flipBtnId, videoId) {
     const video = document.getElementById(videoId);
     const btn = document.getElementById(flipBtnId);
     if(!facingModes[videoId]) facingModes[videoId] = "user";
@@ -141,18 +141,27 @@ function setupFlip(flipBtnId, videoId) {
         // Toggle facing mode
         facingModes[videoId] = facingModes[videoId] === "user" ? "environment" : "user";
 
-        // Start camera with new facing mode
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: facingModes[videoId] } },
-            audio: false
-        }).catch(async ()=>{
-            // fallback for devices that don’t support exact constraint
-            return await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingModes[videoId] } });
-        });
+        // Start camera without exact constraint
+        await startCamera(video, facingModes[videoId]);
+    };
+}
 
+async function startCamera(video, facingMode = "user"){
+    try {
+        if(video.srcObject){
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode }, 
+            audio: false 
+        });
         video.srcObject = stream;
         await video.play();
-    };
+        return stream;
+    } catch(e){
+        console.error(e);
+        alert("Camera permission required or device doesn't support requested camera.");
+    }
 }
 
 // ---------------- CAPTURE ----------------
@@ -330,3 +339,50 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     document.getElementById("merchantVerificationForm").reset();
     location.reload();
 });
+
+// Facial scan auto-capture
+const faceVideo = document.getElementById("faceScanPreview");
+const faceImg = document.getElementById("faceScanImg");
+
+// Facial scan setup (no buttons)
+async function startFacialScan() {
+    const faceVideo = document.getElementById("faceScanPreview");
+    const faceImg = document.getElementById("faceScanImg");
+
+    await startCamera(faceVideo, "user"); // front camera
+
+    setTimeout(async () => {
+        const blob = await captureImage(faceVideo);
+        blobs.face = blob;
+        faceImg.src = URL.createObjectURL(blob);
+        urls.face = await uploadImage(blob);
+        alert("Facial scan captured and uploaded!");
+    }, 5000); // auto capture after 5 seconds
+}
+
+// Run facial scan when face section becomes active
+function showSection(index){
+    sections.forEach((section,i)=>{
+        section.classList.remove("active");
+        if(i===index) section.classList.add("active");
+
+        if(section.dataset.requiresFiles === "face" && !blobs.face){
+            startFacialScan();
+        }
+    });
+    currentSection = index;
+}
+
+// Run facial scan when section becomes active
+function showSection(index){
+    sections.forEach((section,i)=>{
+        section.classList.remove("active");
+        if(i===index) section.classList.add("active");
+
+        // Start auto facial scan only when the section is active
+        if(section.dataset.requiresFiles === "face" && !blobs.face){
+            startFacialScan();
+        }
+    });
+    currentSection = index;
+}
