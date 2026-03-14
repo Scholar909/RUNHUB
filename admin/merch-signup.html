@@ -1,172 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merchant Onboarding | Admin RUN HUB</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-    <link rel="stylesheet" href="css/merch-signup.css?=v10">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merchant Verification | RUNHUB Admin</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+<link rel="stylesheet" href="css/merch-signup.css?v=72">
+
 </head>
+
 <body>
-    <div class="main-wrapper">
-        <nav class="navbar">
-            <div class="menu-trigger" onclick="toggleDrawer()">
-                <div class="bar"></div>
-                <div class="bar"></div>
-                <div class="bar"></div>
-            </div>
-            <div class="logo">RUN<span class="accent">HUB</span></div>
-            <div class="status-indicator">
-                <span class="dot animate-flicker"></span> ONBOARDING
-            </div>
-        </nav>
+
+<div class="main-wrapper">
+
+<nav class="navbar">
+
+<div class="menu-trigger" onclick="toggleDrawer()">
+<div class="bar"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+</div>
+
+<div class="logo">RUN<span class="accent">HUB</span></div>
+
+<div class="status-indicator">
+<span class="dot animate-flicker"></span>
+MERCHANT VERIFICATION
+</div>
+
+</nav>
+
+
+<!-- Drawer -->
 
 <div id="navDrawer" class="nav-drawer">
-    <div class="drawer-header">
-        <h3>Admin Menu</h3>
-        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
-    </div>
-    <ul class="drawer-links">
-        <li><a href="dashboard.html">Dashboard</a></li>
-        <li><a href="location.html">Live Tracking</a></li>
-        <li><a href="complaints.html">Complaints</a></li>
-        <li><a href="merch-signup.html">Merchant Registration</a></li>
-        <li><a href="pol-term-edit.html">Policies & Legal</a></li>
-        <li><a href="ad-copy.html">Copy Hub</a></li>
-    </ul>
-    <div class="drawer-footer">
-        <button class="logout-btn" onclick="handleLogout()">
-            <i class="fi-power"></i> Logout
-        </button>
-    </div>
+
+<div class="drawer-header">
+<h3>Admin Menu</h3>
+<span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+</div>
+
+<ul class="drawer-links">
+<li><a href="dashboard.html">Dashboard</a></li>
+<li><a href="location.html">Live Tracking</a></li>
+<li><a href="complaints.html">Complaints</a></li>
+<li><a href="merch-signup.html">Merchant Verification</a></li>
+<li><a href="pol-term-edit.html">Policies & Legal</a></li>
+<li><a href="ad-copy.html">Copy Hub</a></li>
+</ul>
+
+<div class="drawer-footer">
+<button class="logout-btn" onclick="handleLogout()">
+<i class="fi-power"></i> Logout
+</button>
+</div>
+
 </div>
 
 
-        <main class="content-body">
-            <header class="section-header">
-                <h1>Merchant <span class="highlight">Registration</span></h1>
-                <p class="hero-description">Verify ID and academic details before creating credentials.</p>
-            </header>
+<!-- PAGE HEADER -->
 
-            <section class="registration-section">
-                <form id="merchantSignupForm" class="trust-card report-card">
-                    <div class="card-tag">PHYSICAL VERIFICATION REQUIRED</div>
-                    
-                    <div class="form-group">
-                        <label>Profile Photo (ID Card)</label>
-                        <input type="file" id="profilePhoto" accept="image/*" required>
-                    </div>
+<header class="section-header">
 
-                    <div class="form-group">
-                        <label>Full Name (Official)</label>
-                        <input type="text" id="fullName" placeholder="John Doe" required>
-                    </div>
+<h1>Merchant <span class="highlight">Applications</span></h1>
 
-                    <div class="form-group">
-                        <label>Username (System ID)</label>
-                        <input type="text" id="username" placeholder="tunde_kitchen" required>
-                        <span id="username-status" class="validation-msg"></span>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="text" id="email" placeholder="email" required>
-                    </div>
+<p class="hero-description">
+Review merchant verification requests before approval.
+</p>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Level</label>
-                            <input type="number" id="level" placeholder="e.g. 400" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Matric Number</label>
-                            <input type="text" id="matricNumber" placeholder="20/0000" required>
-                            <span id="matric-status" class="validation-msg"></span>
-                        </div>
-                    </div>
+</header>
 
-                    <div class="form-group">
-                        <label>WhatsApp Number</label>
-                        <input type="tel" id="phoneNumber" placeholder="08012345678" required>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Gender</label>
-                        <select id="gender" required>
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Hostel</label>
-                        <select id="hostel" required>
-                            <option value="">Select Hostel</option>
-                            <option>Prophet Moses Hostel (Main Boys)</option>
-                            <option>Queen Esther Hostel (Main Girls)</option>
-                            <option>Boys Extension Hostel</option>
-                            <option>Girls Extension Hostel</option>
-                            <option>Engr. Male Hostel</option>
-                            <option>Engr. Female Hostel</option>
-                            <option>Guest House</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-row">
-                    
-                        <div class="form-group">
-                            <label>Block</label>
-                            <select id="block" required></select>
-                        </div>
-                    
-                        <div class="form-group">
-                            <label>Room</label>
-                            <select id="room" required></select>
-                        </div>
-                    
-                    </div>
 
-                    <div class="form-group">
-                        <label>Bank Name</label>
-                        <input type="text" id="bankName" placeholder="Access Bank" required>
-                    </div>
+<!-- TABLE -->
 
-                    <div class="form-group">
-                        <label>Account Name</label>
-                        <input type="text" id="accountName" placeholder="John Doe Services" required>
-                    </div>
+<section class="management-section">
 
-                    <div class="form-group">
-                        <label>Account Number</label>
-                        <input type="text" id="accountNumber" placeholder="1234567890" required>
-                    </div>
+<div class="table-card">
 
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="password" placeholder="Password" required>
-                        <input type="password" id="confirm-password" placeholder="Confirm Password" required>
-                    </div>
+<div class="table-header">
 
-                    <div class="alert-box-info">
-                        <i class="fi-info"></i>
-                        <span>By clicking register, you verify that this merchant is physically present and verified.</span>
-                    </div>
+<div class="card-tag">APPLICATION QUEUE</div>
 
-                    <button type="submit" class="btn btn-filled w-100" style="margin-top: 20px;">Register & Verify Merchant</button>
-                </form>
-            </section>
-        </main>
-        
-        <footer class="bottom-nav">
-            <a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
-            <a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
-            <a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
-            <a href="merch-signup.html" class="nav-icon-box active"><i class="fi-plus"></i></a>
-            <a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
-        </footer>
-        </div>
+<div class="search-container">
+<i class="fi-magnifying-glass"></i>
+<input type="text" placeholder="Search merchant..." id="searchInput">
+</div>
 
-    <script src="js/merch-signup.js?=v21" type="module"></script>
+</div>
+
+
+<div class="table-overflow-wrapper">
+
+<table class="admin-table">
+
+<thead>
+
+<tr>
+<th>Merchant</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+
+</thead>
+
+<tbody id="merchantTable">
+
+<!-- Firebase loads merchants here -->
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- Bottom Nav -->
+
+<footer class="bottom-nav">
+
+<a href="location.html" class="nav-icon-box"><i class="fi-marker"></i></a>
+
+<a href="complaints.html" class="nav-icon-box"><i class="fi-comment"></i></a>
+
+<a href="dashboard.html" class="nav-icon-box"><i class="fi-home"></i></a>
+
+<a href="merch-signup.html" class="nav-icon-box active"><i class="fi-plus"></i></a>
+
+<a href="pol-term-edit.html" class="nav-icon-box"><i class="fi-page-filled"></i></a>
+
+</footer>
+
+</div>
+
+<script src="js/merch-signup.js?v=65" type="module"></script>
+
 </body>
 </html>
