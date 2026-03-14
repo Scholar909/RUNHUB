@@ -40,7 +40,7 @@
 </div>
 
 <!-- SECTION 2: ID Front -->
-<div class="form-section">
+<div class="form-section" data-requires-files="idFront">
     <div class="report-card">
         <div class="card-tag">STEP 1</div>
         <h3>ID Card Front</h3>
@@ -62,7 +62,7 @@
 </div>
 
 <!-- SECTION 3: ID Back -->
-<div class="form-section">
+<div class="form-section" data-requires-files="idBack">
     <div class="report-card">
         <div class="card-tag">STEP 2</div>
         <h3>ID Card Back</h3>
@@ -84,7 +84,7 @@
 </div>
 
 <!-- SECTION 4: Selfie -->
-<div class="form-section">
+<div class="form-section" data-requires-files="selfie">
     <div class="report-card">
         <div class="card-tag">STEP 3</div>
         <h3>Selfie Holding ID</h3>
@@ -106,7 +106,7 @@
 </div>
 
 <!-- SECTION 5: Facial Scan -->
-<div class="form-section">
+<div class="form-section" data-requires-files="facr">
     <div class="report-card">
         <div class="card-tag">STEP 4</div>
         <h3>Facial Scan</h3>
@@ -115,9 +115,11 @@
             <video id="faceScanPreview" autoplay playsinline></video>
             <div class="camera-controls">
                 <button type="button" class="icon-btn" id="flipFace"><i class="fas fa-sync-alt"></i></button>
+                <button type="button" class="icon-btn capture-btn" id="captureFace"><i class="fas fa-camera"></i></button>
+                <button type="button" class="icon-btn remove-btn" id="removeFace"><i class="fas fa-trash"></i></button>
             </div>
+            <img id="faceScanImg" class="preview-img" />
         </div>
-        <img id="faceScanImg" class="preview-img" />
     </div>
     <div class="nav-buttons">
         <button type="button" class="btn prev">Previous</button>
@@ -126,7 +128,7 @@
 </div>
 
 <!-- SECTION 6: Verification Video -->
-<div class="form-section">
+<div class="form-section" data-requires-files="video">
     <div class="report-card">
         <div class="card-tag">STEP 5</div>
         <h3>Verification Video</h3>
