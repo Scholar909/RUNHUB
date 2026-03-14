@@ -80,6 +80,12 @@ function showSection(index){
 
 document.querySelectorAll(".next").forEach(btn => {
     btn.addEventListener("click", ()=>{
+        const requiredFiles = ["idFront","idBack","selfie","face","video"];
+        const currentRequired = sections[currentSection].dataset.requiresFiles?.split(",") || [];
+        if(currentRequired.some(f=>!urls[f])){
+            alert("Please capture and upload required files before proceeding.");
+            return;
+        }
         if(currentSection < sections.length - 1) showSection(currentSection + 1);
     });
 });
@@ -89,72 +95,124 @@ document.querySelectorAll(".prev").forEach(btn => {
     });
 });
 
-// ---------------- CAMERA / VIDEO ----------------
-let stream;
-async function startCamera(videoElement){
+// ---------------- CAMERA ----------------
+const facingModes = {}; // track current facing mode per video
+
+async function startCamera(video, facingMode = "user"){
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-        videoElement.srcObject = stream;
-    } catch(e) {
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode },
+            audio: false
+        });
+        video.srcObject = stream;
+        await video.play();
+        return stream;
+    } catch(e){
         alert("Camera permission required for verification.");
     }
 }
 
-// Start cameras
-startCamera(document.getElementById("idFrontPreview"));
-startCamera(document.getElementById("idBackPreview"));
-startCamera(document.getElementById("selfiePreview"));
-startCamera(document.getElementById("faceScanPreview"));
-startCamera(document.getElementById("videoPreview"));
+function setupFlip(flipBtnId, videoId) {
+    const video = document.getElementById(videoId);
+    const btn = document.getElementById(flipBtnId);
+    facingModes[videoId] = "user";
 
-// ---------------- CAPTURE IMAGES ----------------
+    btn.onclick = async () => {
+        facingModes[videoId] = facingModes[videoId] === "user" ? "environment" : "user";
+        await startCamera(video, facingModes[videoId]);
+    };
+}
+
+// ---------------- CAPTURE ----------------
 function captureImage(video){
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video,0,0);
+    canvas.getContext("2d").drawImage(video,0,0);
     return new Promise(resolve=>{
-        canvas.toBlob(blob=>{
-            resolve(blob);
-        },"image/jpeg");
+        canvas.toBlob(blob=>resolve(blob),"image/jpeg");
     });
 }
 
-let idFrontBlob=null, idBackBlob=null, selfieBlob=null, faceBlob=null, verificationVideoBlob=null;
+let blobs = {idFront:null, idBack:null, selfie:null, face:null, video:null};
+let urls = {idFront:null, idBack:null, selfie:null, face:null, video:null};
 
-document.getElementById("captureIdFront").onclick = async () => {
-    idFrontBlob = await captureImage(document.getElementById("idFrontPreview"));
-    alert("ID Front Captured");
-};
-document.getElementById("captureIdBack").onclick = async () => {
-    idBackBlob = await captureImage(document.getElementById("idBackPreview"));
-    alert("ID Back Captured");
-};
-document.getElementById("captureSelfie").onclick = async () => {
-    selfieBlob = await captureImage(document.getElementById("selfiePreview"));
-    alert("Selfie Captured");
+// Setup capture with preview and remove
+const setupCapture = (vidId, captureBtnId, removeBtnId, previewId, key)=>{
+    const video = document.getElementById(vidId);
+    startCamera(video);
+
+    document.getElementById(captureBtnId).onclick = async ()=>{
+        blobs[key] = await captureImage(video);
+        document.getElementById(previewId).src = URL.createObjectURL(blobs[key]);
+        urls[key] = await uploadImage(blobs[key]);
+        alert(`${key} captured and uploaded. Preview below.`);
+    };
+
+    if(removeBtnId){
+        document.getElementById(removeBtnId).onclick = ()=>{
+            blobs[key] = null;
+            document.getElementById(previewId).src = "";
+            urls[key] = null;
+        };
+    }
 };
 
-// facial scan auto capture after 3s
-setTimeout(async()=>{
-    faceBlob = await captureImage(document.getElementById("faceScanPreview"));
-},3000);
+// ---------------- SETUP CAPTURES ----------------
+setupCapture("idFrontPreview","captureIdFront","removeIdFront","idFrontImg","idFront");
+setupCapture("idBackPreview","captureIdBack","removeIdBack","idBackImg","idBack");
+setupCapture("selfiePreview","captureSelfie","removeSelfie","selfieImg","selfie");
+setupCapture("faceScanPreview","captureFace","removeFace","faceScanImg","face");
 
-// ---------------- VIDEO RECORDING ----------------
-let mediaRecorder, recordedChunks=[];
+// ---------------- SETUP FLIPS ----------------
+setupFlip("flipIdFront","idFrontPreview");
+setupFlip("flipIdBack","idBackPreview");
+setupFlip("flipSelfie","selfiePreview");
+setupFlip("flipFace","faceScanPreview");
+setupFlip("flipVideo","videoPreview");
+
+// ---------------- VIDEO ----------------
+const videoPreview = document.getElementById("videoPreview");
+const videoPlayback = document.getElementById("videoPlayback");
+const timerEl = document.getElementById("videoTimer");
+let mediaRecorder, recordedChunks=[], videoStream;
+
+startCamera(videoPreview).then(s=>videoStream=s);
+
 document.getElementById("startVideoRecording").onclick = ()=>{
     recordedChunks=[];
-    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder = new MediaRecorder(videoStream);
     mediaRecorder.ondataavailable = e=>{
         if(e.data.size>0) recordedChunks.push(e.data);
     };
-    mediaRecorder.onstop = ()=>{
-        verificationVideoBlob = new Blob(recordedChunks,{type:"video/webm"});
-        alert("Verification Video Recorded");
+    mediaRecorder.onstop = async ()=>{
+        blobs.video = new Blob(recordedChunks,{type:"video/webm"});
+        videoPlayback.src = URL.createObjectURL(blobs.video);
+        urls.video = await uploadVideo(blobs.video);
+        alert("Video recorded and uploaded. Preview below.");
     };
     mediaRecorder.start();
-    setTimeout(()=> mediaRecorder.stop(),8000);
+
+    let sec = 0;
+    timerEl.innerText = "00 / 30s";
+    const interval = setInterval(()=>{
+        sec++;
+        timerEl.innerText = `${sec<10?'0':''}${sec} / 30s`;
+        if(sec>=30){
+            mediaRecorder.stop();
+            clearInterval(interval);
+        }
+    },1000);
+};
+
+document.getElementById("removeVideo").onclick = ()=>{
+    blobs.video=null;
+    videoPlayback.src="";
+    urls.video=null;
+    timerEl.innerText="";
 };
 
 // ---------------- CLOUDINARY UPLOAD ----------------
@@ -162,15 +220,16 @@ async function uploadImage(blob){
     const formData = new FormData();
     formData.append("file", blob);
     formData.append("upload_preset", UPLOAD_PRESET);
-    const res = await fetch(CLOUDINARY_URL,{method:"POST", body:formData});
+    const res = await fetch(CLOUDINARY_URL,{method:"POST",body:formData});
     const data = await res.json();
     return data.secure_url;
 }
+
 async function uploadVideo(blob){
     const formData = new FormData();
     formData.append("file", blob);
     formData.append("upload_preset", UPLOAD_PRESET);
-    const res = await fetch(CLOUDINARY_VIDEO,{method:"POST", body:formData});
+    const res = await fetch(CLOUDINARY_VIDEO,{method:"POST",body:formData});
     const data = await res.json();
     return data.secure_url;
 }
@@ -187,20 +246,15 @@ function generateCatchPhrase(){
 // ---------------- FORM SUBMIT ----------------
 document.getElementById("merchantVerificationForm").addEventListener("submit", async e=>{
     e.preventDefault();
+    if(!urls.idFront||!urls.idBack||!urls.selfie||!urls.face||!urls.video){
+        alert("Please capture and upload all required files first.");
+        return;
+    }
     if(!isUsernameValid || !isMatricValid){
         alert("Username or Matric Number is already in use.");
         return;
     }
-    alert("Uploading verification files...");
 
-    // upload files to cloudinary
-    const idFrontURL = await uploadImage(idFrontBlob);
-    const idBackURL = await uploadImage(idBackBlob);
-    const selfieURL = await uploadImage(selfieBlob);
-    const faceURL = await uploadImage(faceBlob);
-    const videoURL = await uploadVideo(verificationVideoBlob);
-
-    // collect form data
     const data = {
         fullName: document.getElementById("fullName").value,
         email: document.getElementById("email").value,
@@ -218,23 +272,21 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
         accountNumber: document.getElementById("accountNumber").value
     };
 
-    const catchPhrase = generateCatchPhrase();
-
     await addDoc(collection(db,"merchant_applications"),{
         ...data,
         files:{
-            idFront:idFrontURL,
-            idBack:idBackURL,
-            selfie:selfieURL,
-            faceScan:faceURL,
-            verificationVideo:videoURL
+            idFront:urls.idFront,
+            idBack:urls.idBack,
+            selfie:urls.selfie,
+            faceScan:urls.face,
+            verificationVideo:urls.video
         },
-        catchPhrase:catchPhrase,
+        catchPhrase:generateCatchPhrase(),
         status:"pending",
         submittedAt:serverTimestamp()
     });
 
-    alert(`Verification submitted.\nSave this catch phrase:\n${catchPhrase}`);
+    alert("Data sent, awaiting admin review.");
     document.getElementById("merchantVerificationForm").reset();
     location.reload();
 });
