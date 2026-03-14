@@ -74,6 +74,11 @@ function showSection(index){
     sections.forEach((section,i)=>{
         section.classList.remove("active");
         if(i===index) section.classList.add("active");
+
+        // Start facial scan if this is the face section
+        if(section.dataset.requiresFiles === "face" && !blobs.face){
+            startFacialScan();
+        }
     });
     currentSection = index;
 }
@@ -360,29 +365,3 @@ async function startFacialScan() {
     }, 5000); // auto capture after 5 seconds
 }
 
-// Run facial scan when face section becomes active
-function showSection(index){
-    sections.forEach((section,i)=>{
-        section.classList.remove("active");
-        if(i===index) section.classList.add("active");
-
-        if(section.dataset.requiresFiles === "face" && !blobs.face){
-            startFacialScan();
-        }
-    });
-    currentSection = index;
-}
-
-// Run facial scan when section becomes active
-function showSection(index){
-    sections.forEach((section,i)=>{
-        section.classList.remove("active");
-        if(i===index) section.classList.add("active");
-
-        // Start auto facial scan only when the section is active
-        if(section.dataset.requiresFiles === "face" && !blobs.face){
-            startFacialScan();
-        }
-    });
-    currentSection = index;
-}
