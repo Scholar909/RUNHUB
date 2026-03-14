@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+document.addEventListener("DOMContentLoaded", () => {
+
 /* ---------------- FIREBASE ---------------- */
 
 const firebaseConfig = {
@@ -16,6 +18,18 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
+/* ---------------- STOP ALL CAMERAS ---------------- */
+
+function stopAllCameras(){
+document.querySelectorAll("video").forEach(v=>{
+if(v.srcObject){
+v.srcObject.getTracks().forEach(t=>t.stop());
+v.srcObject=null;
+}
+});
+}
+
+
 /* ---------------- CLOUDINARY ---------------- */
 
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
@@ -25,22 +39,22 @@ const UPLOAD_PRESET = "runhub_uploads";
 
 /* ---------------- VALIDATION ---------------- */
 
-let isUsernameValid = false;
-let isMatricValid = false;
+let isUsernameValid=false;
+let isMatricValid=false;
 
-const debounce = (func, delay) => {
+const debounce=(func,delay)=>{
 let timeout;
-return (...args) => {
+return(...args)=>{
 clearTimeout(timeout);
-timeout = setTimeout(() => func.apply(this, args), delay);
+timeout=setTimeout(()=>func.apply(this,args),delay);
 };
 };
 
-const checkUniqueness = async (field,value,statusId)=>{
+const checkUniqueness=async(field,value,statusId)=>{
 
-const statusEl = document.getElementById(statusId);
+const statusEl=document.getElementById(statusId);
 
-if(!value || value.length < 3){
+if(!value || value.length<3){
 statusEl.innerText="";
 return;
 }
@@ -70,7 +84,7 @@ if(field==="matricNumber") isMatricValid=false;
 
 }
 
-}catch(err){
+}catch{
 
 statusEl.innerText="✓ Available";
 isUsernameValid=true;
@@ -106,11 +120,11 @@ if(i===index){
 
 section.classList.add("active");
 
-if(section.dataset.requiresFiles==="face" && !blobs.face){
+if(section.dataset.requiresFiles?.includes("face") && !blobs.face){
 startFacialScan();
 }
 
-if(section.dataset.requiresFiles==="video"){
+if(section.dataset.requiresFiles?.includes("video")){
 startVideoCamera();
 }
 
@@ -127,7 +141,6 @@ document.querySelectorAll(".next").forEach(btn=>{
 btn.addEventListener("click",()=>{
 
 const section=sections[currentSection];
-
 const required=section.dataset.requiresFiles?.split(",") || [];
 
 if(required.length && required.some(f=>!urls[f])){
@@ -147,7 +160,7 @@ return;
 
 }
 
-if(currentSection < sections.length-1){
+if(currentSection<sections.length-1){
 showSection(currentSection+1);
 }
 
@@ -156,11 +169,9 @@ showSection(currentSection+1);
 });
 
 document.querySelectorAll(".prev").forEach(btn=>{
-
 btn.addEventListener("click",()=>{
 if(currentSection>0) showSection(currentSection-1);
 });
-
 });
 
 
@@ -168,58 +179,31 @@ if(currentSection>0) showSection(currentSection-1);
 
 const facingModes={};
 
-async function startCamera(video, facingMode = "user") {
+async function startCamera(video,facingMode="user"){
 
-try {
+try{
 
-if (video.srcObject) {
-
-video.srcObject.getTracks().forEach(track => track.stop());
-video.srcObject = null;
-
+if(video.srcObject){
+video.srcObject.getTracks().forEach(t=>t.stop());
+video.srcObject=null;
 }
 
-await new Promise(res => setTimeout(res, 500));
+await new Promise(res=>setTimeout(res,300));
 
-let stream;
-
-try {
-
-stream = await navigator.mediaDevices.getUserMedia({
-video: { facingMode: { ideal: facingMode } },
-audio: false
+const stream=await navigator.mediaDevices.getUserMedia({
+video:{facingMode:{ideal:facingMode}},
+audio:false
 });
 
-} catch (err) {
-
-const devices = await navigator.mediaDevices.enumerateDevices();
-const cams = devices.filter(d => d.kind === "videoinput");
-
-let cam;
-
-if (facingMode === "user") {
-cam = cams.find(d => d.label.toLowerCase().includes("front")) || cams[0];
-} else {
-cam = cams.find(d => d.label.toLowerCase().includes("back")) || cams[cams.length - 1];
-}
-
-stream = await navigator.mediaDevices.getUserMedia({
-video: { deviceId: cam.deviceId },
-audio: false
-});
-
-}
-
-video.srcObject = stream;
-
+video.srcObject=stream;
 await video.play();
 
 return stream;
 
-} catch (err) {
+}catch(err){
 
 console.error(err);
-alert("Camera not available or permission denied.");
+alert("Camera permission denied");
 
 }
 
@@ -236,7 +220,7 @@ facingModes[videoId]="user";
 
 btn.onclick=async()=>{
 
-facingModes[videoId]=facingModes[videoId]==="user" ? "environment":"user";
+facingModes[videoId]=facingModes[videoId]==="user"?"environment":"user";
 
 await startCamera(video,facingModes[videoId]);
 
@@ -245,7 +229,7 @@ await startCamera(video,facingModes[videoId]);
 }
 
 
-/* ---------------- CAPTURE ---------------- */
+/* ---------------- IMAGE CAPTURE ---------------- */
 
 function captureImage(video){
 
@@ -264,17 +248,16 @@ canvas.toBlob(blob=>resolve(blob),"image/jpeg");
 
 
 let blobs={idFront:null,idBack:null,selfie:null,face:null,video:null};
-
 let urls={idFront:null,idBack:null,selfie:null,face:null,video:null};
 
 
-const setupCapture=(videoId,captureBtn,removeBtn,previewId,key)=>{
+function setupCapture(videoId,captureBtn,removeBtn,previewId,key){
 
 const video=document.getElementById(videoId);
 
 document.getElementById(captureBtn).onclick=async()=>{
 
-if(!video.srcObject) await startCamera(video, "user");
+if(!video.srcObject) await startCamera(video);
 
 blobs[key]=await captureImage(video);
 
@@ -292,24 +275,23 @@ document.getElementById(removeBtn).onclick=()=>{
 
 blobs[key]=null;
 urls[key]=null;
-
 document.getElementById(previewId).src="";
 
 };
 
 }
 
-};
+}
 
 
-/* ---------------- SETUP CAPTURE ---------------- */
+/* ---------------- CAPTURE SETUP ---------------- */
 
 setupCapture("idFrontPreview","captureIdFront","removeIdFront","idFrontImg","idFront");
 setupCapture("idBackPreview","captureIdBack","removeIdBack","idBackImg","idBack");
 setupCapture("selfiePreview","captureSelfie","removeSelfie","selfieImg","selfie");
 
 
-/* ---------------- FLIPS ---------------- */
+/* ---------------- CAMERA FLIP ---------------- */
 
 setupFlip("flipIdFront","idFrontPreview");
 setupFlip("flipIdBack","idBackPreview");
@@ -334,7 +316,6 @@ async function startVideoCamera(){
 if(videoStream) return;
 
 videoStream=await startCamera(videoPreview);
-
 startVideoBtn.disabled=false;
 
 }
@@ -364,17 +345,13 @@ alert("Video recorded");
 };
 
 mediaRecorder.start();
-
 recording=true;
-
-startVideoBtn.style.color="red";
 
 let sec=0;
 
 const interval=setInterval(()=>{
 
 sec++;
-
 timerEl.innerText=`${sec}/30s`;
 
 if(sec>=30){
@@ -416,7 +393,6 @@ fd.append("file",blob);
 fd.append("upload_preset",UPLOAD_PRESET);
 
 const res=await fetch(CLOUDINARY_URL,{method:"POST",body:fd});
-
 const data=await res.json();
 
 return data.secure_url;
@@ -431,7 +407,6 @@ fd.append("file",blob);
 fd.append("upload_preset",UPLOAD_PRESET);
 
 const res=await fetch(CLOUDINARY_VIDEO,{method:"POST",body:fd});
-
 const data=await res.json();
 
 return data.secure_url;
@@ -439,119 +414,20 @@ return data.secure_url;
 }
 
 
-/* ---------------- CATCH PHRASE ---------------- */
-
-function generateCatchPhrase(){
-
-const words=["Silver","Mango","Falcon","Library","River","Market","Golden","Forest","Tiger","Window","Ocean","Campus","Storm","Bridge","Rocket"];
-
-return `${words[Math.floor(Math.random()*words.length)]} ${words[Math.floor(Math.random()*words.length)]} ${Math.floor(Math.random()*100)}`;
-
-}
-
-function stopAllCameras(){
-document.querySelectorAll("video").forEach(v=>{
-if(v.srcObject){
-v.srcObject.getTracks().forEach(t=>t.stop());
-v.srcObject=null;
-}
-});
-}
-
-/* ---------------- FORM SUBMIT ---------------- */
-
-document.getElementById("merchantVerificationForm").addEventListener("submit",async e=>{
-
-e.preventDefault();
-
-if(!urls.idFront||!urls.idBack||!urls.selfie||!urls.face||!urls.video){
-
-alert("Please capture all required files.");
-return;
-
-}
-
-if(!isUsernameValid || !isMatricValid){
-
-alert("Username or Matric already exists.");
-return;
-
-}
-
-const data={
-
-fullName:fullName.value,
-email:email.value.trim().toLowerCase(),
-username:username.value.trim().toLowerCase(),
-phoneNumber:phoneNumber.value,
-matricNumber:matricNumber.value,
-department:department.value,
-level:level.value,
-gender:gender.value,
-hostel:hostel.value,
-block:block.value,
-room:room.value,
-bankName:bankName.value,
-accountName:accountName.value,
-accountNumber:accountNumber.value
-
-};
-
-await addDoc(collection(db,"merchant_applications"),{
-
-...data,
-
-files:{
-idFront:urls.idFront,
-idBack:urls.idBack,
-selfie:urls.selfie,
-faceScan:urls.face,
-verificationVideo:urls.video
-},
-
-catchPhrase:generateCatchPhrase(),
-status:"pending",
-submittedAt:serverTimestamp()
-
-});
-
-alert("Submitted for admin review");
-
-location.reload();
-
-});
-
-
-/* ---------------- FACIAL SCAN ---------------- */
+/* ---------------- FACE SCAN ---------------- */
 
 async function startFacialScan(){
 
 const faceVideo=document.getElementById("faceScanPreview");
 const faceImg=document.getElementById("faceScanImg");
 
-let oldBtn=faceVideo.parentElement.querySelector(".remove-face-btn");
-if(oldBtn) oldBtn.remove();
+await startCamera(faceVideo);
 
-const removeBtn=document.createElement("button");
-
-removeBtn.innerHTML='<i class="fas fa-trash"></i> Delete';
-removeBtn.className="icon-btn remove-btn remove-face-btn";
-
-faceVideo.parentElement.appendChild(removeBtn);
-
-if(faceVideo.srcObject){
-faceVideo.srcObject.getTracks().forEach(t=>t.stop());
-faceVideo.srcObject=null;
-}
-
-await startCamera(faceVideo,"user");
-
-const timeout=setTimeout(async()=>{
+setTimeout(async()=>{
 
 const blob=await captureImage(faceVideo);
 
 blobs.face=blob;
-
 faceImg.src=URL.createObjectURL(blob);
 
 urls.face=await uploadImage(blob);
@@ -560,18 +436,6 @@ alert("Face captured");
 
 },10000);
 
-
-removeBtn.onclick=()=>{
-
-clearTimeout(timeout);
-
-blobs.face=null;
-urls.face=null;
-
-faceImg.src="";
-
-startFacialScan();
-
-};
-
 }
+
+});
