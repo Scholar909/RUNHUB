@@ -460,6 +460,10 @@ startFacialScan();
 document.getElementById("merchantVerificationForm").addEventListener("submit", async e => {
 
   e.preventDefault();
+  
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Submitting Application...";
 
   if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
     alert("Please capture all required files.");
