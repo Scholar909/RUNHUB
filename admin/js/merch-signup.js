@@ -138,7 +138,7 @@ function renderTable(data){
     const status = (app.status || "pending").toLowerCase();
     let statusClass="pending";
     if(status==="approved") statusClass="approved";
-    if(status==="blocked") statusClass="blocked";
+    if(status==="rejected") statusClass="rejected";
 
     let actionButtons = "";
     if(status === "pending"){
