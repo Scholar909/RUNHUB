@@ -61,7 +61,7 @@ return;
 const data = snap.data();
 
 displayName.textContent = data.fullName;
-handle.textContent = "@"+data.matricNumber;
+handle.textContent = "@"+data.username;
 
 const catchPhraseEl = document.getElementById("catchPhrase");
 if (catchPhraseEl && data.catchPhrase) {
@@ -94,6 +94,11 @@ personalDetails.innerHTML = `
 <div class="info-row">
 <span class="label">Phone</span>
 <span>${data.phoneNumber}</span>
+</div>
+
+<div class="info-row">
+<span class="label">Username</span>
+<span>${data.username}</span>
 </div>
 
 <div class="info-row">
