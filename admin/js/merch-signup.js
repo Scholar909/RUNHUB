@@ -196,6 +196,10 @@ searchInput.addEventListener("input",()=>{
   renderTable(filtered);
 });
 
+function encodeMatric(matric) {
+    return matric.replace(/\//g, "_"); // Replace all slashes with underscores
+}
+
 /* -----------------------------
 ADMIN ACTIONS
 ----------------------------- */
@@ -220,7 +224,7 @@ window.approveMerchant = async(id)=>{
       setDoc(doc(db,"usernames",(data.username || "").toLowerCase()),{
         uid:user.uid
       }, {merge: true}),
-      setDoc(doc(db,"matricNumbers",(data.matricNumber || "").toUpperCase()),{
+      setDoc(doc(db,"matricNumbers",encodeMatric((data.matricNumber || "").toUpperCase())),{
         uid:user.uid
       }, {merge: true})
     ]);
@@ -322,7 +326,7 @@ window.blockMerchant = (id) => {
       // 2️⃣ Delete username and matric, only if they exist
       const deletes = [];
       if (app.username) deletes.push(deleteDoc(doc(db, "usernames", app.username.toLowerCase())));
-      if (app.matricNumber) deletes.push(deleteDoc(doc(db, "matricNumbers", app.matricNumber.toUpperCase())));
+      if (app.matricNumber) deletes.push(deleteDoc(doc(db, "matricNumbers", encodeMatric(app.matricNumber.toUpperCase()))));
       if (deletes.length) await Promise.all(deletes);
 
       // 3️⃣ Update UI
