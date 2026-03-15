@@ -542,3 +542,4 @@ function generateCatchPhrase() {
     ];
     return phrases[Math.floor(Math.random() * phrases.length)];
 }
+});
