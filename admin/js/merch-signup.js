@@ -225,6 +225,8 @@ window.approveMerchant = async(id)=>{
     SAVE KYC RECORD
     ----------------------------- */
     
+    const files = data.files || {};
+    
     await setDoc(doc(db,"kyc", user.uid),{
     
       merchantUid:user.uid,
@@ -253,11 +255,11 @@ window.approveMerchant = async(id)=>{
       },
     
       files:{
-        selfie:data.files?.selfie || "",
-        idFront:data.files?.idFront || "",
-        idBack:data.files?.idBack || "",
-        faceScan:data.files?.faceScan || "",
-        verificationVideo:data.files?.verificationVideo || ""
+        selfie:files.selfie || "",
+        idFront:files.idFront || "",
+        idBack:files.idBack || "",
+        faceScan:files.faceScan || "",
+        verificationVideo:files.verificationVideo || ""
       },
     
       catchPhrase:data.catchPhrase || "",
