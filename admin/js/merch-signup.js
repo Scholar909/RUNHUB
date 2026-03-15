@@ -289,10 +289,9 @@ window.approveMerchant = async(id)=>{
   }
 };
 
-window.blockMerchant = async (id) => {
-
+window.blockMerchant = (id) => {
   const app = applications.find(a => a.id === id);
-  if(!app) return;
+  if (!app) return;
 
   const modal = document.getElementById("rejectModal");
   const reasonInput = document.getElementById("rejectReason");
@@ -301,44 +300,39 @@ window.blockMerchant = async (id) => {
   reasonInput.value = "";
   modal.style.display = "flex";
 
-  sendBtn.onclick = async () => {
+  // Remove any previously attached click handlers
+  sendBtn.replaceWith(sendBtn.cloneNode(true));
+  const newSendBtn = document.getElementById("sendReject");
 
+  newSendBtn.addEventListener("click", async () => {
     const reason = reasonInput.value.trim();
-
-    if(!reason){
+    if (!reason) {
       alert("Please type a rejection reason");
       return;
     }
 
-    try{
-
-      /* -----------------------------
-      1. UPDATE STATUS FIRST
-      ----------------------------- */
-      await updateDoc(doc(db,"merchant_applications",id),{
-        status:"rejected",
-        rejectedAt:new Date().toISOString(),
+    try {
+      // 1️⃣ Update status first
+      await updateDoc(doc(db, "merchant_applications", id), {
+        status: "rejected",
+        rejectedAt: new Date().toISOString(),
         rejectionReason: reason
       });
 
-      /* remove reserved username & matric */
-      await Promise.all([
-        deleteDoc(doc(db,"usernames",(app.username || "").toLowerCase())),
-        deleteDoc(doc(db,"matricNumbers",(app.matricNumber || "").toUpperCase()))
-      ]);
+      // 2️⃣ Delete username and matric, only if they exist
+      const deletes = [];
+      if (app.username) deletes.push(deleteDoc(doc(db, "usernames", app.username.toLowerCase())));
+      if (app.matricNumber) deletes.push(deleteDoc(doc(db, "matricNumbers", app.matricNumber.toUpperCase())));
+      if (deletes.length) await Promise.all(deletes);
 
-      /* -----------------------------
-      2. UPDATE LOCAL UI STATE
-      ----------------------------- */
+      // 3️⃣ Update UI
       const index = applications.findIndex(a => a.id === id);
-      if(index !== -1){
+      if (index !== -1) {
         applications[index].status = "rejected";
         renderTable(applications);
       }
 
-      /* -----------------------------
-      3. OPEN WHATSAPP MESSAGE
-      ----------------------------- */
+      // 4️⃣ Open WhatsApp
       const message = `RUNHUB MERCHANT REQUEST REJECTION NOTICE
 
 Hello ${app.fullName},
@@ -357,19 +351,15 @@ We hope to see you join the RUNHUB merchant community soon.
 
       const encoded = encodeURIComponent(message);
       const phone = formatNGNumber(app.phoneNumber);
-
       const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
-
       window.open(whatsappURL, "_blank");
 
       modal.style.display = "none";
-
-    } catch(err){
+    } catch (err) {
       console.error(err);
-      alert("Failed to reject application");
+      alert("Failed to reject application: " + err.message);
     }
-
-  };
+  });
 };
 
 window.deleteApplication = async(id)=>{
