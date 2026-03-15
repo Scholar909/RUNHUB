@@ -54,12 +54,19 @@ let isUsernameValid=false;
 let isMatricValid=false;
 
 const debounce=(func,delay)=>{
-let timeout;
-return(...args)=>{
-clearTimeout(timeout);
-timeout=setTimeout(()=>func.apply(this,args),delay);
+    let timeout;
+    return(...args)=>{
+        clearTimeout(timeout);
+        timeout=setTimeout(()=>func.apply(this,args),delay);
+    };
 };
-};
+
+// Add this immediately after debounce
+function isValidMatric(matric) {
+    // Example pattern: RUN/CPE/23/14551
+    const pattern = /^[A-Z]{2,5}\/[A-Z]{2,5}\/\d{2}\/\d{4,6}$/;
+    return pattern.test(matric);
+}
 
 const checkUniqueness = async (field, value, statusId) => {
     const statusEl = document.getElementById(statusId);
@@ -103,9 +110,20 @@ document.getElementById("username").addEventListener("input",debounce(e=>{
 checkUniqueness("username",e.target.value.trim().toLowerCase(),"username-status");
 },500));
 
-document.getElementById("matricNumber").addEventListener("input",debounce(e=>{
-checkUniqueness("matricNumber",e.target.value.trim().toUpperCase(),"matric-status");
-},500));
+document.getElementById("matricNumber").addEventListener("input", debounce(e => {
+    const val = e.target.value.trim().toUpperCase();
+    const statusEl = document.getElementById("matric-status");
+
+    if (!isValidMatric(val)) {
+        statusEl.innerText = "✕ Invalid format. Example: RUN/ABC/12/12345";
+        statusEl.style.color = "#ff3b30";
+        isMatricValid = false;
+        return;
+    }
+
+    // Continue checking uniqueness
+    checkUniqueness("matricNumber", val, "matric-status");
+}, 500));
 
 
 /* ---------------- MULTI STEP FORM ---------------- */
