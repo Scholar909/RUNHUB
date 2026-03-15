@@ -219,10 +219,10 @@ window.approveMerchant = async(id)=>{
     await Promise.all([
       setDoc(doc(db,"usernames",(data.username || "").toLowerCase()),{
         uid:user.uid
-      }),
+      }, {merge: true}),
       setDoc(doc(db,"matricNumbers",(data.matricNumber || "").toUpperCase()),{
         uid:user.uid
-      })
+      }, {merge: true})
     ]);
 
     /* save merchant profile */
