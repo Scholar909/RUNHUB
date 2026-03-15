@@ -62,10 +62,16 @@ const debounce=(func,delay)=>{
 };
 
 // Add this immediately after debounce
+// Keep your validation as-is
 function isValidMatric(matric) {
     // Example pattern: RUN/CPE/23/14551
     const pattern = /^[A-Z]{2,5}\/[A-Z]{2,5}\/\d{2}\/\d{4,6}$/;
     return pattern.test(matric);
+}
+
+// Encode matric for Firestore
+function encodeMatric(matric) {
+    return matric.replace(/\//g, "_"); // Replace all slashes with underscores
 }
 
 const checkUniqueness = async (field, value, statusId) => {
@@ -80,7 +86,7 @@ const checkUniqueness = async (field, value, statusId) => {
     statusEl.style.color = "gray";
 
     try {
-        const id = field === "username" ? value.toLowerCase() : value;
+        const id = field === "username" ? value.toLowerCase() : encodeMatric(value);
         const collectionName = field === "username" ? "usernames" : "matricNumbers";
 
         const docSnap = await getDoc(doc(db, collectionName, id));
@@ -511,7 +517,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   };
 
   const usernameId = data.username;
-  const matricId = data.matricNumber;
+  const matricId = encodeMatric(data.matricNumber);
 
   const usernameRef = doc(db, "usernames", usernameId);
   const matricRef = doc(db, "matricNumbers", matricId);
