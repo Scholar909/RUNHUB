@@ -1,5 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { 
+getFirestore, 
+collection, 
+addDoc, 
+serverTimestamp, 
+query, 
+where, 
+getDocs,
+doc,
+getDoc,
+setDoc
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -62,7 +73,7 @@ const checkUniqueness = async (field, value, statusId) => {
     statusEl.style.color = "gray";
 
     try {
-        const id = field === "username" ? value.toLowerCase() : value.toLowerCase();
+        const id = field === "username" ? value.toLowerCase() : value;
         const collectionName = field === "username" ? "usernames" : "matricNumbers";
 
         const docSnap = await getDoc(doc(db, collectionName, id));
@@ -93,7 +104,7 @@ checkUniqueness("username",e.target.value.trim().toLowerCase(),"username-status"
 },500));
 
 document.getElementById("matricNumber").addEventListener("input",debounce(e=>{
-checkUniqueness("matricNumber",e.target.value.trim(),"matric-status");
+checkUniqueness("matricNumber",e.target.value.trim().toUpperCase(),"matric-status");
 },500));
 
 
@@ -459,13 +470,13 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     alert("Username or Matric already exists.");
     return;
   }
-
+  
   const data = {
     fullName: fullName.value,
     email: email.value.trim().toLowerCase(),
     username: username.value.trim().toLowerCase(),
     phoneNumber: phoneNumber.value,
-    matricNumber: matricNumber.value,
+    matricNumber: matricNumber.value.trim().toUpperCase(),
     department: department.value,
     level: level.value,
     gender: gender.value,
@@ -477,10 +488,22 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     accountNumber: accountNumber.value
   };
 
-  // Generate random catch phrase
+  const usernameId = data.username;
+  const matricId = data.matricNumber;
+
+  const usernameRef = doc(db, "usernames", usernameId);
+  const matricRef = doc(db, "matricNumbers", matricId);
+
+  const usernameSnap = await getDoc(usernameRef);
+  const matricSnap = await getDoc(matricRef);
+
+  if(usernameSnap.exists() || matricSnap.exists()){
+    alert("Username or Matric already taken.");
+    return;
+  }
+
   const catchPhrase = generateCatchPhrase();
 
-  // Save application with catch phrase in Firestore
   await addDoc(collection(db, "merchant_applications"), {
     ...data,
     files: {
@@ -490,18 +513,19 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
       faceScan: urls.face,
       verificationVideo: urls.video
     },
-    catchPhrase: catchPhrase,  // <-- included
+    catchPhrase: catchPhrase,
     status: "pending",
     submittedAt: serverTimestamp()
   });
 
-  // Show catch phrase to merchant
+  await Promise.all([
+    setDoc(doc(db,"usernames",usernameId),{reserved:true}),
+    setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
+  ]);
+
   alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
 
-  // Redirect
   window.location.href = "./sign-login.html";
-
-});
 
 });
 
