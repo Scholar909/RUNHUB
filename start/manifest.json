@@ -1,7 +1,7 @@
 {
-  "name": "RUN Delivery Hub",
-  "short_name": "RUNHUB",
-  "description": "Redeemer's University campus delivery network",
+  "name": "NOVA Delivery Hub",
+  "short_name": "NOVAHUB",
+  "description": "Campus Delivery Network",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
