@@ -130,7 +130,7 @@ usernameInput.addEventListener('input', debounce((e) => {
 }));
 
 matricInput.addEventListener('input', debounce((e) => {
-    checkUniqueness("matricNo", e.target.value.trim(), "matric-status");
+    checkUniqueness("matricNo", e.target.value.trim().toUpperCase(), "matric-status");
 }));
 
 
@@ -149,7 +149,7 @@ signupForm.addEventListener('submit', async (e) => {
     const username = inputs[1].value.trim().toLowerCase();
     const email = inputs[2].value.trim();
     const level = inputs[3].value;
-    const matricNo = inputs[4].value.trim();
+    const matricNo = inputs[4].value.trim().toUpperCase();
     const phone = inputs[5].value;
     
     const gender = document.getElementById("gender").value;
