@@ -57,7 +57,7 @@ window.handleLogout = async () => {
     if(confirm("Are you sure you want to logout?")) {
         try {
             await signOut(auth);
-            window.location.href = "admin-login.html";
+            window.location.href = "./admin-login.html";
         } catch (error) {
             console.error("Logout Error:", error);
         }
@@ -141,6 +141,9 @@ function renderUserTable(users) {
                 ${role === 'merchant' ? `
                     <a href="location.html?id=${user.id}" id="${locBtnId}" class="action-btn loc-btn" title="Checking status...">
                         <i class="fi-marker"></i>
+                    </a>
+                    <a href="kyc.html?id=${user.id}" class="action-btn kyc-btn" title="View KYC">
+                          <i class="fi-credit-card"></i>
                     </a>
                 ` : ''}
                 <a href="view.html?id=${user.id}" class="action-btn view-btn" title="View Profile">
