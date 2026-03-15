@@ -16,10 +16,11 @@ import {
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  getAuth,
+  signOut
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 // Secondary app to create merchant without logging out admin
 const secondaryApp = !getApps().some(a => a.name === "Secondary")
