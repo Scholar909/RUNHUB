@@ -216,13 +216,21 @@ window.approveMerchant = async(id)=>{
     // Create merchant using secondary auth instance
     const cred = await createUserWithEmailAndPassword(secondaryAuth, data.email, tempPassword);
     const user = cred.user;
+    await Promise.all([
+      setDoc(doc(db,"usernames",(data.username || "").toLowerCase()),{
+        uid:user.uid
+      }),
+      setDoc(doc(db,"matricNumbers",(data.matricNumber || "").toUpperCase()),{
+        uid:user.uid
+      })
+    ]);
 
     /* save merchant profile */
     await setDoc(doc(db,"users",user.uid),{
       uid:user.uid,
       role:"merchant",
       fullName:data.fullName || "",
-      username:(data.username || "").toLowerCase().replace(/\s+/g,""),
+      username:(data.username || "").toLowerCase().trim(),
       email:data.email,
       level:data.level || "",
       matricNumber:data.matricNumber || "",
@@ -325,6 +333,11 @@ We hope to see you join the RUNHUB merchant community soon.
     const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
 
     window.open(whatsappURL, "_blank");
+
+    await Promise.all([
+      deleteDoc(doc(db,"usernames",(app.username || "").toLowerCase())),
+      deleteDoc(doc(db,"matricNumbers",app.matricNumber || ""))
+    ]);
 
     await updateDoc(doc(db,"merchant_applications",id),{
       status:"blocked",
