@@ -32,7 +32,7 @@ if ('serviceWorker' in navigator) {
 // PWA Install Prompt
 let deferredPrompt;
 const installBtn = document.createElement('button');
-installBtn.textContent = 'Install RUNHUB';
+installBtn.textContent = 'Install NOVAHUB';
 installBtn.className = 'btn btn-filled';
 installBtn.style.position = 'fixed';
 installBtn.style.bottom = '20px';
