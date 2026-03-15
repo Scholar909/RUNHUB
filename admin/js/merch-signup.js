@@ -310,7 +310,36 @@ window.blockMerchant = async (id) => {
       return;
     }
 
-    const message = `RUNHUB MERCHANT REQUEST REJECTION NOTICE
+    try{
+
+      /* -----------------------------
+      1. UPDATE STATUS FIRST
+      ----------------------------- */
+      await updateDoc(doc(db,"merchant_applications",id),{
+        status:"rejected",
+        rejectedAt:new Date().toISOString(),
+        rejectionReason: reason
+      });
+
+      /* remove reserved username & matric */
+      await Promise.all([
+        deleteDoc(doc(db,"usernames",(app.username || "").toLowerCase())),
+        deleteDoc(doc(db,"matricNumbers",(app.matricNumber || "").toUpperCase()))
+      ]);
+
+      /* -----------------------------
+      2. UPDATE LOCAL UI STATE
+      ----------------------------- */
+      const index = applications.findIndex(a => a.id === id);
+      if(index !== -1){
+        applications[index].status = "rejected";
+        renderTable(applications);
+      }
+
+      /* -----------------------------
+      3. OPEN WHATSAPP MESSAGE
+      ----------------------------- */
+      const message = `RUNHUB MERCHANT REQUEST REJECTION NOTICE
 
 Hello ${app.fullName},
 
@@ -326,26 +355,20 @@ We hope to see you join the RUNHUB merchant community soon.
 
 — RUNHUB Team`;
 
-    const encoded = encodeURIComponent(message);
+      const encoded = encodeURIComponent(message);
+      const phone = formatNGNumber(app.phoneNumber);
 
-    const phone = formatNGNumber(app.phoneNumber);
+      const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
 
-    const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
+      window.open(whatsappURL, "_blank");
 
-    window.open(whatsappURL, "_blank");
+      modal.style.display = "none";
 
-    await Promise.all([
-      deleteDoc(doc(db,"usernames",(app.username || "").toLowerCase())),
-      deleteDoc(doc(db,"matricNumbers",app.matricNumber || ""))
-    ]);
+    } catch(err){
+      console.error(err);
+      alert("Failed to reject application");
+    }
 
-    await updateDoc(doc(db,"merchant_applications",id),{
-      status:"blocked",
-      blockedAt:new Date().toISOString(),
-      rejectionReason: reason
-    });
-
-    modal.style.display = "none";
   };
 };
 
