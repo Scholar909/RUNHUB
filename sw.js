@@ -1,4 +1,4 @@
-const CACHE_NAME = "runhub-cache-v10";
+const CACHE_NAME = "novahub-cache-v1";
 
 const urlsToCache = [
 "/",
