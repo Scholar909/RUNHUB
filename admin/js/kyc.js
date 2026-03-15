@@ -143,47 +143,40 @@ personalDetails.innerHTML = `
 `;
 
 
-/* HOSTEL */
-
+// HOSTEL
 hostelDetails.innerHTML = `
-
 <div class="info-row">
-<span class="label">Hostel</span>
-<span>${data.hostel}</span>
+  <span class="label">Hostel</span>
+  <span>${data.hostel?.hostel || ""}</span>
 </div>
 
 <div class="info-row">
-<span class="label">Block</span>
-<span>${data.block}</span>
+  <span class="label">Block</span>
+  <span>${data.hostel?.block || ""}</span>
 </div>
 
 <div class="info-row">
-<span class="label">Room</span>
-<span>${data.room}</span>
+  <span class="label">Room</span>
+  <span>${data.hostel?.room || ""}</span>
 </div>
-
 `;
 
-
-/* BANK */
-
+// BANK
 bankDetails.innerHTML = `
-
 <div class="info-row">
-<span class="label">Bank</span>
-<span>${data.bankName}</span>
+  <span class="label">Bank</span>
+  <span>${data.bankDetails?.bankName || ""}</span>
 </div>
 
 <div class="info-row">
-<span class="label">Account Name</span>
-<span>${data.accountName}</span>
+  <span class="label">Account Name</span>
+  <span>${data.bankDetails?.accountName || ""}</span>
 </div>
 
 <div class="info-row">
-<span class="label">Account Number</span>
-<span>${data.accountNumber}</span>
+  <span class="label">Account Number</span>
+  <span>${data.bankDetails?.accountNumber || ""}</span>
 </div>
-
 `;
 }
 
