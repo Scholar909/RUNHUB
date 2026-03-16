@@ -50,7 +50,7 @@ window.processWalletPayment = async (amount, action) => {
     const payAmount = amount * 100;
 
     const handler = PaystackPop.setup({
-        key: 'pk_live_a8ae192f9fac4a7e427232113a41b7727d36de00', // 🔑 Replace with your Paystack public key
+        key: 'pk_live_1c0f2f6165bbfe84dfe28a7388b68cee17a2353f', // 🔑 Replace with your Paystack public key
         email: currentUser.email,
         amount: payAmount,
         currency: 'NGN',
@@ -122,7 +122,7 @@ window.subscribe = async function(planType, amount) {
     const payAmount = amount * 100;
 
     const handler = PaystackPop.setup({
-        key: 'pk_live_a8ae192f9fac4a7e427232113a41b7727d36de00',
+        key: 'pk_live_1c0f2f6165bbfe84dfe28a7388b68cee17a2353f',
         email: currentUser.email,
         amount: payAmount,
         currency: 'NGN',
