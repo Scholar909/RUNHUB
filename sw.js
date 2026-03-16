@@ -1,4 +1,4 @@
-const CACHE_NAME = "novahub-cache-v3";
+const CACHE_NAME = "novahub-cache-v4";
 
 const urlsToCache = [
 "/",
@@ -6,7 +6,7 @@ const urlsToCache = [
 "/offline.html",
 "/start/style.css",
 "/start/script.js",
-"/start/icon-192.png",
+"/start/splash-logo.png",
 "/start/icon-512.png"
 ];
 
