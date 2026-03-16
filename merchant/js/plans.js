@@ -54,7 +54,7 @@ window.processWalletPayment = async (amount, action) => {
         email: currentUser.email,
         amount: payAmount,
         currency: 'NGN',
-        ref: 'RUNHUB_' + Math.floor(Math.random() * 1000000000),
+        ref: 'NOVAHUB_' + Math.floor(Math.random() * 1000000000),
         metadata: {
             custom_fields: [
                 {
@@ -126,7 +126,7 @@ window.subscribe = async function(planType, amount) {
         email: currentUser.email,
         amount: payAmount,
         currency: 'NGN',
-        ref: 'RUNHUB_SUB_' + Math.floor(Math.random() * 1000000000),
+        ref: 'NOVAHUB_SUB_' + Math.floor(Math.random() * 1000000000),
         metadata: {
             custom_fields: [
                 {
