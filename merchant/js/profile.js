@@ -75,9 +75,10 @@ const renderProfileUI = (data) => {
     // 3. Detailed Account Details
     document.getElementById('p-gender').innerText = data.gender || "N/A";
     document.getElementById('p-matric').innerText = data.matricNumber || "N/A";
-    document.getElementById('p-dept').innerText = `${data.hostelLocation || 'Unknown'} (${data.level || '0'}L)`;
+    document.getElementById('p-dept').innerText = `${data.department || 'Unknown'} (${data.level || '0'}L)`;
     document.getElementById('p-email').innerText = data.email || "N/A";
     document.getElementById('p-phone').innerText = data.phoneNumber || "N/A";
+    document.getElementById('p-hostel').innerText = data.hostelLocation || "N/A";
 
     // 4. Bank Details
     const bank = data.bankDetails || {};
