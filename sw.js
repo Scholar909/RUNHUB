@@ -1,4 +1,4 @@
-const CACHE_NAME = "novahub-cache-v6";
+const CACHE_NAME = "novahub-cache-v7";
 
 const urlsToCache = [
 "/",
