@@ -17,6 +17,9 @@
     <link rel="icon" href="start/icon-512.png">
     <link rel="apple-touch-icon" href="start/icon-512.png" type="image/png">
     <link rel="apple-touch-startup-image" href="start/splash-logo.png">
+    <div id="custom-splash">
+      <img src="start/splash-logo.png" alt="NOVAHUB">
+    </div>
     
     <link rel="stylesheet" href="start/style.css?=v6">
 </head>
@@ -96,5 +99,10 @@
     </div>
 
     <script src="start/script.js?=v17" type="module"></script>
+    <script>
+      window.addEventListener("load", () => {
+        document.getElementById("custom-splash").style.display = "none";
+      });
+    </script>
 </body>
 </html>
