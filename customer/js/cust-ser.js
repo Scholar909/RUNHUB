@@ -101,3 +101,10 @@ async function submitReport() {
 
 // Bind the function to the button (Since it's a module, we attach it to window or use addEventListener)
 document.querySelector('.report-card .btn-filled').addEventListener('click', submitReport);
+
+window.handleLogout = async () => {
+    if (confirm("Logout of RUNHUB?")) {
+        await signOut(auth);
+        window.location.href = "sign-login.html";
+    }
+};
