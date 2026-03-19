@@ -163,7 +163,8 @@ signupForm.addEventListener('submit', async (e) => {
     const email = inputs[2].value.trim();
     const level = inputs[3].value;
     const matricNo = inputs[4].value.trim().toUpperCase();
-    const phone = inputs[5].value;
+    const department = inputs[5].value;
+    const phone = inputs[6].value;
     
     const gender = document.getElementById("gender").value;
     const hostel = document.getElementById("hostel").value;
@@ -172,12 +173,12 @@ signupForm.addEventListener('submit', async (e) => {
     
     const hostelLocation = `Block ${block}, Room ${room}, ${hostel}`;
     
-    const bankName = inputs[6].value;
-    const accName = inputs[7].value;
-    const accNo = inputs[8].value;
+    const bankName = inputs[7].value;
+    const accName = inputs[8].value;
+    const accNo = inputs[9].value;
     
-    const password = inputs[9].value;
-    const confirmPass = inputs[10].value;
+    const password = inputs[10].value;
+    const confirmPass = inputs[11].value;
 
     if (password !== confirmPass) return alert("Passwords do not match!");
     if (password.length < 6) return alert("Password must be at least 6 characters.");
@@ -209,6 +210,7 @@ signupForm.addEventListener('submit', async (e) => {
             gender,
             level,
             matricNo,
+            department,
             phoneNumber: phone,
             hostelLocation,
             bankDetails: { bankName, accName, accNo },
