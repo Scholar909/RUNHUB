@@ -113,7 +113,8 @@ async function calculateMerchantWallet(merchantId) {
         const totalPaid = userData.totalPaid || 0;
         const feeAccrued = userData.feeAccrued || 0;
 
-        const currentBalance = totalPaid - feeAccrued;
+        const walletCredit = userData.walletCredit || 0;
+        const currentBalance = (totalPaid - feeAccrued) + walletCredit;
         return currentBalance;
 
     } catch (err) {
