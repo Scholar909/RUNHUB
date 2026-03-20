@@ -85,9 +85,11 @@ const renderProfileUI = (data) => {
     document.getElementById('p-bank').innerText = `${bank.bankName || 'N/A'} — ${bank.accountNumber || 'N/A'}`;
     document.getElementById('p-acc-name').innerText = `Account Name: ${bank.accountName || 'N/A'}`;
 
-    const walletAmt = (data.totalPaid || 0) - (data.feeAccrued || 0);
+    const walletCredit = data.walletCredit || 0;
+    const walletAmt = (data.totalPaid || 0) - (data.feeAccrued || 0) + walletCredit;
     const walletLabel = walletAmt < 0 ? "Outstanding Debt" : "Wallet Balance";
     document.getElementById('p-wallet').innerText = `₦${Math.abs(walletAmt).toLocaleString()}.00`;
+    
 
     // 6. System Status Indicators
     const locStatus = document.querySelector('.trust-card:nth-child(2) .stat-row:nth-child(2) span:last-child');
