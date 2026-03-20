@@ -61,11 +61,13 @@ async function loadOrderDetails(user) {
         // TRUE subtotal (items only)
         const subtotal = order.total - delivery - packaging - platformFee;
         
+        const firstTotal = order.total;
+        
         // Commission
         const deliveryCommission = delivery * 0.10;
         
         // ✅ Final merchant earning (clean & logical)
-        const merchantEarning = subtotal + delivery - deliveryCommission;
+        const merchantEarning = firstTotal - platformFee - deliveryCommission;
           
         // Fetch Customer Info
         const custDoc = await getDoc(doc(db, "users", order.customerId));
@@ -92,6 +94,7 @@ async function loadOrderDetails(user) {
         document.getElementById('subtotal').innerText = `₦${subtotal.toLocaleString()}`;
         document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
         document.getElementById('packaging').innerText = `₦${packaging.toLocaleString()}`;
+        document.getElementById('firstTotal').innerText = `₦${firstTotal.toLocaleString()}`;
         
         const isMerchant = user.uid === order.merchantId;
           if (isMerchant) {
