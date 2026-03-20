@@ -49,17 +49,14 @@ async function enforceRules(uid) {
 
 // --- 3. Data Loading ---
 async function loadOrderDetails(user) {
-  
-    // Inside loadOrderDetails() after fetching 'order'
-    const platformFee = 25;
-    const deliveryCommission = (order.deliveryCharge || 0) * 0.10;
-    const merchantEarning = order.total - platformFee - deliveryCommission;
-    
     try {
         const orderDoc = await getDoc(doc(db, "orders", currentOrderId));
         if (!orderDoc.exists()) return;
         const order = orderDoc.data();
 
+        const platformFee = 25;
+        const deliveryCommission = (order.deliveryCharge || 0) * 0.10;
+        const merchantEarning = order.total - platformFee - deliveryCommission;
         // Fetch Customer Info
         const custDoc = await getDoc(doc(db, "users", order.customerId));
         const customer = custDoc.exists() ? custDoc.data() : {};
@@ -83,9 +80,11 @@ async function loadOrderDetails(user) {
         listContainer.innerHTML = itemsHtml;
 
         // Financials
+        const delivery = order.deliveryCharge || 0;
+
         const subtotalValue = order.total - order.deliveryCharge - (order.hasPack ? 200 : 0) - 25;
         document.getElementById('subtotal').innerText = `₦${subtotalValue.toLocaleString()}`;
-        document.getElementById('delivery').innerText = `₦${order.deliveryCharge.toLocaleString()}`;
+        document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
         document.getElementById('packaging').innerText = `₦${(order.hasPack ? 200 : 0).toLocaleString()}`;
         
         const isMerchant = user.uid === order.merchantId;
@@ -96,15 +95,10 @@ async function loadOrderDetails(user) {
               document.getElementById('totalLabel').innerText = "YOUR EARNING";
               document.getElementById('grandTotal').innerText = `₦${merchantEarning.toLocaleString()}`;
           } else {
-              document.getElementById('adminFeeRow').style.display = 'none';
+              document.getElementById('platformFee').style.display = 'none';
               document.getElementById('totalLabel').innerText = "TOTAL PAID";
               document.getElementById('grandTotal').innerText = `₦${order.total.toLocaleString()}`;
           }
-        } else {
-            document.getElementById('platformFee').style.display = 'none';
-            document.getElementById('totalLabel').innerText = "TOTAL PAID";
-            document.getElementById('grandTotal').innerText = `₦${order.total.toLocaleString()}`;
-        }
 
         renderTimeline(order);
 
