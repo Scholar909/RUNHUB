@@ -56,9 +56,9 @@ function initWalletAndStatsListener() {
 
         const userData = userDoc.data();
 
-        const totalPaid = userData.totalPaid || 0;
-        const feeAccrued = userData.feeAccrued || 0;
-        const walletCredit = userData.walletCredit || 0;
+        const totalPaid = Number(userData.totalPaid || 0);
+        const feeAccrued = Number(userData.feeAccrued || 0);
+        const walletCredit = Number(userData.walletCredit || 0);
 
         const balance = (totalPaid - feeAccrued) + (walletCredit || 0);
 
