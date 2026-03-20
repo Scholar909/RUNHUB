@@ -38,7 +38,7 @@
                 <p class="hero-description">The premium delivery connection for the NOVA ecosystem. We prioritize your security through meticulous merchant verification and real-time tracking.</p>
                 
                 <div class="cta-group">
-                    <a href="customer/sign-login.html" class="btn btn-filled">Start an Order</a>
+                    <a href="#" id="startOrderBtn" class="btn btn-filled">Start an Order</a>
                     <a href="#" id="merchantAccess" class="btn btn-outline">Merchant Access</a>
                 </div>
             </section>
@@ -97,8 +97,18 @@
             <p>&copy; <span id="year"></span> NOVA Delivery Hub. All Rights Reserved. | <a href="pol.html" class="footer-link">Privacy</a> | <a href="tandc.html" class="footer-link">T's & C's</a></p>
         </footer>
     </div>
+    
+<div id="countdownModal" class="modal">
+  <div class="modal-content">
+    <h2>🚀 Launch Countdown</h2>
+    <p>Customer access opens in:</p>
+    <div id="countdownTimer">00:00:00</div>
+    <button id="closeModal" class="btn btn-outline">Close</button>
+  </div>
+</div>
 
     <script src="start/script.js?=v17" type="module"></script>
+    <script src="countdown.js"></script>
     <script>
       window.addEventListener("load", () => {
         setTimeout(() => {
