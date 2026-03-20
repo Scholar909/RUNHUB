@@ -6,8 +6,8 @@ import {
 
 // --- State Management ---
 let currentMerchantId = null;
-const ADMIN_FEE_PER_ORDER = 50;
-const WALLET_THRESHOLD = 500;
+const ADMIN_FEE_PER_ORDER = 25;
+const WALLET_THRESHOLD = 1000;
 let latestBalance = 0; 
 
 // Helper to safely handle different timestamp formats
@@ -42,7 +42,7 @@ async function checkIfBlocked(uid) {
 
     const balance = (data.totalPaid || 0) - (data.feeAccrued || 0);
 
-    if (balance <= -500) {
+    if (balance <= -1000) {
         const debt = Math.abs(balance);
         window.location.href = `./plans.html?action=pay&amount=${debt}`;
     }

@@ -5,8 +5,8 @@ import {
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 const isMonitoringActive = true; // Set to true to enforce GPS
-const WAL_THRESHOLD = 500;
-const ADMIN_FEE = 50;
+const WAL_THRESHOLD = 1000;
+const ADMIN_FEE = 25;
 const TRIAL_DAYS = 14;
 const GRACE_HOURS = 24;
 
@@ -78,33 +78,26 @@ function startLocationMonitoring() {
         let lastLocationTimestamp = Date.now();
         const GPS_GRACE_MS = 2 * 60 * 1000; // 2 minutes grace
 
-        locationWatcher = navigator.geolocation.watchPosition(
-            async (pos) => {
-                lastLocationTimestamp = Date.now();
-                updateUIStatus(true);
-
-                // --- ADD THIS: Update Firestore with fresh location ---
-                if (auth.currentUser) {
-                    const uid = auth.currentUser.uid;
-                    console.log("GPS update received:", pos.coords.latitude, pos.coords.longitude);
-                    await updateDoc(doc(db, "users", uid), {
-                        "location.lat": pos.coords.latitude,
-                        "location.lng": pos.coords.longitude,
-                        "locationUpdatedAt": serverTimestamp()
-                    });
-                }
-            },
-            () => {
-                const now = Date.now();
-                if (now - lastLocationTimestamp > GPS_GRACE_MS) {
-                    alert("Please turn on your location to remain visible.");
-                    forceLogout(); // only after 2 minutes of being off
-                } else {
-                    updateUIStatus(false); // just show offline temporarily
-                }
-            },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-        );
+      let gpsAlertShown = false;
+      
+      locationWatcher = navigator.geolocation.watchPosition(
+          (pos) => {
+              lastLocationTimestamp = Date.now();
+              gpsAlertShown = false; // reset on successful read
+              updateUIStatus(true);
+          },
+          () => {
+              const now = Date.now();
+              if (!gpsAlertShown && now - lastLocationTimestamp > GPS_GRACE_MS) {
+                  gpsAlertShown = true;
+                  alert("Please turn on your location to remain visible.");
+                  forceLogout();
+              } else {
+                  updateUIStatus(false);
+              }
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+      );
     } else {
         handleLocationFailure();
     }
@@ -130,25 +123,6 @@ async function enforceRules(uid) {
     if (role === "admin" || role === "customer") return;
     
     const now = new Date();
-
-    // 2. Subscription Check
-    const createdAt = toJSDate(userData.createdAt);
-    if (!userData.subscription) {
-        const trialEnd = new Date(createdAt);
-        trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-        if (now > trialEnd) { 
-            await deactivateActiveSession(uid); // SHUTDOWN SESSIONS
-            window.location.href = "./plans.html"; 
-            return; 
-        }
-    } else {
-        const expiry = toJSDate(userData.subscription.expiryDate);
-        if (now > expiry) { 
-            await deactivateActiveSession(uid); // SHUTDOWN SESSIONS
-            window.location.href = "./plans.html"; 
-            return; 
-        }
-    }
 
     // 3. Wallet Debt Check
     // 3. Wallet Debt Check

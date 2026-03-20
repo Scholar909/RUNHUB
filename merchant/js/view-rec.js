@@ -5,9 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 // --- Global Config (Synced with Location JS) ---
-const WAL_THRESHOLD = 500;
-const ADMIN_FEE = 50;
-const TRIAL_DAYS = 14;
+const WAL_THRESHOLD = 1000;
 const GRACE_HOURS = 24;
 
 let currentOrderId = localStorage.getItem("viewingOrderId");
@@ -39,22 +37,6 @@ async function enforceRules(uid) {
     const now = new Date();
     const toJSDate = (val) => val?.toDate ? val.toDate() : new Date(val || 0);
 
-    // Subscription/Trial Check
-    const createdAt = toJSDate(userData.createdAt);
-    let isExpired = false;
-    if (!userData.subscription) {
-        const trialEnd = new Date(createdAt);
-        trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-        if (now > trialEnd) isExpired = true;
-    } else if (now > toJSDate(userData.subscription.expiryDate)) {
-        isExpired = true;
-    }
-
-    if (isExpired) {
-        window.location.href = "./plans.html";
-        return;
-    }
-
     // Wallet/Debt Check (Simplified for the view page check)
     if (userData.walletDueSince) {
         const dueSince = toJSDate(userData.walletDueSince);
@@ -67,6 +49,12 @@ async function enforceRules(uid) {
 
 // --- 3. Data Loading ---
 async function loadOrderDetails(user) {
+  
+    // Inside loadOrderDetails() after fetching 'order'
+    const platformFee = 25;
+    const deliveryCommission = (order.deliveryCharge || 0) * 0.10;
+    const merchantEarning = order.total - platformFee - deliveryCommission;
+    
     try {
         const orderDoc = await getDoc(doc(db, "orders", currentOrderId));
         if (!orderDoc.exists()) return;
@@ -95,18 +83,25 @@ async function loadOrderDetails(user) {
         listContainer.innerHTML = itemsHtml;
 
         // Financials
-        const subtotalValue = order.total - order.deliveryCharge - (order.hasPack ? 200 : 0) - 50;
+        const subtotalValue = order.total - order.deliveryCharge - (order.hasPack ? 200 : 0) - 25;
         document.getElementById('subtotal').innerText = `₦${subtotalValue.toLocaleString()}`;
         document.getElementById('delivery').innerText = `₦${order.deliveryCharge.toLocaleString()}`;
         document.getElementById('packaging').innerText = `₦${(order.hasPack ? 200 : 0).toLocaleString()}`;
         
         const isMerchant = user.uid === order.merchantId;
-        if (isMerchant) {
-            document.getElementById('adminFeeRow').style.display = 'flex';
-            document.getElementById('totalLabel').innerText = "YOUR EARNING";
-            document.getElementById('grandTotal').innerText = `₦${(order.total - 50).toLocaleString()}`;
+          if (isMerchant) {
+              document.getElementById('platformFee').innerText = `₦${platformFee}`;
+              document.getElementById('deliveryCommission').innerText = `₦${deliveryCommission.toLocaleString()}`;
+              document.getElementById('adminFeeRow').style.display = 'flex';
+              document.getElementById('totalLabel').innerText = "YOUR EARNING";
+              document.getElementById('grandTotal').innerText = `₦${merchantEarning.toLocaleString()}`;
+          } else {
+              document.getElementById('adminFeeRow').style.display = 'none';
+              document.getElementById('totalLabel').innerText = "TOTAL PAID";
+              document.getElementById('grandTotal').innerText = `₦${order.total.toLocaleString()}`;
+          }
         } else {
-            document.getElementById('adminFeeRow').style.display = 'none';
+            document.getElementById('platformFee').style.display = 'none';
             document.getElementById('totalLabel').innerText = "TOTAL PAID";
             document.getElementById('grandTotal').innerText = `₦${order.total.toLocaleString()}`;
         }

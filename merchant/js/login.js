@@ -6,7 +6,6 @@ import { doc, getDoc, updateDoc, query, collection, where, getDocs } from "https
 // MASTER LOCATION TOGGLE (Synced with Global)
 // ==========================================
 const isMonitoringActive = true; 
-const TRIAL_DAYS = 14;
 
 const loginForm = document.getElementById('merchant-login');
 const authBtn = document.getElementById('auth-btn');
@@ -51,67 +50,69 @@ async function deactivateActiveSession(uid) {
 // ==========================================
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    const email = loginForm.querySelector('input[type="text"]').value.trim().toLowerCase();
-    const password = loginForm.querySelector('input[type="password"]').value;
 
-    authBtn.innerText = "Verifying Security...";
-    authBtn.disabled = true;
-
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        
-        if (!userDoc.exists()) {
-            await signOut(auth);
-            throw new Error("No record found. Please contact Admin.");
+    // Get geolocation first
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        if (!isInsideCampus({ lat: pos.coords.latitude, lng: pos.coords.longitude })) {
+            alert("You are outside campus. Login blocked.");
+            return;
         }
 
-        const userData = userDoc.data();
-        const now = new Date();
-        const toJSDate = (val) => val?.toDate ? val.toDate() : new Date(val || 0);
+        // Proceed with login only if inside campus
+        const email = loginForm.querySelector('input[type="text"]').value.trim().toLowerCase();
+        const password = loginForm.querySelector('input[type="password"]').value;
 
-        // 1. ACCOUNT STATUS CHECK
-        if (userData.status === "Locked") {
-            await deactivateActiveSession(user.uid);
-            await signOut(auth);
-            throw new Error("ACCESS DENIED: Your account is BLOCKED. Pay debt or contact Admin.");
+        authBtn.innerText = "Verifying Security...";
+        authBtn.disabled = true;
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            
+            if (!userDoc.exists()) {
+                await signOut(auth);
+                throw new Error("No record found. Please contact Admin.");
+            }
+
+            const userData = userDoc.data();
+
+            // 1. ACCOUNT STATUS CHECK
+            if (userData.status === "Locked") {
+                await deactivateActiveSession(user.uid);
+                await signOut(auth);
+                throw new Error("ACCESS DENIED: Your account is BLOCKED. Pay debt or contact Admin.");
+            }
+
+            // 2. RATING CHECK
+            if (userData.rating <= 1) {
+                await deactivateActiveSession(user.uid);
+                await signOut(auth);
+                throw new Error("Account Deleted: Rating fell to 1 star.");
+            }
+
+            // 3. WALLET DEBT CHECK
+            const balance = (userData.totalPaid || 0) - (userData.feeAccrued || 0);
+            if (balance <= -WALLET_THRESHOLD) {
+                await deactivateActiveSession(user.uid);
+                const debtAmount = Math.abs(balance);
+                window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
+                return;
+            }
+
+            // Success
+            authBtn.innerText = "Authorized. Redirecting...";
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1200);
+
+        } catch (error) {
+            alert(error.message);
+            authBtn.innerText = "Authorize & Go Online";
+            authBtn.disabled = false;
         }
 
-        // 2. TRIAL/SUBSCRIPTION CHECK
-        const createdAt = toJSDate(userData.createdAt);
-        let isExpired = false;
-        if (!userData.subscription) {
-            const trialEnd = new Date(createdAt);
-            trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-            if (now > trialEnd) isExpired = true;
-        } else if (now > toJSDate(userData.subscription.expiryDate)) {
-            isExpired = true;
-        }
-
-        if (isExpired) {
-            await deactivateActiveSession(user.uid);
-            await signOut(auth);
-            throw new Error("Trial/Subscription Expired. Please renew access.");
-        }
-
-        // 3. RATING CHECK
-        if (userData.rating <= 1) {
-            await deactivateActiveSession(user.uid);
-            await signOut(auth);
-            throw new Error("Account Deleted: Rating fell to 1 star.");
-        }
-
-        // Success
-        authBtn.innerText = "Authorized. Redirecting...";
-        setTimeout(() => { window.location.href = "dashboard.html"; }, 1200);
-
-    } catch (error) {
-        alert(error.message);
-        authBtn.innerText = "Authorize & Go Online";
-        authBtn.disabled = false;
-    }
+    }, () => {
+        alert("Unable to detect location. Please enable GPS.");
+    }, { enableHighAccuracy: true });
 });
 
 // ==========================================
@@ -178,6 +179,48 @@ window.switchTab = function(tab) {
         window.location.reload();
     }
 };
+
+const CAMPUS_BOUNDARY = [
+    { lat: 7.9821, lng: 5.0365 },
+    { lat: 7.9850, lng: 5.0365 },
+    { lat: 7.9850, lng: 5.0400 },
+    { lat: 7.9821, lng: 5.0400 }
+];
+
+function isInsideCampus({ lat, lng }) {
+    // Simple rectangular check
+    const lats = CAMPUS_BOUNDARY.map(p => p.lat);
+    const lngs = CAMPUS_BOUNDARY.map(p => p.lng);
+    return lat >= Math.min(...lats) && lat <= Math.max(...lats)
+        && lng >= Math.min(...lngs) && lng <= Math.max(...lngs);
+}
+
+async function checkCampusAndToggleButtons() {
+    if (!("geolocation" in navigator)) return;
+
+    navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+        const inside = isInsideCampus({ lat: latitude, lng: longitude });
+
+        if (!inside) {
+            // Disable login & proceed buttons
+            if(authBtn) authBtn.disabled = true;
+            if(proceedBtn) proceedBtn.disabled = true;
+            alert("You must be on Redeemer's University campus to login or sign up.");
+        } else {
+            if(authBtn) authBtn.disabled = false;
+            if(proceedBtn) proceedBtn.disabled = false;
+        }
+    }, () => {
+        alert("Unable to detect location. Please enable GPS.");
+        if(authBtn) authBtn.disabled = true;
+        if(proceedBtn) proceedBtn.disabled = true;
+    }, { enableHighAccuracy: true });
+}
+
+// Run on page load and optionally every 30s
+checkCampusAndToggleButtons();
+setInterval(checkCampusAndToggleButtons, 30000);
 
 
 document.getElementById('year').textContent = new Date().getFullYear();

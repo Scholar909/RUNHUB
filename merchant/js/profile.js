@@ -85,34 +85,9 @@ const renderProfileUI = (data) => {
     document.getElementById('p-bank').innerText = `${bank.bankName || 'N/A'} — ${bank.accountNumber || 'N/A'}`;
     document.getElementById('p-acc-name').innerText = `Account Name: ${bank.accountName || 'N/A'}`;
 
-    // 5. Merchant Subscription Status (Admin View Style)
-    const sub = data.subscription || {};
-    const subType = sub.type || "No Active Plan";
-    
-    const typeEl = document.getElementById('p-sub-type');
-    const statusEl = document.getElementById('p-sub-status');
-    const expiryEl = document.getElementById('p-sub-expiry');
-
-    if (typeEl && statusEl && expiryEl) {
-        // Set Plan Type & Color
-        typeEl.innerText = subType.toUpperCase();
-        typeEl.style.color = subType.toLowerCase() === 'trial' ? "#ff9500" : "var(--success)";
-
-        // Set Expiry Date
-        expiryEl.innerText = formatSubDate(sub.expiryDate);
-
-        // Determine Expiry Logic
-        const now = new Date();
-        const expiryDate = sub.expiryDate?.seconds ? new Date(sub.expiryDate.seconds * 1000) : new Date(sub.expiryDate);
-
-        if (sub.expiryDate && expiryDate < now) {
-            statusEl.innerText = "EXPIRED";
-            statusEl.style.color = "var(--error)";
-        } else {
-            statusEl.innerText = "CURRENT";
-            statusEl.style.color = "var(--success)";
-        }
-    }
+    const walletAmt = (data.totalPaid || 0) - (data.feeAccrued || 0);
+    const walletLabel = walletAmt < 0 ? "Outstanding Debt" : "Wallet Balance";
+    document.getElementById('p-wallet').innerText = `₦${Math.abs(walletAmt).toLocaleString()}.00`;
 
     // 6. System Status Indicators
     const locStatus = document.querySelector('.trust-card:nth-child(2) .stat-row:nth-child(2) span:last-child');

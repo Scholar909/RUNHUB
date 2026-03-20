@@ -341,13 +341,24 @@ let videoStream;
 let recording=false;
 let videoInterval;
 
-async function startVideoCamera(){
+async function startVideoCamera() {
+    if(videoStream) return; // already started
 
-if(videoStream) return;
+    try {
+        // Request both audio + video
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: true
+        });
 
-videoStream=await startCamera(videoPreview);
-startVideoBtn.disabled=false;
+        videoPreview.srcObject = videoStream;
+        await videoPreview.play();
 
+        startVideoBtn.disabled = false;
+    } catch(err) {
+        console.error("Camera + audio failed:", err);
+        alert("Please enable camera and microphone permissions.");
+    }
 }
 
 startVideoBtn.onclick = () => {
@@ -356,7 +367,7 @@ startVideoBtn.onclick = () => {
 
     // Start recording
     recordedChunks = [];
-    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm" });
+    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm; codecs=vp8,opus" });
 
     mediaRecorder.ondataavailable = e => {
       if(e.data.size > 0) recordedChunks.push(e.data);
@@ -401,6 +412,9 @@ startVideoBtn.onclick = () => {
   }
 
 };
+
+const clonedStream = new MediaStream(videoStream.getVideoTracks());
+faceVideo.srcObject = clonedStream;
 
 document.getElementById("removeVideo").onclick=()=>{
 

@@ -5,7 +5,7 @@ import {
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 let currentUser = null;
-const ADMIN_FEE_PER_ORDER = 50;
+const ADMIN_FEE_PER_ORDER = 25;
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -82,88 +82,51 @@ async function finalizeWalletPayment(paidAmount, action) {
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
 
-    // 1. Get current debt one last time
     const totalPaid = userData.totalPaid || 0;
     const feeAccrued = userData.feeAccrued || 0;
-    
-    const currentDebt = Math.max(0, feeAccrued - totalPaid);
 
-    // 2. Determine the new totalPaid and Reset logic
+    // Current debt
+    const currentDebt = Math.max(0, feeAccrued - totalPaid);
+    
+    // Apply any existing wallet credit to reduce current debt
+    let usableCredit = Math.min(userData.walletCredit || 0, currentDebt);
+    let remainingDebt = currentDebt - usableCredit;
+    let newCredit = (userData.walletCredit || 0) - usableCredit;
+    
+    // Determine how much still needs Paystack payment
+    const amountToPay = Math.max(0, remainingDebt - paidAmount); // paidAmount = what came from Paystack
+
     if (action === 'pay') {
-        // If they pay exactly the debt or more
-        const excess = Math.max(0, paidAmount - currentDebt); 
-        
-        await updateDoc(userRef, {
-            totalPaid: excess, // Will be 0 if they paid exactly the debt
-            feeAccrued: 0, // This clears the "history" for the next calculation
-            walletDueSince: null
-        });
+        if (paidAmount >= currentDebt) {
+            // Payment covers debt completely
+            const excess = paidAmount - currentDebt;
+
+            await updateDoc(userRef, {
+                totalPaid: totalPaid + currentDebt + excess, // sum of previous + debt paid + extra
+                feeAccrued: 0, // debt cleared
+                walletDueSince: null,
+                walletCredit: (userData.walletCredit || 0) + excess // store excess as credit
+            });
+
+        } else {
+            // Payment partially reduces debt
+            await updateDoc(userRef, {
+                totalPaid: totalPaid + paidAmount,
+                feeAccrued: feeAccrued - paidAmount,
+                walletDueSince: null
+            });
+        }
+
     } else {
-        // This is a manual deposit (Credit)
-        const currentPaid = userData.totalPaid || 0;
+        // Manual deposit (Credit)
         await updateDoc(userRef, {
-            totalPaid: currentPaid + paidAmount
+            totalPaid: totalPaid + usableCredit + paidAmount,
+            feeAccrued: Math.max(0, feeAccrued - (usableCredit + paidAmount)),
+            walletCredit: newCredit,
+            walletDueSince: null
         });
     }
 
-    alert("Debt cleared! Redirecting to verify your status...");
+    alert("Payment processed! Redirecting to verify your status...");
     window.location.href = "./dashboard.html";
 }
-
-
-// Keep your existing subscribe function for plans...
-
-
-/* ---------------------- */
-/* SUBSCRIPTION LOGIC */
-/* ---------------------- */
-
-window.subscribe = async function(planType, amount) {
-    const payAmount = amount * 100;
-
-    const handler = PaystackPop.setup({
-        key: 'pk_live_1c0f2f6165bbfe84dfe28a7388b68cee17a2353f',
-        email: currentUser.email,
-        amount: payAmount,
-        currency: 'NGN',
-        ref: 'NOVAHUB_SUB_' + Math.floor(Math.random() * 1000000000),
-        metadata: {
-            custom_fields: [
-                {
-                    display_name: "User ID",
-                    variable_name: "user_id",
-                    value: currentUser.uid
-                }
-            ]
-        },
-        callback: async function(response) {
-            console.log('Subscription Payment successful! Reference:', response.reference);
-
-            const now = new Date();
-            let expiryDate = planType === 'weekly'
-                ? new Date(now.setDate(now.getDate() + 7))
-                : new Date(now.setDate(now.getDate() + 30));
-
-            const userRef = doc(db, "users", currentUser.uid);
-
-            await updateDoc(userRef, {
-                subscription: {
-                    type: planType,
-                    startDate: new Date(),
-                    expiryDate: expiryDate,
-                    status: "Active"
-                },
-                walletResetAt: serverTimestamp()
-            });
-
-            alert("Payment successful. Please login again.");
-            await signOut(auth);
-            window.location.href = "./sign-login.html";
-        },
-        onClose: function() {
-            alert('Payment cancelled.');
-        }
-    });
-
-    handler.openIframe();
-};

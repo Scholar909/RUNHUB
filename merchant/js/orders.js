@@ -1,22 +1,36 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
-    collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy, increment
+    collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy, increment, runTransaction
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+
+const isMonitoringActive = true; // Set to true to enforce GPS
+const WAL_THRESHOLD = 1000;
+
+let locationWatcher = null;
 
 // --- State Management ---
 let currentMerchantId = null;
 let activeOrders = [];
 let orderToDecline = null;
 
-// --- 1. Auth & Initialization ---
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentMerchantId = user.uid;
-        initOrdersListener();
-    }
-});
+const CUSTOMER_FEE = 25;
 
+// --- 1. Auth & Initialization ---
+onAuthStateChanged(auth, async (user) => {
+    if (!user) return window.location.href = "./sign-login.html";
+
+    currentMerchantId = user.uid;
+    initOrdersListener();
+    startLocationMonitoring(); // enforce GPS
+
+    // Real-time wallet enforcement
+    const userRef = doc(db, "users", user.uid);
+    onSnapshot(userRef, async () => {
+        await enforceRules(user.uid);
+    });
+});
 // --- 2. Real-time Orders Listener ---
 function initOrdersListener() {
     const q = query(
@@ -97,16 +111,26 @@ async function renderOrders() {
 window.approveOrder = async (orderId) => {
     try {
         const orderRef = doc(db, "orders", orderId);
-        await updateDoc(orderRef, {
-            status: "approved",
-            approvedAt: serverTimestamp()
-        });
+
+        await runTransaction(db, async (t) => {
+            const orderSnap = await t.get(orderRef);
+            const orderData = orderSnap.data();
         
-        // Increment platform fee
-        await updateDoc(doc(db, "users", currentMerchantId), {
-            feeAccrued: increment(50)
+            const merchantRef = doc(db, "users", currentMerchantId);
+            const merchantSnap = await t.get(merchantRef);
+        
+            const merchantFee = Math.ceil((orderData.deliveryCharge || 0) * 0.1);
+            const totalFee = CUSTOMER_FEE + merchantFee;
+        
+            // 1. Approve order
+            t.update(orderRef, { status: "approved", approvedAt: serverTimestamp() });
+        
+            // 2. Increment wallet
+            t.update(merchantRef, { feeAccrued: increment(totalFee) });
         });
-        alert("Order Approved! It has moved to your Pending History tab.");
+
+        alert(`Order Approved! Fee charged`);
+        
     } catch (error) {
         console.error("Approval error:", error);
         alert("Failed to approve order.");
@@ -127,8 +151,7 @@ window.prepareDecline = async (orderId) => {
         // Mapping to your signup keys: bankName, accName, accNo
         const bank = customer.bankDetails || {};
 
-        // Calculate refund amount: Total paid minus 50 naira platform fee
-        const refundAmount = order.total - 50;
+        const refundAmount = order.total;
 
         document.getElementById('refundName').innerText = bank.accName || "Not Provided";
         document.getElementById('refundNumber').innerText = bank.accNo || "Not Provided";
@@ -156,11 +179,6 @@ window.confirmRefund = async () => {
             declinedAt: serverTimestamp()
         });
         
-        // Increment platform fee
-        await updateDoc(doc(db, "users", currentMerchantId), {
-            feeAccrued: increment(50)
-        });
-
         closeModal();
         alert("Order declined. Refund has been marked as completed.");
     } catch (error) {
@@ -187,6 +205,79 @@ function formatTime(timestamp) {
     const mins = Math.floor(seconds / 60);
     return `${mins} mins ago`;
 }
+
+async function deactivateActiveSession(uid) {
+    try {
+        await updateDoc(doc(db, "users", uid), { isActive: false });
+        const sessionsSnap = await getDocs(query(collection(db, "merchants", uid, "sessions"), where("isActive", "==", true)));
+        const batch = [];
+        sessionsSnap.forEach(d => batch.push(updateDoc(d.ref, { isActive: false, lastTurnedOff: Date.now() })));
+        await Promise.all(batch);
+    } catch (e) {
+        console.error("Session cleanup failed:", e);
+    }
+}
+
+async function forceLogout() {
+    if (locationWatcher) navigator.geolocation.clearWatch(locationWatcher);
+    if (auth.currentUser) await deactivateActiveSession(auth.currentUser.uid);
+    await auth.signOut();
+    window.location.href = "./sign-login.html";
+}
+
+async function enforceRules(uid) {
+    const userRef = doc(db, "users", uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return forceLogout();
+
+    const data = userSnap.data();
+
+    // Skip admins/customers if needed
+    const role = (data.role || "").toLowerCase();
+    if (role === "admin" || role === "customer") return;
+
+    // Wallet debt enforcement
+    const balance = (data.totalPaid || 0) - (data.feeAccrued || 0);
+    if (balance <= -WAL_THRESHOLD) {
+        if (!data.walletDueSince) await updateDoc(userRef, { walletDueSince: serverTimestamp() });
+        await deactivateActiveSession(uid);
+        const debtAmount = Math.abs(balance);
+        window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
+    } else if (data.walletDueSince) {
+        await updateDoc(userRef, { walletDueSince: null });
+    }
+}
+
+function startLocationMonitoring() {
+    if (!isMonitoringActive) return;
+
+    let lastLocationTimestamp = Date.now();
+    const GPS_GRACE_MS = 2 * 60 * 1000; // 2 minutes grace
+    let gpsAlertShown = false;
+
+    if ("geolocation" in navigator) {
+        locationWatcher = navigator.geolocation.watchPosition(
+            () => {
+                lastLocationTimestamp = Date.now();
+                gpsAlertShown = false;
+            },
+            () => {
+                const now = Date.now();
+                if (!gpsAlertShown && now - lastLocationTimestamp > GPS_GRACE_MS) {
+                    gpsAlertShown = true;
+                    alert("Please turn on your location to remain visible.");
+                    forceLogout();
+                }
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+        );
+    } else {
+        alert("CRITICAL: Location services must remain ON.");
+        forceLogout();
+    }
+}
+
+
 
 window.handleLogout = async () => {
     await auth.signOut();
