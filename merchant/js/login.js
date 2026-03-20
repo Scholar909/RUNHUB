@@ -180,19 +180,24 @@ window.switchTab = function(tab) {
     }
 };
 
-const CAMPUS_BOUNDARY = [
-    { lat: 7.9821, lng: 5.0365 },
-    { lat: 7.9850, lng: 5.0365 },
-    { lat: 7.9850, lng: 5.0400 },
-    { lat: 7.9821, lng: 5.0400 }
-];
+function getDistanceInMeters(lat1, lng1, lat2, lng2) {
+    const R = 6371000; // Earth radius in meters
+    const toRad = (deg) => deg * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
+}
+
+const CAMPUS_CENTER = { lat: 7.98355, lng: 5.03825 }; // midpoint of campus
+const CAMPUS_RADIUS = 200; // meters, adjust to 250–300 if needed
 
 function isInsideCampus({ lat, lng }) {
-    // Simple rectangular check
-    const lats = CAMPUS_BOUNDARY.map(p => p.lat);
-    const lngs = CAMPUS_BOUNDARY.map(p => p.lng);
-    return lat >= Math.min(...lats) && lat <= Math.max(...lats)
-        && lng >= Math.min(...lngs) && lng <= Math.max(...lngs);
+    return getDistanceInMeters(lat, lng, CAMPUS_CENTER.lat, CAMPUS_CENTER.lng) <= CAMPUS_RADIUS;
 }
 
 async function checkCampusAndToggleButtons() {
