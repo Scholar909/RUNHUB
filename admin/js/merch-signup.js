@@ -221,40 +221,40 @@ window.approveMerchant = async(id)=>{
     // Create merchant using secondary auth instance
     const cred = await createUserWithEmailAndPassword(secondaryAuth, data.email, tempPassword);
     const user = cred.user;
-    
+
     /* -----------------------------
     SAVE KYC RECORD
     ----------------------------- */
-    
+
     const files = data.files || {};
-    
+
     await setDoc(doc(db,"kyc", user.uid),{
-    
+
       merchantUid:user.uid,
-    
+
       fullName:data.fullName || "",
       username:(data.username || "").toLowerCase().trim(),
       email:data.email,
-    
+
       matricNumber:data.matricNumber || "",
       department:data.department || "",
       level:data.level || "",
       gender:data.gender || "",
-    
+
       phoneNumber:data.phoneNumber || "",
-    
+
       hostel:{
         hostel:data.hostel || "",
         block:data.block || "",
         room:data.room || ""
       },
-    
+
       bankDetails:{
         bankName:data.bankName || "",
         accountName:data.accountName || "",
         accountNumber:data.accountNumber || ""
       },
-    
+
       files:{
         selfie:files.selfie || "",
         idFront:files.idFront || "",
@@ -262,14 +262,14 @@ window.approveMerchant = async(id)=>{
         faceScan:files.faceScan || "",
         verificationVideo:files.verificationVideo || ""
       },
-    
+
       catchPhrase:data.catchPhrase || "",
-    
+
       verifiedBy:auth.currentUser.uid,
       verifiedAt:serverTimestamp()
-    
+
     });
-    
+
     await Promise.all([
       setDoc(doc(db,"usernames",(data.username || "").toLowerCase()),{
         uid:user.uid
@@ -303,11 +303,6 @@ window.approveMerchant = async(id)=>{
       rating:5.0,
       status:"active",
       isSessionOn:false,
-      subscription:{
-        type:"trial",
-        startDate:serverTimestamp(),
-        expiryDate:new Date(Date.now() + 14*24*60*60*1000)
-      },
       createdAt:serverTimestamp(),
       walletLastUpdated:serverTimestamp()
     });
@@ -318,7 +313,7 @@ window.approveMerchant = async(id)=>{
       approvedAt:new Date().toISOString(),
       merchantUid:user.uid
     });
-    
+
     // after updateDoc(appRef, {...})
     const index = applications.findIndex(a => a.id === id);
     if(index !== -1) {

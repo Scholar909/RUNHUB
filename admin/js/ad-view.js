@@ -222,9 +222,6 @@ async function renderProfile(data, walletAmt) {
                         (${data.ratingCount || 0} reviews)
                     </span>
                 `)}
-
-                ${createInfoRow("Current Plan", data.subscription?.type?.toUpperCase())}
-                ${createInfoRow("Expiry Date", formatDate(data.subscription?.expiryDate))}
             </div>
         `;
     }
