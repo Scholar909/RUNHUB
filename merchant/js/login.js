@@ -6,7 +6,6 @@ import { doc, getDoc, updateDoc, query, collection, where, getDocs } from "https
 // MASTER LOCATION TOGGLE (Synced with Global)
 // ==========================================
 const isMonitoringActive = true; 
-const TRIAL_DAYS = 14;
 
 const loginForm = document.getElementById('merchant-login');
 const authBtn = document.getElementById('auth-btn');
@@ -77,23 +76,6 @@ loginForm.addEventListener('submit', async (e) => {
             await deactivateActiveSession(user.uid);
             await signOut(auth);
             throw new Error("ACCESS DENIED: Your account is BLOCKED. Pay debt or contact Admin.");
-        }
-
-        // 2. TRIAL/SUBSCRIPTION CHECK
-        const createdAt = toJSDate(userData.createdAt);
-        let isExpired = false;
-        if (!userData.subscription) {
-            const trialEnd = new Date(createdAt);
-            trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-            if (now > trialEnd) isExpired = true;
-        } else if (now > toJSDate(userData.subscription.expiryDate)) {
-            isExpired = true;
-        }
-
-        if (isExpired) {
-            await deactivateActiveSession(user.uid);
-            await signOut(auth);
-            throw new Error("Trial/Subscription Expired. Please renew access.");
         }
 
         // 3. RATING CHECK
