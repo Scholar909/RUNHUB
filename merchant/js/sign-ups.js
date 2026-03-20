@@ -341,24 +341,13 @@ let videoStream;
 let recording=false;
 let videoInterval;
 
-async function startVideoCamera() {
-    if(videoStream) return; // already started
+async function startVideoCamera(){
 
-    try {
-        // Request both audio + video
-        videoStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
-            audio: true
-        });
+if(videoStream) return;
 
-        videoPreview.srcObject = videoStream;
-        await videoPreview.play();
+videoStream=await startCamera(videoPreview);
+startVideoBtn.disabled=false;
 
-        startVideoBtn.disabled = false;
-    } catch(err) {
-        console.error("Camera + audio failed:", err);
-        alert("Please enable camera and microphone permissions.");
-    }
 }
 
 startVideoBtn.onclick = () => {
@@ -412,9 +401,6 @@ startVideoBtn.onclick = () => {
   }
 
 };
-
-const clonedStream = new MediaStream(videoStream.getVideoTracks());
-faceVideo.srcObject = clonedStream;
 
 document.getElementById("removeVideo").onclick=()=>{
 
