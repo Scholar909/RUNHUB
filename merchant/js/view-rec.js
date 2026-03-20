@@ -54,9 +54,18 @@ async function loadOrderDetails(user) {
         if (!orderDoc.exists()) return;
         const order = orderDoc.data();
 
-        const platformFee = 25;
-        const deliveryCommission = (order.deliveryCharge || 0) * 0.10;
-        const merchantEarning = order.total - platformFee - deliveryCommission;
+          const platformFee = 25;
+          const delivery = order.deliveryCharge || 0;
+          const packaging = order.hasPack ? 200 : 0;
+          
+          // Subtotal (items only)
+          const subtotalValue = order.total - delivery - packaging - platformFee;
+          
+          // Commission
+          const deliveryCommission = delivery * 0.10;
+          
+          // Merchant earning
+          const merchantEarning = order.total - platformFee - deliveryCommission;
         // Fetch Customer Info
         const custDoc = await getDoc(doc(db, "users", order.customerId));
         const customer = custDoc.exists() ? custDoc.data() : {};
@@ -79,18 +88,14 @@ async function loadOrderDetails(user) {
         });
         listContainer.innerHTML = itemsHtml;
 
-        // Financials
-        const delivery = order.deliveryCharge || 0;
-
-        const subtotalValue = order.total - order.deliveryCharge - (order.hasPack ? 200 : 0) - 25;
         document.getElementById('subtotal').innerText = `₦${subtotalValue.toLocaleString()}`;
         document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
-        document.getElementById('packaging').innerText = `₦${(order.hasPack ? 200 : 0).toLocaleString()}`;
+        document.getElementById('packaging').innerText = `₦${packaging.toLocaleString()}`;
         
         const isMerchant = user.uid === order.merchantId;
           if (isMerchant) {
-              document.getElementById('platformFee').innerText = `₦${platformFee}`;
-              document.getElementById('deliveryCommission').innerText = `₦${deliveryCommission.toLocaleString()}`;
+              document.getElementById('platformFee').innerText = `-₦${platformFee}`;
+              document.getElementById('deliveryCommission').innerText = `-₦${deliveryCommission.toLocaleString()}`;
               document.getElementById('adminFeeRow').style.display = 'flex';
               document.getElementById('totalLabel').innerText = "YOUR EARNING";
               document.getElementById('grandTotal').innerText = `₦${merchantEarning.toLocaleString()}`;
@@ -118,7 +123,7 @@ function renderTimeline(order) {
     let html = `<h3>Transaction Logs</h3>`;
     const toMs = (time) => time?.toMillis ? time.toMillis() : time;
 
-    html += createTimelineItem(order.timestamp, "Order Placed & Payment Sent", "completed");
+    html += createTimelineItem(toMs(order.timestamp), "Order Placed & Payment Sent", "completed");
 
     if (order.approvedAt) {
         html += createTimelineItem(toMs(order.approvedAt), "Merchant Approved Payment", "completed");
