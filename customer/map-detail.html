@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tracking | NOVAHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/map-detail.css?=v2">
+</head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="back-btn" onclick="window.location.href='track-order.html'">
+                <i class="fi-arrow-left"></i>
+            </div>
+            <div class="logo">TRACKING <span class="accent">ORDER</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> SATELLITE
+            </div>
+        </nav>
+
+        <main class="content-body">
+            <div id="map-frame">
+                <div id="map"></div>
+                <div class="map-overlay-tag">Live GPS</div>
+            </div>
+
+            <div class="tracking-info">
+                <div class="merchant-profile">
+                    <img id="merchantImg" src="img/default.png" alt="Merchant">
+                    <div class="m-text">
+                        <h2 id="merchantName">@Merchant</h2>
+                        <p id="orderRoute">From: -- To: --</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">CLOSEST TO</span>
+                        <h3 id="closestLoc">Calculating...</h3>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">TIME LEFT</span>
+                        <h3 id="timeLeft">-- mins</h3>
+                    </div>
+                </div>
+
+                <div class="order-contents">
+                    <span class="card-tag">ORDER CONTENTS</span>
+                    <p id="itemsSummary">Loading items...</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="rating.html" class="nav-icon-box"><i class="fi-star"></i></a>
+            <a href="home.html" class="nav-icon-box active"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="cust-ser.html" class="nav-icon-box"><i class="fi-comments"></i></a>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="js/map-detail.js?=v1"></script>
+</body>
+</html>

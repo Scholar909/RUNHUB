@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Live Orders | NOVAHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/track-order.css"> </head>
+<body>
+    <div class="main-wrapper">
+        <nav class="navbar">
+            <div class="menu-trigger" onclick="toggleDrawer()">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+            <div class="logo">NOVA<span class="accent">HUB</span></div>
+            <div class="status-indicator">
+                <span class="dot animate-flicker"></span> LIVE TRACKING
+            </div>
+        </nav>
+        
+        <div id="navDrawer" class="nav-drawer">
+            <div class="drawer-header">
+                <h3>Menu</h3>
+                <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+            </div>
+            <ul class="drawer-links">
+                <li><a href="home.html">Dashboard</a></li>
+                <li><a href="history.html">My Orders</a></li>
+                <li><a href="track-order.html">Track Order</a></li>
+                <li><a href="rating.html">Rate Merchants</a></li>
+                <li><a href="profile.html">My Account</a></li>
+                <li><a href="service.html">Support</a></li>
+            </ul>
+            <div class="drawer-footer">
+                <button class="logout-btn" onclick="handleLogout()">
+                    <i class="fi-power"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <main class="content-body">
+            <header class="section-header">
+                <h1>Active <span class="highlight">Deliveries</span></h1>
+                <p class="hero-description">Only approved orders currently in transit are shown here.</p>
+            </header>
+
+            <div id="activeOrdersGrid" class="trust-grid">
+                <div class="status-indicator" style="justify-content: center; padding: 40px;">
+                    Searching for active orders...
+                </div>
+            </div>
+        </main>
+
+        <footer class="bottom-nav">
+            <a href="history.html" class="nav-icon-box active"><i class="fi-clock"></i></a>
+            <a href="rating.html" class="nav-icon-box"><i class="fi-star"></i></a>
+            <a href="home.html" class="nav-icon-box"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="cust-ser.html" class="nav-icon-box"><i class="fi-comments"></i></a>
+        </footer>
+        </div>
+
+    <script src="js/track-order.js?=v6" type="module"></script>
+    <script src="js/firebase-config.js" type="module"></script>
+</body>
+</html>
