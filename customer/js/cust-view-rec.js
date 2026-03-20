@@ -51,13 +51,19 @@ async function loadOrderDetails() {
         listContainer.innerHTML = itemsHtml;
 
         // 4. Financials (Customer View)
-        // Subtotal = Grand Total - Delivery - Pack - Platform Fee
+                // Subtotal = Grand Total - // Financials for Customer
         const packCost = order.hasPack ? 200 : 0;
-        const subtotalValue = order.total - order.deliveryCharge - packCost - 50;
-
-        document.getElementById('subtotal').innerText = `₦${subtotalValue.toLocaleString()}`;
-        document.getElementById('delivery').innerText = `₦${order.deliveryCharge.toLocaleString()}`;
+        const platformFee = 25;
+        const delivery = order.deliveryCharge || 0;
+        
+        // Subtotal = sum of items only
+        const subtotal = order.total - delivery - packCost - platformFee;
+        
+        // Update UI
+        document.getElementById('subtotal').innerText = `₦${subtotal.toLocaleString()}`;
+        document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
         document.getElementById('packaging').innerText = `₦${packCost.toLocaleString()}`;
+        document.getElementById('platformFee').innerText = `₦${platformFee}`;
         document.getElementById('grandTotal').innerText = `₦${order.total.toLocaleString()}`;
 
         // 5. Timeline Logic

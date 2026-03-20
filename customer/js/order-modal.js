@@ -7,7 +7,7 @@ import {
 // --- State ---
 let merchantData = null;
 let activeSessionData = null;
-let platformFee = 50;
+let platformFee = 25;
 let packagingCost = 200;
 
 // --- 1. Initialization ---
@@ -163,7 +163,7 @@ window.updateTotal = () => {
         }
     });
 
-    const delivery = merchantData.deliveryCharge || 0;
+    const delivery = activeSessionData.deliveryCharge || 0;
     const currentPackCost = packChecked ? packagingCost : 0;
     const grandTotal = subtotal + delivery + currentPackCost + platformFee;
 
@@ -220,7 +220,7 @@ window.submitOrder = async () => {
             items: selectedItems,
             hasPack: document.getElementById('pack-checkbox').checked,
             total: totalAmount,
-            deliveryCharge: merchantData.deliveryCharge,
+            deliveryCharge: activeSessionData.deliveryCharge,
             status: "pending",
             timestamp: Date.now(),
             route: `${merchantData.fromLocation} to ${merchantData.toLocation}`
