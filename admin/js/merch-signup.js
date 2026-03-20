@@ -288,6 +288,7 @@ window.approveMerchant = async(id)=>{
       email:data.email,
       level:data.level || "",
       matricNumber:data.matricNumber || "",
+      department: data.department || "",
       phoneNumber:data.phoneNumber || "",
       gender:data.gender || "",
       hostelLocation:`Block ${data.block}, Room ${data.room}, ${data.hostel}`,
