@@ -82,48 +82,37 @@ async function finalizeWalletPayment(paidAmount, action) {
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data();
 
-    const totalPaid = userData.totalPaid || 0;
-    const feeAccrued = userData.feeAccrued || 0;
+    let totalPaid = userData.totalPaid || 0;
+    let feeAccrued = userData.feeAccrued || 0;
+    let walletCredit = userData.walletCredit || 0;
 
-    // Current debt
-    const currentDebt = Math.max(0, feeAccrued - totalPaid);
-    
-    // Apply any existing wallet credit to reduce current debt
-    let usableCredit = Math.min(userData.walletCredit || 0, currentDebt);
-    let remainingDebt = currentDebt - usableCredit;
-    let newCredit = (userData.walletCredit || 0) - usableCredit;
-    
-    // Determine how much still needs Paystack payment
-    const amountToPay = Math.max(0, remainingDebt - paidAmount); // paidAmount = what came from Paystack
+    // 1. Calculate current debt after applying existing wallet credit
+    const debtBefore = Math.max(0, feeAccrued - walletCredit);
 
-    if (action === 'pay') {
-        if (paidAmount >= currentDebt) {
-            // Payment covers debt completely
-            const excess = paidAmount - currentDebt;
+    if (action === 'deposit') {
+        // Deposit reduces debt first
+        const depositApplied = Math.min(debtBefore, paidAmount);
+        const remainingDebt = debtBefore - depositApplied;
 
-            await updateDoc(userRef, {
-                totalPaid: totalPaid + currentDebt + excess, // sum of previous + debt paid + extra
-                feeAccrued: 0, // debt cleared
-                walletDueSince: null,
-                walletCredit: (userData.walletCredit || 0) + excess // store excess as credit
-            });
+        // Any leftover deposit becomes wallet credit
+        const extraCredit = Math.max(0, paidAmount - depositApplied);
 
-        } else {
-            // Payment partially reduces debt
-            await updateDoc(userRef, {
-                totalPaid: totalPaid + paidAmount,
-                feeAccrued: feeAccrued - paidAmount,
-                walletDueSince: null
-            });
-        }
-
-    } else {
-        // Manual deposit (Credit)
         await updateDoc(userRef, {
-            totalPaid: totalPaid + usableCredit + paidAmount,
-            feeAccrued: Math.max(0, feeAccrued - (usableCredit + paidAmount)),
-            walletCredit: newCredit,
-            walletDueSince: null
+            totalPaid: totalPaid,               // totalPaid unchanged, deposits don’t count as paid
+            feeAccrued: remainingDebt,          // reduce debt
+            walletCredit: walletCredit - (debtBefore - remainingDebt) + extraCredit
+        });
+
+    } else if (action === 'pay') {
+        // Pay directly reduces debt
+        const paymentApplied = Math.min(debtBefore, paidAmount);
+        const remainingDebt = debtBefore - paymentApplied;
+        const extraCredit = Math.max(0, paidAmount - debtBefore);
+
+        await updateDoc(userRef, {
+            totalPaid: totalPaid + paymentApplied,
+            feeAccrued: remainingDebt,
+            walletCredit: walletCredit + extraCredit
         });
     }
 
