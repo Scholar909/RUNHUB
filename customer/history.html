@@ -21,24 +21,25 @@
             </div>
         </nav>
 
-<div id="navDrawer" class="nav-drawer">
-    <div class="drawer-header">
-        <h3>Menu</h3>
-        <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
-    </div>
-    <ul class="drawer-links">
-        <li><a href="home.html">Dashboard</a></li>
-        <li><a href="history.html">My Orders</a></li>
-        <li><a href="rating.html">Rate Merchants</a></li>
-        <li><a href="profile.html">My Account</a></li>
-        <li><a href="service.html">Support</a></li>
-    </ul>
-    <div class="drawer-footer">
-        <button class="logout-btn" onclick="handleLogout()">
-            <i class="fi-power"></i> Logout
-        </button>
-    </div>
-</div>
+        <div id="navDrawer" class="nav-drawer">
+            <div class="drawer-header">
+                <h3>Menu</h3>
+                <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+            </div>
+            <ul class="drawer-links">
+                <li><a href="home.html">Dashboard</a></li>
+                <li><a href="history.html">My Orders</a></li>
+                <li><a href="track-order.html">Track Order</a></li>
+                <li><a href="rating.html">Rate Merchants</a></li>
+                <li><a href="profile.html">My Account</a></li>
+                <li><a href="service.html">Support</a></li>
+            </ul>
+            <div class="drawer-footer">
+                <button class="logout-btn" onclick="handleLogout()">
+                    <i class="fi-power"></i> Logout
+                </button>
+            </div>
+        </div>
 
 
         <main class="content-body">
@@ -58,12 +59,12 @@
                     <div class="order-info-stack">
                         <div class="card-tag status-pending">PENDING APPROVAL</div>
                         <div class="order-header">
-                            <h3>@SwiftCourier</h3>
+                            <h3>@Loading...</h3>
                         </div>
                         <div class="order-summary">
-                            <p>Total: <span class="accent">₦1,550</span></p>
+                            <p>Total: <span class="accent">₦---</span></p>
                         </div>
-                        <span class="order-date">Oct 12, 10:30 AM</span>
+                        <span class="order-date">Loading...</span>
                     </div>
                     <button class="btn btn-outline">View</button>
                 </div>
@@ -79,7 +80,7 @@
         </footer>
     </div>
 
-    <script src="js/cust-history.js?=v9" type="module"></script>
+    <script src="js/cust-history.js?=v10" type="module"></script>
     <script src="js/firebase-config.js?=v5" type="module"></script>
 </body>
 </html>
