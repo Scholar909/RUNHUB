@@ -115,6 +115,9 @@ window.approveOrder = async (orderId) => {
         await runTransaction(db, async (t) => {
             const orderSnap = await t.get(orderRef);
             const orderData = orderSnap.data();
+            if (orderData.status !== "pending") {
+                throw new Error("Order already processed");
+            }
         
             const merchantRef = doc(db, "users", currentMerchantId);
             const merchantSnap = await t.get(merchantRef);
@@ -237,7 +240,7 @@ async function enforceRules(uid) {
     if (role === "admin" || role === "customer") return;
 
     // Wallet debt enforcement
-    const balance = (data.totalPaid || 0) - (data.feeAccrued || 0);
+    const balance = (data.walletCredit || 0) - (data.feeAccrued || 0);
     if (balance <= -WAL_THRESHOLD) {
         if (!data.walletDueSince) await updateDoc(userRef, { walletDueSince: serverTimestamp() });
         await deactivateActiveSession(uid);

@@ -6,7 +6,6 @@ import {
 
 // --- State Management ---
 let currentMerchantId = null;
-const ADMIN_FEE_PER_ORDER = 25;
 const WALLET_THRESHOLD = 1000;
 let latestBalance = 0; 
 
@@ -40,7 +39,7 @@ async function checkIfBlocked(uid) {
 
     const data = snap.data();
 
-    const balance = (data.totalPaid || 0) - (data.feeAccrued || 0);
+    const balance = (data.walletCredit || 0) - (data.feeAccrued || 0);
 
     if (balance <= -1000) {
         const debt = Math.abs(balance);
@@ -56,11 +55,10 @@ function initWalletAndStatsListener() {
 
         const userData = userDoc.data();
 
-        const totalPaid = Number(userData.totalPaid || 0);
-        const feeAccrued = Number(userData.feeAccrued || 0);
-        const walletCredit = Number(userData.walletCredit || 0);
+        const feeAccrued = userData.feeAccrued || 0;
+        const walletCredit = userData.walletCredit || 0;
 
-        const balance = (totalPaid - feeAccrued) + (walletCredit || 0);
+        const balance = walletCredit - feeAccrued;
 
         updateWalletUI(balance);
     });
@@ -94,10 +92,27 @@ function updateWalletUI(balance) {
     const progressFill = document.querySelector('.progress-fill');
     const alertBox = document.querySelector('.alert-box');
     latestBalance = balance;
+    const payBtn = document.getElementById("payDebtBtn");
+    const depositBtn = document.getElementById("depositBtn");
 
     if (!walletH3) return;
 
-    walletH3.innerText = `₦${Math.abs(balance).toLocaleString()}.00`;
+    walletH3.innerText = balance < 0     ? `-₦${Math.abs(balance).toLocaleString()}.00`     : `₦${balance.toLocaleString()}.00`;
+    
+    if (balance < 0) {
+        // Debt state
+        payBtn.disabled = false;
+        depositBtn.disabled = true;
+    
+        depositBtn.onclick = () => alert("You must clear your debt first.");
+    
+    } else {
+        // Zero or Positive
+        payBtn.disabled = true;
+        depositBtn.disabled = false;
+    
+        payBtn.onclick = () => alert("No outstanding debt.");
+    }
     
     if (balance > 0) {
         // POSITIVE BALANCE (Green)
@@ -160,19 +175,23 @@ function initOrderStats() {
 // --- 5. Global Helpers ---
 window.redirectToPay = () => {
     if (latestBalance >= 0) {
-        alert("You have no outstanding debt.");
+        alert("No debt to pay.");
         return;
     }
+
     const debt = Math.abs(latestBalance);
-    // Redirect with action and the specific amount
     window.location.href = `./plans.html?action=pay&amount=${debt}`;
 };
 
 window.handleDeposit = async () => {
-    const amount = prompt("Enter amount to deposit into your wallet:");
+    if (latestBalance < 0) {
+        alert("Clear your debt before depositing.");
+        return;
+    }
+
+    const amount = prompt("Enter amount to deposit:");
     if (!amount || isNaN(amount) || amount <= 0) return;
-    
-    // Redirect to plans with deposit action
+
     window.location.href = `./plans.html?action=deposit&amount=${amount}`;
 };
 

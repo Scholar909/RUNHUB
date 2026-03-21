@@ -85,11 +85,10 @@ const renderProfileUI = (data) => {
     document.getElementById('p-bank').innerText = `${bank.bankName || 'N/A'} — ${bank.accountNumber || 'N/A'}`;
     document.getElementById('p-acc-name').innerText = `Account Name: ${bank.accountName || 'N/A'}`;
 
-    const totalPaid = Number(data.totalPaid || 0);
     const feeAccrued = Number(data.feeAccrued || 0);
     const walletCredit = Number(data.walletCredit || 0);
     
-    const walletAmt = (totalPaid - feeAccrued) + walletCredit;
+    const walletAmt = walletCredit - feeAccrued;
     const walletLabel = walletAmt < 0 ? "Outstanding Debt" : "Wallet Balance";
     document.getElementById('p-wallet').innerText = `₦${Math.abs(walletAmt).toLocaleString()}.00`;
     

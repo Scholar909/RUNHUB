@@ -1,11 +1,10 @@
 import { auth, db } from "./firebase-config.js";
 import { 
-    doc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp 
+    doc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, increment
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 let currentUser = null;
-const ADMIN_FEE_PER_ORDER = 25;
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -19,8 +18,23 @@ onAuthStateChanged(auth, async (user) => {
     const action = urlParams.get('action');
     const amount = Number(urlParams.get('amount') || 0);
 
-    if (action === 'pay' || action === 'deposit') {
-        showDebtPaymentUI(action, amount);
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    const data = snap.data();
+    
+    const balance = (data.walletCredit || 0) - (data.feeAccrued || 0);
+    
+    // Block wrong actions
+    if (action === "deposit" && balance < 0) {
+        alert("Clear your debt before depositing.");
+        window.location.href = "./dashboard.html";
+        return;
+    }
+    
+    if (action === "pay" && balance >= 0) {
+        alert("No debt to pay.");
+        window.location.href = "./dashboard.html";
+        return;
     }
 });
 
@@ -77,45 +91,37 @@ window.processWalletPayment = async (amount, action) => {
     handler.openIframe();
 };
 
-async function finalizeWalletPayment(paidAmount, action) {
+async function finalizeWalletPayment(amount, action) {
     const userRef = doc(db, "users", currentUser.uid);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.data();
 
-    let totalPaid = userData.totalPaid || 0;
-    let feeAccrued = userData.feeAccrued || 0;
-    let walletCredit = userData.walletCredit || 0;
+    try {
+        if (action === "deposit") {
+            // Safe atomic update
+            await updateDoc(userRef, {
+                walletCredit: increment(amount)
+            });
 
-    // 1. Calculate current debt after applying existing wallet credit
-    const debtBefore = Math.max(0, feeAccrued - walletCredit);
+        else if (action === "pay") {
+            const snap = await getDoc(userRef);
+            const data = snap.data();
+        
+            const walletCredit = data.walletCredit || 0;
+            const feeAccrued = data.feeAccrued || 0;
+        
+            const actualDebt = Math.max(0, feeAccrued - walletCredit);
+        
+            const amountToClear = Math.min(amount, actualDebt);
+        
+            await updateDoc(userRef, {
+                feeAccrued: increment(-amountToClear)
+            });
+        }
 
-    if (action === 'deposit') {
-        // Deposit reduces debt first
-        const depositApplied = Math.min(debtBefore, paidAmount);
-        const remainingDebt = debtBefore - depositApplied;
+        alert("Payment successful!");
+        window.location.href = "./dashboard.html";
 
-        // Any leftover deposit becomes wallet credit
-        const extraCredit = Math.max(0, paidAmount - depositApplied);
-
-        await updateDoc(userRef, {
-            totalPaid: totalPaid,               // totalPaid unchanged, deposits don’t count as paid
-            feeAccrued: remainingDebt,          // reduce debt
-            walletCredit: walletCredit - (debtBefore - remainingDebt) + extraCredit
-        });
-
-    } else if (action === 'pay') {
-        // Pay directly reduces debt
-        const paymentApplied = Math.min(debtBefore, paidAmount);
-        const remainingDebt = debtBefore - paymentApplied;
-        const extraCredit = Math.max(0, paidAmount - debtBefore);
-
-        await updateDoc(userRef, {
-            totalPaid: totalPaid + paymentApplied,
-            feeAccrued: remainingDebt,
-            walletCredit: walletCredit + extraCredit
-        });
+    } catch (err) {
+        console.error("Payment error:", err);
+        alert("Payment failed. Try again.");
     }
-
-    alert("Payment processed! Redirecting to verify your status...");
-    window.location.href = "./dashboard.html";
 }
