@@ -147,7 +147,6 @@ function updateClosestAndETA(mLoc, mode) {
     const minutes = Math.ceil((distanceKm / speed) * 60);
     
     document.getElementById('timeLeft').innerText = `${minutes} mins`;
-    showLiveTracker(`Near ${closest || "your area"} • ${minutes} mins away`);
 }
 
 function getDistanceKm(lat1, lon1, lat2, lon2) {
