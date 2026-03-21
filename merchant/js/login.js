@@ -70,6 +70,11 @@ loginForm.addEventListener('submit', async (e) => {
         const userData = userDoc.data();
         const now = new Date();
         const toJSDate = (val) => val?.toDate ? val.toDate() : new Date(val || 0);
+        
+        if (userData.role !== "merchant") {
+            await signOut(auth);
+            throw new Error("ACCESS DENIED: This is a Merchant portal. Customers and Admins cannot log in here.");
+        }
 
         // 1. ACCOUNT STATUS CHECK
         if (userData.status === "Locked") {
