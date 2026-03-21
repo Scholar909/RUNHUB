@@ -212,6 +212,7 @@ window.submitOrder = async () => {
     try {
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
+        const customerLoc = await getCustomerLocation();
 
         const orderObj = {
             customerId: auth.currentUser.uid,
@@ -223,7 +224,8 @@ window.submitOrder = async () => {
             deliveryCharge: activeSessionData.deliveryCharge,
             status: "pending",
             timestamp: Date.now(),
-            route: `${merchantData.fromLocation} to ${merchantData.toLocation}`
+            route: `${merchantData.fromLocation} to ${merchantData.toLocation}`,
+            customerLocation: customerLoc // <--- store as object
         };
 
         // 1. Save Order
@@ -250,6 +252,18 @@ window.submitOrder = async () => {
         submitBtn.style.cursor = 'pointer';
     }
 };
+
+async function getCustomerLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject("Geolocation not supported");
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            },
+            (err) => reject(err.message)
+        );
+    });
+}
 
 // --- 5. Navigation ---
 document.querySelector('.close-btn').onclick = () => window.location.href = "./home.html";
