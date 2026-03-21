@@ -1,4 +1,26 @@
-const CACHE_NAME = "novahub-cache-v8";
+importScripts('https://www.gstatic.com/firebasejs/12.9.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyC7onB0OptTyu-J6J1PwU6zX799tQIjh4k",
+  authDomain: "affiliate-app-dab95.firebaseapp.com",
+  projectId: "affiliate-app-dab95",
+  storageBucket: "affiliate-app-dab95.firebasestorage.app",
+  messagingSenderId: "510180440268",
+  appId: "1:510180440268:web:99be47162857f635d8ea69"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  self.registration.showNotification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: "/start/icon-512.png",
+    data: payload.data?.url
+  });
+});
+
+const CACHE_NAME = "novahub-cache-v9";
 
 const urlsToCache = [
 "/",
@@ -68,4 +90,26 @@ return res || caches.match("/offline.html");
 
 );
 
+
+
+});
+
+self.addEventListener("push", event => {
+    if (!event.data) return;
+
+    const data = event.data.json();
+
+    self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: "/start/icon-512.png",
+        data: data.url
+    });
+});
+
+self.addEventListener("notificationclick", event => {
+    event.notification.close();
+
+    event.waitUntil(
+        clients.openWindow(event.notification.data || "/")
+    );
 });
