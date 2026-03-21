@@ -28,25 +28,17 @@ const menuContainer = document.getElementById('menuContainer');
 const sessionGrid = document.querySelector('.session-grid');
 
 document.addEventListener("DOMContentLoaded", () => {
-    const deliveryInput = document.getElementById('deliveryChargeInput');
-    const slotsInput = document.getElementById('maxSlotsInput');
+    deliveryInput = document.getElementById('deliveryChargeInput');
+    slotsInput = document.getElementById('maxSlotsInput');
 
     deliveryInput.addEventListener("input", () => {
-        if (deliveryInput.value > MAX_DELIVERY_FEE) {
-            deliveryInput.value = MAX_DELIVERY_FEE;
-        }
-        if (deliveryInput.value < 0) {
-            deliveryInput.value = 0;
-        }
+        if (deliveryInput.value > MAX_DELIVERY_FEE) deliveryInput.value = MAX_DELIVERY_FEE;
+        if (deliveryInput.value < 0) deliveryInput.value = 0;
     });
 
     slotsInput.addEventListener("input", () => {
-        if (slotsInput.value > MAX_SLOTS_LIMIT) {
-            slotsInput.value = MAX_SLOTS_LIMIT;
-        }
-        if (slotsInput.value < 1) {
-            slotsInput.value = 1;
-        }
+        if (slotsInput.value > MAX_SLOTS_LIMIT) slotsInput.value = MAX_SLOTS_LIMIT;
+        if (slotsInput.value < 1) slotsInput.value = 1;
     });
 });
 
@@ -325,6 +317,7 @@ window.showForm = (mode, id = null) => {
     if (mode === 'edit' && id) {
         editingSessionId = id;
         const s = sessions.find(x => x.id === id);
+        if (!s) return alert("Session not found!");
         document.getElementById('formTitle').innerText = "EDIT SESSION";
         document.querySelector('input[placeholder="e.g. Dinner Run"]').value = s.sessionName;
         document.querySelector('input[placeholder="Pickup point"]').value = s.fromLocation;
