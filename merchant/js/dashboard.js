@@ -119,12 +119,15 @@ function updateWalletUI(balance) {
         walletH3.style.color = "#34c759"; 
         if (progressFill) progressFill.style.width = "0%"; 
         if (alertBox) alertBox.style.display = 'none';
-    } else if (balance === 0) {
-        // CLEAN SLATE (Neutral/Gray or Black)
-        walletH3.style.color = "var(--text-main, #000)"; // Use your main text color
-        if (progressFill) progressFill.style.width = "0%";
-        if (alertBox) alertBox.style.display = 'none';
-    } else {
+        } else if (balance === 0) {
+            // CLEAN SLATE
+            walletH3.style.color = "var(--text-main, #f5f5f7)"; 
+            if (progressFill) {
+                progressFill.style.width = "0%";
+                progressFill.style.background = "var(--accent)"; // Reset to blue or green
+            }
+            if (alertBox) alertBox.style.display = 'none';
+        } else {
         // DEBT (Red)
         walletH3.style.color = "#ff3b30";
         const debt = Math.abs(balance);
