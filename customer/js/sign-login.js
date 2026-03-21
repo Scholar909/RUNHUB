@@ -263,6 +263,13 @@ loginForm.addEventListener('submit', async (e) => {
         
         if (userDoc.exists()) {
             const userData = userDoc.data();
+            
+// --- ROLE CHECK: Only 'customer' allowed ---
+            if (userData.role !== "customer") {
+                await signOut(auth);
+                throw new Error("ACCESS DENIED: Merchants and Admins must use their respective login pages.");
+            }
+            
             if (userData.status === "Locked") {
                 await signOut(auth);
                 throw new Error("Your account has been BLOCKED.");
