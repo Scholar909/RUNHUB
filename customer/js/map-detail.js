@@ -35,7 +35,7 @@ async function syncOrderData() {
         } else {
             // If no stored location, try to get live location
             try {
-                customerLocation = await getLiveLoca tion();
+                customerLocation = await getLiveLocation();
             } catch (err) {
                 console.warn("Customer location unavailable:", err);
             }
