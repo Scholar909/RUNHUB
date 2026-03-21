@@ -109,8 +109,8 @@ async function calculateMerchantWallet(merchantId) {
         const userData = userSnap.data();
 
         // Simply mirror the merchant dashboard
-        const walletCredit = userData.walletCredit || 0;
-        const feeAccrued = userData.feeAccrued || 0;
+        const walletCredit = Number(userData.walletCredit || 0);
+        const feeAccrued = Number(userData.feeAccrued || 0);
         
         const currentBalance = walletCredit - feeAccrued;
         return currentBalance;
