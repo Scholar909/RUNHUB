@@ -105,8 +105,8 @@ async function finalizeWalletPayment(amount, action) {
             const snap = await getDoc(userRef);
             const data = snap.data();
         
-            const walletCredit = data.walletCredit || 0;
-            const feeAccrued = data.feeAccrued || 0;
+            const walletCredit = Number(data.walletCredit || 0);
+            const feeAccrued = Number(data.feeAccrued || 0);
         
             const actualDebt = Math.max(0, feeAccrued - walletCredit);
         

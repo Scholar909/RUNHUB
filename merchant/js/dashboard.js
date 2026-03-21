@@ -55,8 +55,8 @@ function initWalletAndStatsListener() {
 
         const userData = userDoc.data();
 
-        const feeAccrued = userData.feeAccrued || 0;
-        const walletCredit = userData.walletCredit || 0;
+        const feeAccrued = Number(userData.feeAccrued || 0);
+        const walletCredit = Number(userData.walletCredit || 0);
 
         const balance = walletCredit - feeAccrued;
 
@@ -91,7 +91,7 @@ function updateWalletUI(balance) {
     const walletH3 = document.querySelector('.wallet-card h3');
     const progressFill = document.querySelector('.progress-fill');
     const alertBox = document.querySelector('.alert-box');
-    latestBalance = balance;
+    latestBalance = Number(balance);
     const payBtn = document.getElementById("payDebtBtn");
     const depositBtn = document.getElementById("depositBtn");
 
