@@ -96,12 +96,13 @@ async function finalizeWalletPayment(amount, action) {
 
     try {
         if (action === "deposit") {
-            // Safe atomic update
+            // Add the amount to the user's credit
             await updateDoc(userRef, {
-                walletCredit: increment(amount)
+                walletCredit: increment(Number(amount))
             });
-
+        } // <--- Added this missing brace
         else if (action === "pay") {
+            // Use the logic you wrote to reduce the accrued fees
             const snap = await getDoc(userRef);
             const data = snap.data();
         
@@ -109,19 +110,18 @@ async function finalizeWalletPayment(amount, action) {
             const feeAccrued = Number(data.feeAccrued || 0);
         
             const actualDebt = Math.max(0, feeAccrued - walletCredit);
-        
-            const amountToClear = Math.min(amount, actualDebt);
+            const amountToClear = Math.min(Number(amount), actualDebt);
         
             await updateDoc(userRef, {
                 feeAccrued: increment(-amountToClear)
             });
         }
 
-        alert("Payment successful!");
+        alert("Payment successful! Your wallet has been updated.");
         window.location.href = "./dashboard.html";
 
     } catch (err) {
         console.error("Payment error:", err);
-        alert("Payment failed. Try again.");
+        alert("Payment failed. Please contact support.");
     }
 }
