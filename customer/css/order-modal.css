@@ -288,3 +288,40 @@ h3 {
         max-height: 85vh;
     }
 }
+
+.nova-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #111;
+    color: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    width: 260px;
+    z-index: 9999;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    cursor: pointer;
+    animation: slideIn 0.3s ease;
+}
+
+.nova-notification strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.nova-notification p {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.nova-notification .close-btn {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(120%); }
+    to { transform: translateX(0); }
+}
