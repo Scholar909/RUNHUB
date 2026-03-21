@@ -82,21 +82,6 @@ async function loadStaticLocations() {
     });
 }
 
-function syncOrderData() {
-    onSnapshot(doc(db, "orders", orderId), (snapshot) => {
-        if (!snapshot.exists()) return;
-        const data = snapshot.data();
-        
-        document.getElementById('orderRoute').innerText = data.route || "Campus Delivery";
-        document.getElementById('itemsSummary').innerText = data.items.map(i => `${i.qty}x ${i.name}`).join(", ");
-
-        // ✅ ADD THIS
-        if (data.customerLocation) {
-            customerLocation = data.customerLocation;
-        }
-    });
-}
-
 function syncMerchantLiveLocation() {
     onSnapshot(doc(db, "users", merchantId), (snapshot) => {
         const data = snapshot.data();
