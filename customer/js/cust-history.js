@@ -1,3 +1,4 @@
+import { showNotification } from "./notify.js";
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
@@ -16,6 +17,8 @@ onAuthStateChanged(auth, (user) => {
         window.location.href = "./sign-login.html";
     }
 });
+
+let seenDeclined = new Set();
 
 // --- 2. Real-time Listener ---
 function initHistoryListener(uid) {
@@ -44,7 +47,20 @@ function initHistoryListener(uid) {
 
     unsubscribe = onSnapshot(q, (snapshot) => {
         const orders = [];
-        snapshot.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(doc => {
+            const order = { id: doc.id, ...doc.data() };
+            orders.push(order);
+        
+            if (order.status === "declined" && !seenDeclined.has(order.id)) {
+                seenDeclined.add(order.id);
+        
+                showNotification({
+                    title: "Order Declined ❌",
+                    message: "Refund will be processed within 30 mins.",
+                    action: () => window.location.href = "./track-order.html"
+                });
+            }
+        });
         renderHistory(orders);
     });
 }

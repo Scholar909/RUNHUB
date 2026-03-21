@@ -1,3 +1,4 @@
+import { showNotification } from "./notify.js";
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
@@ -14,6 +15,9 @@ function initTracking(uid) {
         where("status", "==", "approved") // Only show approved/active ones
     );
 
+
+    let seenOrders = new Set();
+    
     onSnapshot(q, (snapshot) => {
         const grid = document.getElementById('activeOrdersGrid');
         grid.innerHTML = '';
@@ -26,6 +30,19 @@ function initTracking(uid) {
         snapshot.forEach(doc => {
             const order = doc.data();
             const orderId = doc.id;
+            
+            if (!seenOrders.has(orderId)) {
+                seenOrders.add(orderId);
+    
+                showNotification({
+                    title: "Order Approved 🚀",
+                    message: "Your order is on the way. Tap to track.",
+                    action: () => {
+                        window.location.href = `./map-detail.html?id=${orderId}&m=${order.merchantId}`;
+                    }
+                });
+            }
+
             
             const card = document.createElement('div');
             card.className = 'trust-card history-card';

@@ -92,6 +92,28 @@ function updateClosestAndETA(mLoc, mode) {
     const minutes = Math.ceil(minDist * speedFactor);
     
     document.getElementById('timeLeft').innerText = `${minutes} mins`;
+    showLiveTracker(`${closest || "Moving"} • ${minutes} mins away`);
+}
+
+function showLiveTracker(text) {
+    let banner = document.getElementById("liveTracker");
+
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "liveTracker";
+        banner.style.position = "fixed";
+        banner.style.bottom = "20px";
+        banner.style.left = "50%";
+        banner.style.transform = "translateX(-50%)";
+        banner.style.background = "#000";
+        banner.style.color = "#fff";
+        banner.style.padding = "12px 20px";
+        banner.style.borderRadius = "30px";
+        banner.style.zIndex = "9999";
+        document.body.appendChild(banner);
+    }
+
+    banner.innerText = text;
 }
 
 initPage();
