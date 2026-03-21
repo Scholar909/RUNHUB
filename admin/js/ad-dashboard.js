@@ -71,6 +71,7 @@ const userTableBody = document.querySelector('.admin-table tbody');
 const searchInput = document.querySelector('.admin-search');
 const customerCountEl = document.querySelectorAll('.stat-value')[0];
 const merchantCountEl = document.querySelectorAll('.stat-value')[1];
+const pendingMerchantCountEl = document.querySelectorAll('.stat-value')[2];
 
 let allUsers = []; // Source of truth for filtering
 
@@ -101,11 +102,30 @@ function initDashboard() {
             triggerSearch();
         }
     });
+    listenToPendingMerchantCount();
 }
 
-/**
- * 4. TABLE RENDERING
- */
+function listenToPendingMerchantCount() {
+    const ref = collection(db, "merchant_applications");
+
+    onSnapshot(ref, (snapshot) => {
+        let count = 0;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+
+            // Match your existing logic
+            const status = (data.status || "pending").toLowerCase();
+
+            if (status === "pending") count++;
+        });
+
+        pendingMerchantCountEl.textContent = count.toLocaleString();
+    }, (err) => {
+        console.error("Pending merchant listener error:", err);
+        pendingMerchantCountEl.textContent = "N/A";
+    });
+}
 
 function renderUserTable(users) {
     userTableBody.innerHTML = '';
