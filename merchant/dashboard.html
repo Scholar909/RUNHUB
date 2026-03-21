@@ -56,22 +56,22 @@
                     
                     <div class="progress-container">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%;"></div>
+                            <div class="progress-fill" style="width: 0%;"></div>
                         </div>
                         <span class="progress-label">Threshold: ₦1,000.00</span>
                     </div>
-
-                    <div class="alert-box overdue">
+                
+                    <div class="alert-box overdue" style="display: none;">
                         <i class="fi-alert"></i>
                         <span>Wallet exceeds ₦1000. Pay immediately.</span>
                     </div>
                     
                     <div class="wallet-actions" style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="handleDeposit()" class="btn-deposit" style="flex: 1; background: #28a745; color: white; border: none; padding: 10px; border-radius: 5px;">Deposit</button>
-                        <button onclick="redirectToPay()" class="btn-pay" style="flex: 1; background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px;">Pay Debt</button>
+                        <button id="depositBtn" onclick="handleDeposit()" class="btn-deposit" style="flex: 1; background: #28a745; color: white; border: none; padding: 10px; border-radius: 5px;">Deposit</button>
+                        <button id="payDebtBtn" onclick="redirectToPay()" class="btn-pay" style="flex: 1; background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px;">Pay Debt</button>
                     </div>
-
                 </div>
+
 
                 <div class="trust-card status-card">
                     <div class="card-tag">ORDER SUMMARY</div>
@@ -103,6 +103,6 @@
 
     <script src="js/firebase-config.js?=v11" type="module"></script>
     <script src="js/location.js?=v21" type="module"></script>
-    <script src="js/dashboard.js?=v32" type="module"></script>
+    <script src="js/dashboard.js?=v35" type="module"></script>
 </body>
 </html>
