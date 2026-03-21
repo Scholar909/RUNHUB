@@ -298,7 +298,7 @@ window.approveMerchant = async(id)=>{
         accountNumber:data.accountNumber || ""
       },
       profilePhoto:data.files?.selfie || "",
-      totalPaid:0,
+      walletCredit:0,
       feeAccrued:0,
       walletDueSince:null,
       rating:5.0,

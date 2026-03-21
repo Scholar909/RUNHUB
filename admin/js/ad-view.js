@@ -31,6 +31,8 @@ async function getClosestLocationName(merchantLatLng) {
 
 // --- CONFIG ---
 const ADMIN_FEE_PER_ORDER = 50;
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('id');
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
@@ -54,9 +56,6 @@ const displayName = document.querySelector('.user-display-name');
 const handle = document.querySelector('.user-handle');
 const detailsGrid = document.querySelector('.details-grid');
 const suspendBtn = document.querySelector('.btn-danger');
-
-const urlParams = new URLSearchParams(window.location.search);
-const userId = urlParams.get('id');
 
 /**
  * Helper: Formats Firebase Timestamps or Strings safely
@@ -110,11 +109,10 @@ async function calculateMerchantWallet(merchantId) {
         const userData = userSnap.data();
 
         // Simply mirror the merchant dashboard
-        const totalPaid = Number(userData.totalPaid || 0);
-        const feeAccrued = Number(userData.feeAccrued || 0);
-
-        const walletCredit = Number(userData.walletCredit || 0);
-        const currentBalance = (totalPaid - feeAccrued) + walletCredit;
+        const walletCredit = userData.walletCredit || 0;
+        const feeAccrued = userData.feeAccrued || 0;
+        
+        const currentBalance = walletCredit - feeAccrued;
         return currentBalance;
 
     } catch (err) {
