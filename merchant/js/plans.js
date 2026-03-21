@@ -13,18 +13,19 @@ onAuthStateChanged(auth, async (user) => {
     }
     currentUser = user;
     
-    // Check URL parameters
+    // 1. Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const action = urlParams.get('action');
     const amount = Number(urlParams.get('amount') || 0);
 
+    // 2. Fetch User Data
     const userRef = doc(db, "users", user.uid);
     const snap = await getDoc(userRef);
     const data = snap.data();
     
     const balance = (data.walletCredit || 0) - (data.feeAccrued || 0);
     
-    // Block wrong actions
+    // 3. Block wrong actions
     if (action === "deposit" && balance < 0) {
         alert("Clear your debt before depositing.");
         window.location.href = "./dashboard.html";
@@ -36,7 +37,14 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "./dashboard.html";
         return;
     }
+
+    // --- ADD THIS PART BELOW ---
+    // 4. Trigger the UI display if we have an action and amount
+    if (action && amount > 0) {
+        showDebtPaymentUI(action, amount);
+    }
 });
+
 
 function showDebtPaymentUI(action, amount) {
     const walletCard = document.getElementById("walletCard");
