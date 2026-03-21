@@ -182,8 +182,9 @@ window.redirectToPay = () => {
         return;
     }
 
-    const debt = Math.abs(latestBalance);
-    window.location.href = `./plans.html?action=pay&amount=${debt}`;
+    // Convert negative balance (e.g., -1200) into a positive payment amount (1200)
+    const debtAmount = Math.abs(latestBalance);
+    window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
 };
 
 window.handleDeposit = async () => {
@@ -192,11 +193,18 @@ window.handleDeposit = async () => {
         return;
     }
 
-    const amount = prompt("Enter amount to deposit:");
-    if (!amount || isNaN(amount) || amount <= 0) return;
+    const amount = prompt("Enter amount to deposit (₦):");
+    
+    // Validation: Ensure it's a number and greater than 0
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+        alert("Please enter a valid amount.");
+        return;
+    }
 
+    // Forward the custom amount to the plans page
     window.location.href = `./plans.html?action=deposit&amount=${amount}`;
 };
+
 
 window.toggleDrawer = () => {
     const drawer = document.getElementById('navDrawer');
