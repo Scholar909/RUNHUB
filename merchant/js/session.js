@@ -10,6 +10,8 @@ let currentUid = null;
 let sessions = [];
 let editingSessionId = null;
 let unsubscribeSessions = null;
+let deliveryInput;
+let slotsInput;
 
 // --- Enforcement Constants (Synced with Location JS) ---
 const WAL_THRESHOLD = 1000;
@@ -24,6 +26,29 @@ const sessionListView = document.getElementById('sessionListView');
 const sessionFormView = document.getElementById('sessionFormView');
 const menuContainer = document.getElementById('menuContainer');
 const sessionGrid = document.querySelector('.session-grid');
+
+document.addEventListener("DOMContentLoaded", () => {
+    const deliveryInput = document.getElementById('deliveryChargeInput');
+    const slotsInput = document.getElementById('maxSlotsInput');
+
+    deliveryInput.addEventListener("input", () => {
+        if (deliveryInput.value > MAX_DELIVERY_FEE) {
+            deliveryInput.value = MAX_DELIVERY_FEE;
+        }
+        if (deliveryInput.value < 0) {
+            deliveryInput.value = 0;
+        }
+    });
+
+    slotsInput.addEventListener("input", () => {
+        if (slotsInput.value > MAX_SLOTS_LIMIT) {
+            slotsInput.value = MAX_SLOTS_LIMIT;
+        }
+        if (slotsInput.value < 1) {
+            slotsInput.value = 1;
+        }
+    });
+});
 
 // --- 1. Initialization & Auth Guard ---
 onAuthStateChanged(auth, async (user) => {
@@ -173,13 +198,17 @@ window.saveSession = async () => {
     const nameInput = document.querySelector('input[placeholder="e.g. Dinner Run"]');
     const fromInput = document.querySelector('input[placeholder="Pickup point"]');
     const toInput = document.querySelector('input[placeholder="Destination"]');
-    const nums = document.querySelectorAll('input[type="number"]');
-    nums[0].max = MAX_DELIVERY_FEE;
-    nums[1].max = MAX_SLOTS_LIMIT;
+
+    // Clamp the values
+    const rawDelivery = Number(deliveryInput.value);
+    const rawSlots = Number(slotsInput.value);
     
-    // Clamp visually in the input fields
-    nums[0].value = Math.min(Number(nums[0].value), MAX_DELIVERY_FEE);
-    nums[1].value = Math.min(Number(nums[1].value), MAX_SLOTS_LIMIT);
+    const finalDeliveryCharge = Math.max(0, Math.min(rawDelivery || 0, MAX_DELIVERY_FEE));
+    const finalMaxSlots = Math.max(1, Math.min(rawSlots || 1, MAX_SLOTS_LIMIT));
+    
+    // Update the UI visually so the user sees the correction
+    deliveryInput.value = finalDeliveryCharge;
+    slotsInput.value = finalMaxSlots;
     
     const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
         name: row.querySelectorAll('input')[0].value,
@@ -195,8 +224,8 @@ window.saveSession = async () => {
         sessionName: nameInput.value,
         fromLocation: fromInput.value,
         toLocation: toInput.value,
-        deliveryCharge: Math.min(Number(nums[0].value), MAX_DELIVERY_FEE),
-        maxSlots: Math.min(Number(nums[1].value), MAX_SLOTS_LIMIT),
+        deliveryCharge: finalDeliveryCharge, // Capped
+        maxSlots: finalMaxSlots,             // Capped
         menu: menuItems,
         isActive: false,
         slotsFilled: 0,
@@ -300,8 +329,8 @@ window.showForm = (mode, id = null) => {
         document.querySelector('input[placeholder="e.g. Dinner Run"]').value = s.sessionName;
         document.querySelector('input[placeholder="Pickup point"]').value = s.fromLocation;
         document.querySelector('input[placeholder="Destination"]').value = s.toLocation;
-        nums[0].value = Math.min(s.deliveryCharge, MAX_DELIVERY_FEE);
-        nums[1].value = Math.min(s.maxSlots, MAX_SLOTS_LIMIT);
+        document.getElementById('deliveryChargeInput').value = s.deliveryCharge;
+        document.getElementById('maxSlotsInput').value = s.maxSlots;
         s.menu.forEach(item => window.addMenuItem(item.name, item.price));
     } else {
         editingSessionId = null;
