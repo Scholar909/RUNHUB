@@ -1,4 +1,4 @@
-const CACHE_NAME = "novahub-cache-v10";
+const CACHE_NAME = "novahub-cache-v11";
 
 const urlsToCache = [
 "/",
@@ -41,33 +41,20 @@ self.clients.claim();
 
 
 self.addEventListener("fetch", event => {
-
-event.respondWith(
-
-fetch(event.request)
-.then(response => {
-
-const clone = response.clone();
-
-caches.open(CACHE_NAME)
-.then(cache => cache.put(event.request, clone));
-
-return response;
-
-})
-.catch(() => {
-
-return caches.match(event.request)
-.then(res => {
-
-return res || caches.match("/offline.html");
-
+  event.respondWith(
+    caches.match(event.request).then(cachedResponse => {
+      const fetchPromise = fetch(event.request).then(networkResponse => {
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse.clone()));
+        return networkResponse;
+      });
+      // Return cached response if available, otherwise wait for network
+      return cachedResponse || fetchPromise;
+    }).catch(() => caches.match("/offline.html"))
+  );
 });
 
-})
-
-);
-
-
-
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
