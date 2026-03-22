@@ -26,7 +26,7 @@ window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggl
 
 window.contactSupport = () => {
     const adminPhone = "2349168873680"; 
-    const message = encodeURIComponent("Hello RUNHUB Admin, I am a merchant and I need assistance with my account.");
+    const message = encodeURIComponent("Hello NOVAHUB Admin, I am a merchant and I need assistance with my account.");
     window.location.href = `https://wa.me/${adminPhone}?text=${message}`;
 };
 
@@ -62,7 +62,7 @@ window.submitDispute = async () => {
         });
 
         // 2. Format the Response Message
-        const responseMsg = `Hi ${currentMerchant.fullName}, I am replying to your RUNHUB ticket ${ticketId} regarding ${category}.`;
+        const responseMsg = `Hi ${currentMerchant.fullName}, I am replying to your NOVAHUB ticket ${ticketId} regarding ${category}.`;
         
         // 3. ENCODE THE REPLY URL (First Level)
         const adminReplyUrl = `https://wa.me/${currentMerchant.phoneNumber}?text=${encodeURIComponent(responseMsg)}\n`;
@@ -70,7 +70,7 @@ window.submitDispute = async () => {
         // 4. Construct the Notification Message
         // Use encodeURIComponent on the values to ensure special characters don't break the string
         const notificationMessage = encodeURIComponent(
-            `*RUNHUB DISPUTE ALERT*\n\n` +
+            `*NOVAHUB DISPUTE ALERT*\n\n` +
             `*Ticket:* ${ticketId}\n` +
             `*Category:* ${category}\n` +
             `*Merchant:* ${currentMerchant.fullName}\n` +
