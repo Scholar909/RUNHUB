@@ -92,10 +92,11 @@ const checkUniqueness = async (field, value, statusId) => {
     statusEl.style.color = "gray";
 
     try {
-
+        
         const id = field === "username"
             ? value.toLowerCase()
-            : encodeMatric(value);
+            : `${encodeMatric(value)}_customer`; // Appending role
+
 
         const collectionName =
             field === "username"
@@ -143,8 +144,21 @@ usernameInput.addEventListener('input', debounce((e) => {
 }));
 
 matricInput.addEventListener('input', debounce((e) => {
-    checkUniqueness("matricNo", e.target.value.trim().toUpperCase(), "matric-status");
-}));
+    const val = e.target.value.trim().toUpperCase();
+    const statusEl = document.getElementById("matric-status");
+
+    // Validate pattern first
+    if (!isValidMatric(val)) {
+        statusEl.innerText = "✕ Invalid format. Example: RUN/ABC/12/12345";
+        statusEl.style.color = "#ff3b30";
+        isMatricValid = false;  // mark invalid
+        return;  // stop here
+    }
+
+    // If valid, proceed to uniqueness check
+    checkUniqueness("matricNo", val, "matric-status");
+
+}), 500);
 
 
 // --- Feature: Customer Signup ---
@@ -163,6 +177,13 @@ signupForm.addEventListener('submit', async (e) => {
     const email = inputs[2].value.trim();
     const level = inputs[3].value;
     const matricNo = inputs[4].value.trim().toUpperCase();
+    
+     // Check format
+    if (!isValidMatric(matricNo)) {
+        alert("Invalid Matric Number format. Example: RUN/ABC/12/12345");
+        return;
+    }
+    
     const department = inputs[5].value;
     const phone = inputs[6].value;
     
@@ -199,7 +220,8 @@ signupForm.addEventListener('submit', async (e) => {
         // Ensure the user is fully signed in
         await new Promise(resolve => setTimeout(resolve, 200)); // small delay
         
-        const matricId = encodeMatric(matricNo);
+        const matricId = `${encodeMatric(matricNo)}_customer`;
+
         
         await Promise.all([
           setDoc(doc(db, "users", user.uid), {
