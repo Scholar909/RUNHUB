@@ -86,7 +86,10 @@ const checkUniqueness = async (field, value, statusId) => {
     statusEl.style.color = "gray";
 
     try {
-        const id = field === "username" ? value.toLowerCase() : encodeMatric(value);
+        const id = field === "username" 
+            ? value.toLowerCase() 
+            : `${encodeMatric(value)}_merchant`; // Appending role
+
         const collectionName = field === "username" ? "usernames" : "matricNumbers";
 
         const docSnap = await getDoc(doc(db, collectionName, id));
@@ -517,7 +520,8 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   };
 
   const usernameId = data.username;
-  const matricId = encodeMatric(data.matricNumber);
+  const matricId = `${encodeMatric(data.matricNumber)}_merchant`;
+
 
   const usernameRef = doc(db, "usernames", usernameId);
   const matricRef = doc(db, "matricNumbers", matricId);
