@@ -383,11 +383,11 @@ window.blockMerchant = (id) => {
       }
 
       // 4️⃣ Open WhatsApp
-      const message = `RUNHUB MERCHANT REQUEST REJECTION NOTICE
+      const message = `NOVAHUB MERCHANT REQUEST REJECTION NOTICE
 
 Hello ${app.fullName},
 
-This is to inform you that your request to join RUNHUB as a merchant was rejected due to the reason below:
+This is to inform you that your request to join NOVAHUB as a merchant was rejected due to the reason below:
 
 ${reason}
 
@@ -395,9 +395,9 @@ You may resubmit your merchant application again with the correct details.
 
 If you believe this message was sent in error, you may ignore it.
 
-We hope to see you join the RUNHUB merchant community soon.
+We hope to see you join the NOVAHUB merchant community soon.
 
-— RUNHUB Team`;
+— NOVAHUB Team`;
 
       const encoded = encodeURIComponent(message);
       const phone = formatNGNumber(app.phoneNumber);
