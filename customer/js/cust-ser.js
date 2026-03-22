@@ -29,7 +29,7 @@ window.toggleDrawer = () => {
 
 window.contactSupport = () => {
     const adminPhone = "2349168873680"; 
-    const message = encodeURIComponent("Hello RUNHUB Admin, I am a customer and I need assistance with my account.");
+    const message = encodeURIComponent("Hello NOVAHUB Admin, I am a customer and I need assistance with my account.");
     window.location.href = `https://wa.me/${adminPhone}?text=${message}`;
 };
 /**
@@ -67,7 +67,7 @@ async function submitReport() {
         });
 
         // 2. Prepare WhatsApp Notification for Admin
-        const responseGreeting = `Hi ${currentUserData.fullName}, this is RUNHUB Support regarding your ticket ${ticketId}.`;
+        const responseGreeting = `Hi ${currentUserData.fullName}, this is NOVAHUB Support regarding your ticket ${ticketId}.`;
         const adminReplyUrl = `https://wa.me/${currentUserData.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
 
         const notificationText = encodeURIComponent(
@@ -103,7 +103,7 @@ async function submitReport() {
 document.querySelector('.report-card .btn-filled').addEventListener('click', submitReport);
 
 window.handleLogout = async () => {
-    if (confirm("Logout of RUNHUB?")) {
+    if (confirm("Logout of NOVAHUB?")) {
         await signOut(auth);
         window.location.href = "sign-login.html";
     }

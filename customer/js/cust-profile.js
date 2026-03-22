@@ -69,7 +69,7 @@ async function fetchUserProfile(uid) {
 // --- 3. Interaction Logic ---
 window.contactSupport = () => {
     const adminPhone = "2349168873680"; 
-    const message = encodeURIComponent("Hello RUNHUB Admin, I am a customer and I need assistance with my profile/account.");
+    const message = encodeURIComponent("Hello NOVAHUB Admin, I am a customer and I need assistance with my profile/account.");
     window.location.href = `https://wa.me/${adminPhone}?text=${message}`;
 };
 /**
@@ -90,7 +90,7 @@ const initializeListeners = () => {
 
     // Global handleLogout for the Drawer button and Main button
     window.handleLogout = async () => {
-        if (confirm("Are you sure you want to logout of RUN HUB?")) {
+        if (confirm("Are you sure you want to logout of NOVAHUB?")) {
             try {
                 await signOut(auth);
                 window.location.href = "./sign-login.html";
