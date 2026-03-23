@@ -213,6 +213,9 @@ window.submitOrder = async () => {
 
     try {
         const merchantId = localStorage.getItem("selectedMerchantId");
+        const customerSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const customerData = customerSnap.exists() ? customerSnap.data() : {};
+        const customerUsername = customerData.username || "Guest";
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
         const customerLoc = await getCustomerLocation();
@@ -254,7 +257,7 @@ window.submitOrder = async () => {
                 if (alertData.enabled) {
                     const message = `*New Order Received — NOVAHUB* 🔔
 Order ID: ${orderId}
-Customer: @${auth.currentUser.username || "User"}
+Customer: @${customerUsername}
 Total: ₦${totalAmount.toLocaleString()}
 Route: ${orderObj.route}
 
