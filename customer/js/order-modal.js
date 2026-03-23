@@ -1,4 +1,6 @@
 import { auth, db } from "./firebase-config.js";
+import { sendWhatsAppAlert } from "./send-alert.js"; 
+
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     doc, getDoc, collection, addDoc, updateDoc, increment 
@@ -210,13 +212,14 @@ window.submitOrder = async () => {
     }
 
     try {
+        const merchantId = localStorage.getItem("selectedMerchantId");
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
         const customerLoc = await getCustomerLocation();
 
         const orderObj = {
             customerId: auth.currentUser.uid,
-            merchantId: localStorage.getItem("selectedMerchantId"),
+            merchantId: merchantId,
             merchantName: merchantData.username,
             items: selectedItems,
             hasPack: document.getElementById('pack-checkbox').checked,
@@ -229,15 +232,42 @@ window.submitOrder = async () => {
         };
 
         // 1. Save Order
-        await addDoc(collection(db, "orders"), orderObj);
+        const orderRef = await addDoc(collection(db, "orders"), orderObj);
+        
+        const orderId = orderRef.id;
 
         // 2. Increment Slots Filled
-        const mId = localStorage.getItem("selectedMerchantId");
-        const merchantRef = doc(db, "users", mId);
-        const sessionRef = doc(db, "merchants", mId, "sessions", merchantData.currentSessionId);
+        const merchantRef = doc(db, "users", merchantId);
+        const sessionRef = doc(db, "merchants", merchantId, "sessions", merchantData.currentSessionId);
 
         await updateDoc(merchantRef, { slotsFilled: increment(1) });
         await updateDoc(sessionRef, { slotsFilled: increment(1) });
+
+        try {
+            // Check if THIS specific merchant has alerts enabled
+            const alertRef = doc(db, "merchant_alerts", merchantId);
+            const alertSnap = await getDoc(alertRef);
+
+            if (alertSnap.exists()) {
+                const alertData = alertSnap.data();
+
+                if (alertData.enabled) {
+                    const message = `*New Order Received — NOVAHUB* 🔔
+Order ID: ${orderId}
+Customer: @${auth.currentUser.displayName || "User"}
+Total: ₦${totalAmount.toLocaleString()}
+Route: ${orderObj.route}
+
+Please confirm the payment, then log in to your dashboard to Approve or Decline the order.`;
+
+                    // Send to the merchant's saved phone number
+                    await sendWhatsAppAlert(merchantId, message, "merchant_alerts"); 
+                }
+            }
+        } catch (alertErr) {
+            console.error("Alert failed to send, but order was placed:", alertErr);
+            // We don't alert the customer if the merchant's notification fails
+        }
 
         alert("Order Sent! Awaiting Merchant Approval.");
         window.location.href = "./history.html";
