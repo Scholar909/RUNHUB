@@ -191,7 +191,7 @@ window.confirmRefund = async () => {
         const message = `*Order Rejected — NOVAHUB*
         Order ID: ${orderToDecline.id}
         Total: ₦${orderToDecline.total.toLocaleString()}
-        Status: Check if you've been refunded. If not, it should arrive within 30 mins.`;
+        Status: Kindly confirm if you have been refunded. If not, it should arrive within 30 mins.`;
         
         await sendWhatsAppAlert(orderToDecline.customerId, message);
         
