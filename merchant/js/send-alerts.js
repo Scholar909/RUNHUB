@@ -21,7 +21,12 @@ export async function sendWhatsAppAlert(userId, message) {
         // small delay to make alerts feel natural (and avoid API bursts)
         await new Promise(res => setTimeout(res, 1000));
         
-        await fetch(url);
+        await fetch(url, { 
+            mode: 'no-cors',
+            method: 'GET'
+        });
+
+        console.log("Alert dispatched for:", userId);
 
     } catch (err) {
         console.error("Alert Error:", err);
