@@ -111,6 +111,7 @@ async function renderOrders() {
 
 window.approveOrder = async (orderId) => {
     try {
+      localStorage.setItem("activeOrderId", orderId);
         const orderRef = doc(db, "orders", orderId);
         let customerId = "";
 

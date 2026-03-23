@@ -85,6 +85,13 @@ function startLocationMonitoring() {
               lastLocationTimestamp = Date.now();
               gpsAlertShown = false; // reset on successful read
               updateUIStatus(true);
+              const mLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+              
+              // 1. Update the Merchant's Profile (for the map to see)
+              updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                  location: mLoc,
+                  lastSeen: serverTimestamp() 
+              });
           },
           () => {
               const now = Date.now();
