@@ -118,10 +118,6 @@ window.toggleDrawer = () => {
 };
 
 window.handleLogout = async () => {
-    try {
-        await signOut(auth);
-        window.location.href = "./sign-login.html";
-    } catch (error) {
-        console.error("Logout failed", error);
-    }
+    await auth.signOut();
+    window.location.href = "./sign-login.html";
 };
