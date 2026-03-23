@@ -254,7 +254,7 @@ window.submitOrder = async () => {
                 if (alertData.enabled) {
                     const message = `*New Order Received — NOVAHUB* 🔔
 Order ID: ${orderId}
-Customer: @${auth.currentUser.displayName || "User"}
+Customer: @${auth.currentUser.username || "User"}
 Total: ₦${totalAmount.toLocaleString()}
 Route: ${orderObj.route}
 
