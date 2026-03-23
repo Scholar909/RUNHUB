@@ -1,4 +1,6 @@
 import { auth, db } from "./firebase-config.js";
+import { sendWhatsAppAlert } from "./send-alerts.js";
+
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs 
@@ -158,15 +160,30 @@ window.markOrderDelivered = async () => {
     if (!confirm("Confirm that this order has been delivered to the customer?")) return;
 
     try {
-        await updateDoc(doc(db, "orders", currentOrderId), {
+        const orderRef = doc(db, "orders", currentOrderId);
+        const orderSnap = await getDoc(orderRef);
+        const orderData = orderSnap.data();
+
+        await updateDoc(orderRef, {
             status: "delivered",
             deliveredAt: serverTimestamp()
         });
-        alert("Order completed! Moving to Completed tab.");
+
+        const message = `*Order Delivered — NOVAHUB*
+Order ID: ${currentOrderId}
+Total: ₦${orderData.total.toLocaleString()}
+
+Thank you for using NOVAHUB! Please rate your experience on the Ratings Page.`;
+
+        await sendWhatsAppAlert(orderData.customerId, message);
+
+        alert("Order completed and customer notified!");
         window.location.href = "./history.html"; 
     } catch (e) {
+        console.error(e);
         alert("Error updating order.");
     }
 };
+
 
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');

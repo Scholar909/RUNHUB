@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase-config.js";
+import { sendWhatsAppAlert } from "./send-alerts.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy, increment, runTransaction
@@ -111,34 +112,39 @@ async function renderOrders() {
 window.approveOrder = async (orderId) => {
     try {
         const orderRef = doc(db, "orders", orderId);
+        let customerId = "";
 
+        // 1. Database Update
         await runTransaction(db, async (t) => {
             const orderSnap = await t.get(orderRef);
             const orderData = orderSnap.data();
-            if (orderData.status !== "pending") {
-                throw new Error("Order already processed");
-            }
-        
-            const merchantRef = doc(db, "users", currentMerchantId);
-            const merchantSnap = await t.get(merchantRef);
-        
+            
+            if (orderData.status !== "pending") throw new Error("Already processed");
+            
+            customerId = orderData.customerId; // Capture ID for the alert later
             const merchantFee = Math.ceil((orderData.deliveryCharge || 0) * 0.1);
-            const totalFee = CUSTOMER_FEE + merchantFee;
-        
-            // 1. Approve order
+            
             t.update(orderRef, { status: "approved", approvedAt: serverTimestamp() });
-        
-            // 2. Increment wallet
-            t.update(merchantRef, { feeAccrued: increment(totalFee) });
+            t.update(doc(db, "users", currentMerchantId), { 
+                feeAccrued: increment(CUSTOMER_FEE + merchantFee) 
+            });
         });
 
-        alert(`Order Approved! Fee charged`);
+        // 2. Notification (Outside transaction, only runs once on success)
+        const message = `*Order Approval Alert — NOVAHUB*
+Order ID: ${orderId}
+Status: Approved & In Transit
+Time: ${new Date().toLocaleTimeString()}`;
+
+        await sendWhatsAppAlert(customerId, message);
+        alert(`Order Approved! Customer Notified.`);
         
     } catch (error) {
         console.error("Approval error:", error);
         alert("Failed to approve order.");
     }
 };
+
 
 window.prepareDecline = async (orderId) => {
     const order = activeOrders.find(o => o.id === orderId);
@@ -182,8 +188,15 @@ window.confirmRefund = async () => {
             declinedAt: serverTimestamp()
         });
         
+        const message = `*Order Rejected — NOVAHUB*
+        Order ID: ${orderToDecline.id}
+        Total: ₦${orderToDecline.total.toLocaleString()}
+        Status: Check if you've been refunded. If not, it should arrive within 30 mins.`;
+        
+        await sendWhatsAppAlert(orderToDecline.customerId, message);
+        
         closeModal();
-        alert("Order declined. Refund has been marked as completed.");
+        alert("Order declined and Customer notified.");
     } catch (error) {
         console.error("Decline error:", error);
         alert("Error updating order status.");
