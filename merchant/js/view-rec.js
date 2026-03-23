@@ -162,28 +162,38 @@ window.markOrderDelivered = async () => {
     try {
         const orderRef = doc(db, "orders", currentOrderId);
         const orderSnap = await getDoc(orderRef);
+        
+        if (!orderSnap.exists()) {
+            alert("Order not found!");
+            return;
+        }
+        
         const orderData = orderSnap.data();
+        const customerId = orderData.customerId; // This MUST be the Firebase UID
 
+        // 1. Update Firestore
         await updateDoc(orderRef, {
             status: "delivered",
             deliveredAt: serverTimestamp()
         });
 
+        // 2. Prepare Message
         const message = `*Order Delivered — NOVAHUB*
-Order ID: ${currentOrderId}
+Order ID: ${currentOrderId.slice(-5).toUpperCase()}
 Total: ₦${orderData.total.toLocaleString()}
 
-Thank you for using NOVAHUB! Please rate your experience on the Ratings Page.`;
+Thank you for using NOVAHUB! Your delivery is complete.`;
 
-        await sendWhatsAppAlert(orderData.customerId, message);
+        // 3. Send Alert
+        console.log("Attempting to alert customer UID:", customerId);
+        await sendWhatsAppAlert(customerId, message);
 
         alert("Order completed and customer notified!");
         window.location.href = "./history.html"; 
     } catch (e) {
-        console.error(e);
-        alert("Error updating order.");
+        console.error("Delivery Error:", e);
+        alert("Error updating order: " + e.message);
     }
 };
-
 
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
