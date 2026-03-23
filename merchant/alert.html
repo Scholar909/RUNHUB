@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts | NOVAHUB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
+    <link rel="stylesheet" href="css/alert.css?=v5">
+</head>
+<body>
+
+<div class="main-wrapper">
+    
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="menu-trigger" onclick="toggleDrawer()">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <div class="logo">NOVA<span class="accent">HUB</span></div>
+        <div class="status-indicator">
+            <span class="dot animate-flicker"></span> ALERTS
+        </div>
+    </nav>
+
+    <!-- DRAWER -->
+    <div id="navDrawer" class="nav-drawer">
+        <div class="drawer-header">
+            <h3>Merchant Menu</h3>
+            <span class="close-drawer" onclick="toggleDrawer()">&times;</span>
+        </div>
+        <ul class="drawer-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Active Orders</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="session.html">Set Session</a></li>
+            <li><a href="profile.html">Profile</a></li>
+            <li><a href="merch-ser.html">Customer Service</a></li>
+            <li><a href="alert.html">Alert Setting</a></li>
+        </ul>
+        <div class="drawer-footer">
+            <button class="logout-btn" onclick="handleLogout()">
+                <i class="fi-power"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="content-body">
+
+        <header class="section-header">
+            <h1>WhatsApp <span class="highlight">Alerts</span></h1>
+            <p class="hero-description">
+                Receive real-time updates when you receive orders from customers.
+            </p>
+        </header>
+
+        <!-- INSTRUCTIONS -->
+        <div class="instruction-card">
+            <h3>Activate Alerts</h3>
+
+            <ol>
+                <li>Open WhatsApp</li>
+                <li>Send this message:</li>
+            </ol>
+
+            <div class="code-box">
+                I allow callmebot to send me messages
+            </div>
+
+            <p class="small">To this number (save as <strong>NOVAHUB ALERTS</strong>):</p>
+
+            <div class="code-box">
+                +34 694 23 41 84
+            </div>
+
+            <p class="small">
+                You will receive a reply with your phone number and API key.
+                Copy them exactly into the form below.
+            </p>
+        </div>
+
+        <!-- FORM -->
+        <div class="form-card" id="alertFormCard">
+            <h3>Connect Number</h3>
+
+            <input type="number" id="phoneInput" placeholder="Phone (e.g 2348123456789)">
+            <input type="number" id="apiInput" placeholder="7-digit API key">
+
+            <button class="btn btn-filled w-100" onclick="saveAlertDetails()">
+                Save Alert Settings
+            </button>
+        </div>
+
+        <!-- SAVED STATE -->
+        <div class="saved-card hidden" id="savedCard">
+            <h3>Alert Active</h3>
+
+            <p id="savedNumber"></p>
+
+            <div class="btn-group">
+                <button class="btn btn-outline" id="toggleBtn" onclick="toggleAlerts()">Disable Alerts</button>
+                <button class="btn btn-outline" onclick="editAlert()">Edit</button>
+                <button class="btn btn-danger" onclick="deleteAlert()">Delete</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+        <footer class="bottom-nav">
+            <a href="orders.html" class="nav-icon-box"><i class="fi-page-edit"></i></a>
+            <a href="history.html" class="nav-icon-box"><i class="fi-clock"></i></a>
+            <a href="dashboard.html" class="nav-icon-box active"><i class="fi-home"></i></a>
+            <a href="profile.html" class="nav-icon-box"><i class="fi-torso"></i></a>
+            <a href="merch-ser.html" class="nav-icon-box"><i class="fi-comments"></i></a>
+        </footer>
+
+</div>
+
+<script type="module" src="js/alert.js?=v6"></script>
+</body>
+</html>
