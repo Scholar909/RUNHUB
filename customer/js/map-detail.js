@@ -1,5 +1,4 @@
 import { auth, db } from "./firebase-config.js";
-import { sendWhatsAppAlert } from "./send-alert.js";
 import { doc, onSnapshot, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const params = new URLSearchParams(window.location.search);
@@ -127,24 +126,6 @@ function updateClosestAndETA(mLoc, mode) {
     });
 
     document.getElementById('closestLoc').innerText = closest || "In Transit";
-    
-    if (closest && closest !== lastNotifiedLocation) {
-    
-        const now = Date.now();
-    
-        if (now - lastAlertTime < 10000) return; // 10 sec cooldown
-    
-        lastAlertTime = now;
-        lastNotifiedLocation = closest;
-    
-        const message = `*NOVAHUB Merchant Location Update*
-    Merchant: ${document.getElementById('merchantName').innerText}
-    Order ID: ${orderId}
-    Closest To: ${closest}
-    ETA: ${document.getElementById('timeLeft').innerText}`;
-    
-        sendWhatsAppAlert(auth.currentUser.uid, message);
-    }
 
     // ❗ NOW FIX ETA (use CUSTOMER location instead)
     if (!customerLocation) return;
@@ -159,12 +140,6 @@ function updateClosestAndETA(mLoc, mode) {
     // ✅ ARRIVAL CHECK (ADD HERE)
     if (distanceKm < 0.05) {
         document.getElementById('timeLeft').innerText = "Arrived";
-    
-        const message = `*NOVAHUB Merchant Arrival*
-    Merchant has arrived at your location.
-    Order ID: ${orderId}`;
-    
-        sendWhatsAppAlert(auth.currentUser.uid, message);
     
         return;
     }
