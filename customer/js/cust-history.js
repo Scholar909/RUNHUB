@@ -1,5 +1,4 @@
 import { auth, db } from "./firebase-config.js";
-import { sendWhatsAppAlert } from "./send-alert.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     collection, query, where, onSnapshot, orderBy 
@@ -8,9 +7,6 @@ import {
 // --- State Management ---
 let currentTab = 'pending';
 let unsubscribe = null;
-
-// Persisted alerts across reloads
-const sentAlerts = new Set(JSON.parse(localStorage.getItem('sentAlerts') || '[]'));
 
 // --- 1. Initialization ---
 onAuthStateChanged(auth, (user) => {
@@ -49,17 +45,7 @@ function initHistoryListener(uid) {
     unsubscribe = onSnapshot(q, (snapshot) => {
         const orders = [];
         snapshot.forEach(docSnap => {
-            const order = { id: docSnap.id, ...docSnap.data() };
-            orders.push(order);
-        
-            // --- ALERT LOGIC ---
-            const key = order.id + "_" + order.status;
-        
-            if (!sentAlerts.has(key)) {
-                sentAlerts.add(key);
-        
-                triggerOrderAlert(order);
-            }
+            orders.push({ id: docSnap.id, ...docSnap.data() });
         });
         renderHistory(orders);
     });
@@ -144,47 +130,6 @@ window.viewReceipt = (orderId) => {
     
     window.location.href = "./cust-view-rec.html";
 };
-
-function triggerOrderAlert(order) {
-    const key = order.id + "_" + order.status;
-
-    // Skip if already sent (persisted across reloads)
-    if (sentAlerts.has(key)) return;
-
-    sentAlerts.add(key);
-    localStorage.setItem('sentAlerts', JSON.stringify([...sentAlerts]));
-
-    let message = "";
-
-    if (order.status === "approved") {
-        message = `*Order Approval Alert — NOVAHUB*
-        Order ID: ${order.id}
-        Items: ${order.items.map(i => `${i.qty}x ${i.name}`).join(", ")}
-        Total: ₦${order.total}
-        Merchant: @${order.merchantName}
-        Time: ${new Date().toLocaleTimeString()}`;
-    }
-
-    if (order.status === "delivered") {
-        message = `*Order Delivered — NOVAHUB*
-        Order ID: ${order.id}
-        Total: ₦${order.total}
-
-        Please rate your experience on the Ratings Page.`;
-    }
-
-    if (order.status === "declined") {
-        message = `*Order Rejected — NOVAHUB*
-        Order ID: ${order.id}
-        Total: ₦${order.total}
-
-        Check if you've been refunded. If not, it should arrive within 30 mins.`;
-    }
-
-    if (message) {
-        sendWhatsAppAlert(order.customerId, message);
-    }
-}
 
 // --- 5. Global Navigation ---
 window.toggleDrawer = () => {
