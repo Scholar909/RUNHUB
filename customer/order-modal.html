@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Place Order | NOVA Delivery Hub</title>
+<link rel="manifest" href="/start/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/start/icon-512.png">
+
     <link rel="stylesheet" href="css/order-modal.css?=v3">
 </head>
 <body class="modal-open">
@@ -89,7 +94,7 @@
             </div>
         </div>
     </div>
-    
+    <script src="/start/pwa-handler.js"></script>
     <script src="js/order-modal.js?=v5" type="module"></script>
     <script src="js/firebase-config.js?=v5" type="module"></script>
 </body>
