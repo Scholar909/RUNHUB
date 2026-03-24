@@ -74,6 +74,14 @@ function isValidMatric(matric) {
     return pattern.test(matric);
 }
 
+// Add this below isValidMatric
+function isValidUsername(username) {
+    // Allows letters, numbers, and underscores only
+    const pattern = /^[a-zA-Z0-9_]+$/;
+    return pattern.test(username);
+}
+
+
 // Encode matric for Firestore
 function encodeMatric(matric) {
     return matric.replace(/\//g, "_"); // Replace all slashes with underscores
@@ -140,8 +148,19 @@ const matricInput = inputs[4];
 
 // Attach listeners (Make sure IDs 'username-status' and 'matric-status' exist in HTML)
 usernameInput.addEventListener('input', debounce((e) => {
-    checkUniqueness("username", e.target.value.trim(), "username-status");
+    const val = e.target.value.trim();
+    const statusEl = document.getElementById("username-status");
+
+    if (!isValidUsername(val)) {
+        statusEl.innerText = "✕ Only letters, numbers, and underscores allowed";
+        statusEl.style.color = "#ff3b30";
+        isUsernameValid = false;
+        return;
+    }
+
+    checkUniqueness("username", val.toLowerCase(), "username-status");
 }));
+
 
 matricInput.addEventListener('input', debounce((e) => {
     const val = e.target.value.trim().toUpperCase();
@@ -173,10 +192,16 @@ signupForm.addEventListener('submit', async (e) => {
 
     const submitBtn = signupForm.querySelector('button');
     const fullName = inputs[0].value;
-    const username = inputs[1].value.trim().toLowerCase();
-    const email = inputs[2].value.trim();
+    const rawUsername = inputs[1].value.trim();
+    const username = rawUsername.toLowerCase();
+    const email = inputs[2].value.trim().toLowerCase();
     const level = inputs[3].value;
     const matricNo = inputs[4].value.trim().toUpperCase();
+    
+    if (!isValidUsername(rawUsername)) {
+        alert("Username can only contain letters, numbers, and underscores.");
+        return;
+    }
     
      // Check format
     if (!isValidMatric(matricNo)) {
@@ -267,7 +292,7 @@ loginForm.addEventListener('submit', async (e) => {
     submitBtn.innerText = "Authenticating...";
 
     try {
-        let email = identifier;
+        let email = identifier.toLowerCase();
 
         if (!identifier.includes('@')) {
             const usernameDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
