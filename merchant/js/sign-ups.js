@@ -634,8 +634,51 @@ function generateCatchPhrase() {
         "Sunny Orange Sky",
         "Quiet Mountain Echo",
         "Blue Horizon Run",
-        "Golden Leaf Whisper"
+        "Golden Leaf Whisper",
+
+        // New additions
+        "Midnight Owl Signal",
+        "Electric Sunset Drive",
+        "Hidden Bamboo Path",
+        "Rapid Thunder Pulse",
+        "Velvet Storm Rising",
+        "Silent Ocean Drift",
+        "Neon City Breeze",
+        "Broken Clock Wisdom",
+        "Emerald Skyfall",
+        "Rolling Desert Code",
+        "Frozen Flame Spark",
+        "Cosmic Banana Loop",
+        "Wild Cherry Orbit",
+        "Shadow Lantern Glow",
+        "Purple Rain Circuit",
+        "Floating Island Signal",
+        "Retro Pixel Dream",
+        "Caffeine Powered Genius",
+        "Binary Sunset Mood",
+        "Soft Chaos Theory",
+        "Invisible Crown Energy",
+        "Dancing Gravity Shift",
+        "Turbo Penguin Mode",
+        "Infinite Loop Vibes",
+        "Cloud Nine Protocol",
+        "Digital Jungle Beat",
+        "Starlight Coffee Break",
+        "Mystic River Sync",
+        "Urban Legend Loading",
+        "Golden Hour Hack",
+        "Phantom WiFi Spirit",
+        "Parallel Universe Ping",
+        "Skyline Echo Burst",
+        "Quantum Chill State",
+        "Firefly Debug Mode",
+        "Zero Gravity Focus",
+        "Hidden Level Unlocked",
+        "Dark Mode Energy",
+        "Silent Thunder Move",
+        "Code Ninja Awakens"
     ];
+
     return phrases[Math.floor(Math.random() * phrases.length)];
 }
 });
