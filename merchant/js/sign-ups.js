@@ -46,6 +46,9 @@ v.srcObject=null;
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
 const CLOUDINARY_VIDEO = "https://api.cloudinary.com/v1_1/dltoup0cz/video/upload";
 const UPLOAD_PRESET = "runhub_uploads";
+// Add this at the top with your other constants
+const ADMIN_PHONE = "2349168873680";
+const CALLMEBOT_API_KEY = "7465463"; 
 
 
 /* ---------------- VALIDATION ---------------- */
@@ -435,18 +438,28 @@ timerEl.innerText="";
 
 /* ---------------- CLOUDINARY ---------------- */
 
-async function uploadImage(blob){
+/* --- sign-ups.js FIX --- */
 
-const fd=new FormData();
+async function uploadImage(blob) {
+    const fd = new FormData();
+    fd.append("file", blob);
+    fd.append("upload_preset", UPLOAD_PRESET);
+    // Add this to tell Cloudinary to figure out if it's an image or a PDF/Raw file
+    fd.append("resource_type", "auto"); 
 
-fd.append("file",blob);
-fd.append("upload_preset",UPLOAD_PRESET);
-
-const res=await fetch(CLOUDINARY_URL,{method:"POST",body:fd});
-const data=await res.json();
-
-return data.secure_url;
-
+    try {
+        const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+        if (!res.ok) {
+            const errorData = await res.json();
+            console.error("Cloudinary Upload Error:", errorData);
+            return null;
+        }
+        const data = await res.json();
+        return data.secure_url;
+    } catch (err) {
+        console.error("Upload failed:", err);
+        return null;
+    }
 }
 
 async function uploadVideo(blob){
@@ -568,7 +581,22 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   }
 
   const catchPhrase = generateCatchPhrase();
-
+  
+  
+  // 1. Generate the PDF Blob
+  const pdfBlob = await generateBindingAgreement(data, urls.face);
+  
+  // 2. Upload PDF to Cloudinary (using your existing upload logic)
+  // 2. Upload PDF to Cloudinary
+  const pdfUrl = await uploadImage(pdfBlob); 
+  
+  if (!pdfUrl) {
+      alert("Failed to generate or upload the Binding Agreement. Please try again.");
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit Application";
+      return; // Stop here if PDF failed
+  }
+  
   await addDoc(collection(db, "merchant_applications"), {
     ...data,
     files: {
@@ -576,19 +604,22 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
       idBack: urls.idBack,
       selfie: urls.selfie,
       faceScan: urls.face,
-      verificationVideo: urls.video
+      verificationVideo: urls.video,
+      bindingAgreementBlank: pdfUrl
     },
     catchPhrase: catchPhrase,
     status: "pending",
     submittedAt: serverTimestamp()
   });
+  
+  await sendAdminMerchantAlert(data);
 
   await Promise.all([
     setDoc(doc(db,"usernames",usernameId),{reserved:true}),
     setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
   ]);
 
-  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.\n\nYou'll receive an email to set your password only if you successfully get verified.`);
+  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
 
   window.location.href = "./sign-login.html";
 
@@ -608,3 +639,121 @@ function generateCatchPhrase() {
     return phrases[Math.floor(Math.random() * phrases.length)];
 }
 });
+
+async function generateBindingAgreement(data, faceScanUrl) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // --- Header ---
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("NOVAHUB MERCHANT BINDING AGREEMENT", pageWidth / 2, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Redeemer's University, Ede - Official Business Partner", pageWidth / 2, 27, { align: "center" });
+    doc.line(margin, 32, pageWidth - margin, 32);
+
+    // --- Passport Photo (Face Scan) ---
+    try {
+        // We fetch the image to convert it to a base64 string for jsPDF
+        const response = await fetch(faceScanUrl);
+        const blob = await response.blob();
+        const base64Img = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+        doc.addImage(base64Img, 'JPEG', margin, 40, 35, 45); // Top Left Passport
+    } catch (e) {
+        doc.rect(margin, 40, 35, 45);
+        doc.text("Photo ID", margin + 10, 62);
+    }
+
+    // --- Merchant Details ---
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("MERCHANT DETAILS", 65, 45);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Full Name: ${data.fullName}`, 65, 52);
+    doc.text(`Matric No: ${data.matricNumber}`, 65, 58);
+    doc.text(`Department: ${data.department} (${data.level}L)`, 65, 64);
+    doc.text(`Contact: ${data.phoneNumber}`, 65, 70);
+    doc.text(`Address: ${data.hostel}, Block ${data.block}, Room ${data.room}`, 65, 76);
+
+    // --- The Agreement Body ---
+    doc.setFont("helvetica", "bold");
+    doc.text("AFFIDAVIT & TERMS OF ENGAGEMENT", margin, 100);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    
+    const agreementText = `I, ${data.fullName.toUpperCase()}, a student of Redeemer's University, Ede, hereby solemnly affirm and agree to be bound by the operational guidelines of NOVAHUB. 
+
+1. FINANCIAL OBLIGATION: I acknowledge that funds received from customers are held in trust. I am obligated to utilize said funds solely for the purchase of requested goods.
+2. REFUND POLICY: If an order is declined or cannot be fulfilled, I must refund the full amount to the customer within 30 minutes.
+3. DELIVERY: I commit to delivering orders promptly. Failure to deliver or refund constitutes a breach of trust and will be reported to the Directorate of Student Services (DSSS) and the Chief Security Officer (CSO).
+4. DISPUTE RESOLUTION: I agree that in cases of network delays (where funds are not visible within 10 minutes), I must contact NOVAHUB support immediately.
+5. LEGAL STANDING: I understand that NOVAHUB is a registered business entity within Redeemer's University. Any fraudulent activity will result in immediate suspension and disciplinary action by school authorities based on the data provided herein.`;
+
+    const splitText = doc.splitTextToSize(agreementText, pageWidth - (margin * 2));
+    doc.text(splitText, margin, 110);
+
+    // --- Signatures ---
+    const sigY = 180;
+    doc.line(margin, sigY, margin + 60, sigY);
+    doc.text("Merchant Signature & Date", margin, sigY + 5);
+
+    doc.line(pageWidth - margin - 60, sigY, pageWidth - margin, sigY);
+    doc.text("Admin / Representative", pageWidth - margin - 60, sigY + 5);
+
+    // --- Return the PDF as a Blob for uploading to Cloudinary ---
+    return doc.output('blob');
+}
+
+async function sendAdminMerchantAlert(data) {
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Day formatting logic
+    const options = { weekday: 'long' };
+    const todayName = new Intl.DateTimeFormat('en-US', options).format(now);
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const tomorrowName = new Intl.DateTimeFormat('en-US', options).format(tomorrow);
+    
+    const nextTomorrow = new Date(now);
+    nextTomorrow.setDate(now.getDate() + 2);
+    const nextTomorrowName = new Intl.DateTimeFormat('en-US', options).format(nextTomorrow);
+
+    // Determine available days based on 8:00 PM (20:00) cutoff
+    let dayOptions = "";
+    if (currentHour < 20) {
+        dayOptions = `1. Today (${todayName})\n2. Tomorrow (${tomorrowName})\n3. ${nextTomorrowName}`;
+    } else {
+        dayOptions = `1. Tomorrow (${tomorrowName})\n2. ${nextTomorrowName}`;
+    }
+
+    const responseGreeting = `Hello ${data.fullName},\n\nYour sign up request for NOVAHUB has been received! 🚀\n\nWe need to decide on a date and time for your physical verification and signing of the binding agreement.\n\nPlease let us know which day works best for you:\n\n${dayOptions}\n\nOnce you've decided, we'll pick a specific time!`;
+
+    const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
+
+    const notificationText = encodeURIComponent(
+        `*MERCHANT SIGN UP ALERT - NOVAHUB*\n\n` +
+        `*Name:* ${data.fullName}\n` +
+        `*Username:* ${data.username}\n` +
+        `*Matric:* ${data.matricNumber}\n` +
+        `*Submitted:* ${now.toLocaleTimeString()}\n\n` +
+        `*REPLY TO MERCHANT:* \n${adminReplyUrl}`
+    );
+
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${ADMIN_PHONE}&text=${notificationText}&apikey=${CALLMEBOT_API_KEY}`;
+
+    try {
+        await fetch(url, { mode: 'no-cors' });
+    } catch (err) {
+        console.error("CallMeBot Error:", err);
+    }
+}
