@@ -96,23 +96,21 @@ async function loadReviews(merchantUid = null, searchTerm = "") {
     }
 }
 
-// --- 3. Search & Live Filter Logic ---
+// --- 3. Search & Live Filter Logic (Refined) ---
 searchInput.addEventListener('input', async (e) => {
     const term = e.target.value.trim().toLowerCase().replace('@', '');
     
-    // Reset if search is empty
     if (term.length === 0) {
         suggestionBox.style.display = 'none';
         ratingPortal.style.display = 'none';
-        loadReviews(); // Back to global feed
+        loadReviews(); 
         return;
     }
 
-    // UPDATE FEED LIVE AS USER TYPES
     loadReviews(null, term);
 
-    // Fetch Merchant Suggestions for the dropdown (min 2 chars)
-    if (term.length >= 2) {
+    // 1. Show suggestions starting from the very FIRST character
+    if (term.length >= 1) { 
         const q = query(collection(db, "users"), 
                         where("role", "==", "merchant"), 
                         where("username", ">=", term), 
@@ -120,33 +118,57 @@ searchInput.addEventListener('input', async (e) => {
         
         const snap = await getDocs(q);
         suggestionBox.innerHTML = '';
-        
-        if (snap.empty) { 
-            suggestionBox.style.display = 'none'; 
-        } else {
+
+        if (!snap.empty) {
             snap.forEach(doc => {
                 const data = doc.data();
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerText = `@${data.username}`;
-                div.onclick = () => selectMerchant(doc.id, data.username);
-                suggestionBox.appendChild(div);
+                const isOwnAccount = currentCustomerData && data.matricNumber === currentCustomerData.matricNo;
+
+                // 2. Only show the "Rating Yourself" warning if they've typed > 3 chars
+                if (isOwnAccount) {
+                    if (term.length > 3) {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.style.color = "#ff3b30";
+                        div.style.fontSize = "0.75rem";
+                        div.innerText = `✕ You cannot rate yourself 😏`;
+                        suggestionBox.appendChild(div);
+                    }
+                    // If it's their account but < 3 chars, we just hide it silently
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerText = `@${data.username}`;
+                    div.onclick = () => selectMerchant(doc.id, data.username, data.matricNumber);
+                    suggestionBox.appendChild(div);
+                }
             });
             suggestionBox.style.display = 'block';
+        } else {
+            suggestionBox.style.display = 'none';
         }
     } else {
         suggestionBox.style.display = 'none';
     }
 });
 
-function selectMerchant(uid, username) {
+// Update the function signature to include merchantMatric
+function selectMerchant(uid, username, merchantMatric) {
+    // Final hard-check against the matric number
+    if (currentCustomerData && merchantMatric === currentCustomerData.matricNo) {
+        alert("Nice try! I see what you did there, but you can't rate your own merchant account. 👀");
+        suggestionBox.style.display = 'none';
+        searchInput.value = '';
+        return;
+    }
+
     selectedMerchantUid = uid;
     document.getElementById('selectedMerchant').innerText = `@${username}`;
     suggestionBox.style.display = 'none';
     searchInput.value = `@${username}`;
     
     ratingPortal.style.display = 'block'; 
-    loadReviews(uid); // Lock feed to this specific merchant
+    loadReviews(uid); 
 }
 
 // --- 4. Submit Review ---
