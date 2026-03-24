@@ -11,13 +11,23 @@ import {
 onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-/* --- ADD AT THE TOP OF view-verify.js --- */
-const approveBtn = document.getElementById("approveBtn");
+// Use a helper to check if element exists before styling
+const safeSetDisabled = (id, state) => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.disabled = state;
+        el.style.opacity = state ? "0.5" : "1";
+        el.style.cursor = state ? "not-allowed" : "pointer";
+    }
+};
 
-// Ensure button is locked immediately on script load
-approveBtn.disabled = true;
-approveBtn.style.opacity = "0.5";
-approveBtn.style.cursor = "not-allowed";
+// Initial state (Safe check)
+const approveBtn = document.getElementById("approveBtn");
+if (approveBtn) {
+    approveBtn.disabled = true;
+    approveBtn.style.opacity = "0.5";
+    approveBtn.style.cursor = "not-allowed";
+}
 
 const params = new URLSearchParams(window.location.search);
 const appId = params.get("id");
@@ -123,12 +133,12 @@ async function loadApplication() {
 
     // 2. CHECK PERSISTENCE: If document already exists, unlock the approve button immediately
     if (data.signedAgreementUrl) {
-        uploadStatus.innerText = "✓ Signed agreement verified.";
-        uploadStatus.style.color = "#34c759";
-        
-        approveBtn.disabled = false;
-        approveBtn.style.opacity = "1";
-        approveBtn.style.cursor = "pointer";
+        const uploadStatus = document.getElementById("uploadStatus");
+        if(uploadStatus) {
+            uploadStatus.innerText = "✓ Signed agreement verified.";
+            uploadStatus.style.color = "#34c759";
+        }
+        safeSetDisabled("approveBtn", false); // Use the helper
     }
 
     // 3. Handle File Selection UI
