@@ -7,7 +7,7 @@ import {
 
 
 const isMonitoringActive = true; // Set to true to enforce GPS
-const WAL_THRESHOLD = 1000;
+const WAL_THRESHOLD = 300;
 
 let locationWatcher = null;
 

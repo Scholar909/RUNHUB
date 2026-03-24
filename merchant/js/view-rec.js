@@ -7,7 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 // --- Global Config (Synced with Location JS) ---
-const WAL_THRESHOLD = 1000;
+const WAL_THRESHOLD = 300;
 const GRACE_HOURS = 24;
 
 let currentOrderId = localStorage.getItem("viewingOrderId");

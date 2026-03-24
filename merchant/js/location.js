@@ -5,7 +5,7 @@ import {
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 const isMonitoringActive = true; // Set to true to enforce GPS
-const WAL_THRESHOLD = 1000;
+const WAL_THRESHOLD = 300;
 const ADMIN_FEE = 25;
 const TRIAL_DAYS = 14;
 const GRACE_HOURS = 24;

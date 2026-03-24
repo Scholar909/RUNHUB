@@ -6,7 +6,7 @@ import {
 
 // --- State Management ---
 let currentMerchantId = null;
-const WALLET_THRESHOLD = 1000;
+const WALLET_THRESHOLD = 300;
 let latestBalance = 0; 
 
 // Helper to safely handle different timestamp formats
@@ -41,7 +41,7 @@ async function checkIfBlocked(uid) {
 
     const balance = (data.walletCredit || 0) - (data.feeAccrued || 0);
 
-    if (balance <= -1000) {
+    if (balance <= -300) {
         const debt = Math.abs(balance);
         window.location.href = `./plans.html?action=pay&amount=${debt}`;
     }
