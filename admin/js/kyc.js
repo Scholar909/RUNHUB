@@ -178,6 +178,25 @@ bankDetails.innerHTML = `
   <span>${data.bankDetails?.accountNumber || ""}</span>
 </div>
 `;
+
+/* --- LEGAL DOCUMENTS SECTION --- */
+const legalDocsSection = document.getElementById("legalDocs"); // Ensure this ID exists in your HTML
+if (legalDocsSection) {
+    legalDocsSection.innerHTML = `
+        <div class="info-row">
+            <span class="label">Blank Agreement</span>
+            <a href="${data.files?.bindingAgreementBlank || '#'}" target="_blank" class="view-link">
+                View Original PDF
+            </a>
+        </div>
+        <div class="info-row">
+            <span class="label">Signed Agreement</span>
+            <a href="${data.files?.signedAgreement || '#'}" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">
+                View Signed Version
+            </a>
+        </div>
+    `;
+  }
 }
 
 // --- PHOTO MODAL LOGIC ---

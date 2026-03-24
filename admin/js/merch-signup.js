@@ -204,11 +204,12 @@ function encodeMatric(matric) {
 /* -----------------------------
 ADMIN ACTIONS
 ----------------------------- */
-window.approveMerchant = async(id)=>{
+window.approveMerchant = async(id) => {
   if(!confirm("Approve this merchant?")) return;
-  try{
-    /* get application data */
-    const appRef = doc(db,"merchant_applications",id);
+  
+  try {
+    /* 1. GET APPLICATION DATA */
+    const appRef = doc(db, "merchant_applications", id);
     const snap = await getDoc(appRef);
     if(!snap.exists()){
       alert("Application not found");
@@ -216,106 +217,101 @@ window.approveMerchant = async(id)=>{
     }
     const data = snap.data();
 
-    /* create firebase auth account with temp password (user resets it) */
+    /* 2. SAFETY CHECK: Ensure signed agreement was uploaded */
+    if (!data.signedAgreementUrl) {
+      alert("CRITICAL ERROR: The Signed Binding Agreement has not been uploaded or saved. Approval aborted.");
+      return;
+    }
+
+    /* 3. CREATE FIREBASE AUTH ACCOUNT */
+    // Using temp password for secondary auth instance
     const tempPassword = Math.random().toString(36).slice(-8) + "A1";
-    // Create merchant using secondary auth instance
     const cred = await createUserWithEmailAndPassword(secondaryAuth, data.email, tempPassword);
     const user = cred.user;
 
-    /* -----------------------------
-    SAVE KYC RECORD
-    ----------------------------- */
-
+    /* 4. SAVE KYC RECORD (Including Signed Agreement) */
     const files = data.files || {};
-
-    await setDoc(doc(db,"kyc", user.uid),{
-
-      merchantUid:user.uid,
-
-      fullName:data.fullName || "",
-      username:(data.username || "").toLowerCase().trim(),
-      email:data.email,
-
-      matricNumber:data.matricNumber || "",
-      department:data.department || "",
-      level:data.level || "",
-      gender:data.gender || "",
-
-      phoneNumber:data.phoneNumber || "",
-
-      hostel:{
-        hostel:data.hostel || "",
-        block:data.block || "",
-        room:data.room || ""
+    await setDoc(doc(db, "kyc", user.uid), {
+      merchantUid: user.uid,
+      fullName: data.fullName || "",
+      username: (data.username || "").toLowerCase().trim(),
+      email: data.email,
+      matricNumber: data.matricNumber || "",
+      department: data.department || "",
+      level: data.level || "",
+      gender: data.gender || "",
+      phoneNumber: data.phoneNumber || "",
+      hostel: {
+        hostel: data.hostel || "",
+        block: data.block || "",
+        room: data.room || ""
       },
-
-      bankDetails:{
-        bankName:data.bankName || "",
-        accountName:data.accountName || "",
-        accountNumber:data.accountNumber || ""
+      bankDetails: {
+        bankName: data.bankName || "",
+        accountName: data.accountName || "",
+        accountNumber: data.accountNumber || ""
       },
-
-      files:{
-        selfie:files.selfie || "",
-        idFront:files.idFront || "",
-        idBack:files.idBack || "",
-        faceScan:files.faceScan || "",
-        verificationVideo:files.verificationVideo || ""
+      files: {
+        selfie: files.selfie || "",
+        idFront: files.idFront || "",
+        idBack: files.idBack || "",
+        faceScan: files.faceScan || "",
+        verificationVideo: files.verificationVideo || "",
+        signedAgreement: data.signedAgreementUrl,
+        bindingAgreementBlank: data.files?.bindingAgreementBlank || ""
       },
-
-      catchPhrase:data.catchPhrase || "",
-
-      verifiedBy:auth.currentUser.uid,
-      verifiedAt:serverTimestamp()
-
+      catchPhrase: data.catchPhrase || "",
+      verifiedBy: auth.currentUser.uid,
+      verifiedAt: serverTimestamp()
     });
 
+    /* 5. REGISTER UNIQUE IDENTIFIERS */
     await Promise.all([
-      setDoc(doc(db,"usernames",(data.username || "").toLowerCase()),{
-        uid:user.uid
-      }, {merge: true}),
-      setDoc(doc(db,"matricNumbers", `${encodeMatric((data.matricNumber || "").toUpperCase())}_merchant`),{
-        uid:user.uid
-      }, {merge: true})
+      setDoc(doc(db, "usernames", (data.username || "").toLowerCase()), {
+        uid: user.uid
+      }, { merge: true }),
+      setDoc(doc(db, "matricNumbers", `${encodeMatric((data.matricNumber || "").toUpperCase())}_merchant`), {
+        uid: user.uid
+      }, { merge: true })
     ]);
 
-    /* save merchant profile */
-    await setDoc(doc(db,"users",user.uid),{
-      uid:user.uid,
-      role:"merchant",
-      fullName:data.fullName || "",
-      username:(data.username || "").toLowerCase().trim(),
-      email:data.email,
-      level:data.level || "",
-      matricNumber:data.matricNumber || "",
+    /* 6. SAVE MERCHANT PUBLIC PROFILE */
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      role: "merchant",
+      fullName: data.fullName || "",
+      username: (data.username || "").toLowerCase().trim(),
+      email: data.email,
+      level: data.level || "",
+      matricNumber: data.matricNumber || "",
       department: data.department || "",
-      phoneNumber:data.phoneNumber || "",
-      gender:data.gender || "",
-      hostelLocation:`Block ${data.block}, Room ${data.room}, ${data.hostel}`,
-      bankDetails:{
-        bankName:data.bankName || "",
-        accountName:data.accountName || "",
-        accountNumber:data.accountNumber || ""
+      phoneNumber: data.phoneNumber || "",
+      gender: data.gender || "",
+      hostelLocation: `Block ${data.block}, Room ${data.room}, ${data.hostel}`,
+      bankDetails: {
+        bankName: data.bankName || "",
+        accountName: data.accountName || "",
+        accountNumber: data.accountNumber || ""
       },
-      profilePhoto:data.files?.selfie || "",
-      walletCredit:200,
-      feeAccrued:0,
-      walletDueSince:null,
-      rating:5.0,
-      status:"active",
-      isSessionOn:false,
-      createdAt:serverTimestamp(),
-      walletLastUpdated:serverTimestamp()
+      profilePhoto: data.files?.selfie || "",
+      walletCredit: 200,
+      feeAccrued: 0,
+      walletDueSince: null,
+      rating: 5.0,
+      status: "active",
+      isSessionOn: false,
+      createdAt: serverTimestamp(),
+      walletLastUpdated: serverTimestamp()
     });
 
-    /* update application status */
-    await updateDoc(appRef,{
-      status:"approved",
-      approvedAt:new Date().toISOString(),
-      merchantUid:user.uid
+    /* 7. UPDATE APPLICATION STATUS */
+    await updateDoc(appRef, {
+      status: "approved",
+      approvedAt: new Date().toISOString(),
+      merchantUid: user.uid
     });
 
-    // after updateDoc(appRef, {...})
+    // Update local applications array for UI reactivity
     const index = applications.findIndex(a => a.id === id);
     if(index !== -1) {
         applications[index].status = "approved";
@@ -323,21 +319,46 @@ window.approveMerchant = async(id)=>{
         renderTable(applications);
     }
 
-    /* send password reset email so merchant sets their own password */
-    await sendPasswordResetEmail(secondaryAuth, data.email)
-      .then(() => {
-        alert(`Merchant approved successfully.\nA password reset email has been sent to ${data.email}.\nMerchant can now set their own password.`);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Failed to send password reset email: " + err.message);
-      });
+    /* 8. SEND PASSWORD RESET EMAIL & REDIRECT TO WHATSAPP */
+    try {
+      await sendPasswordResetEmail(secondaryAuth, data.email);
+      
+      // Construct the WhatsApp Message
+      const message = `CONGRATULATIONS! MERCHANT APPROVAL NOTICE
 
-  } catch(err){
-    console.error(err);
-    alert("Approval failed: " + err.message);
+Hello ${data.fullName},
+
+Congratulations! We are pleased to inform you that your application to become a merchant on NOVAHUB has been approved.
+
+A password reset link has been sent to your registered email (${data.email}). This link is valid for a limited time, so please act quickly to set your official password.
+
+Once your password is set, you can log in and start your journey with us. If you do not see the email in your inbox, please check your spam folder or reach out to me here—the official NOVAHUB customer service line.
+
+We are excited to have you on board. Welcome to the NOVAHUB merchant community!
+
+Best regards,
+NOVAHUB Team`;
+
+      const encoded = encodeURIComponent(message);
+      const phone = formatNGNumber(data.phoneNumber);
+      const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
+
+      alert(`Merchant approved successfully.\nAn email has been sent to ${data.email}.\n\nClick OK to notify the merchant via WhatsApp.`);
+      
+      // Open WhatsApp in a new tab
+      window.open(whatsappURL, "_blank");
+
+    } catch (err) {
+      console.error("Email Error:", err);
+      alert("Account created, but failed to send the password reset email: " + err.message);
+    }
+
+  } catch(err) {
+    console.error("General Error:", err);
+    alert("Approval process failed: " + err.message);
   }
 };
+
 
 window.blockMerchant = (id) => {
   const app = applications.find(a => a.id === id);
