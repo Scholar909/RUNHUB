@@ -203,3 +203,81 @@ border:1px solid var(--error);
 background:none;
 color:var(--error);
 }
+
+.upload-area { 
+    margin-bottom: 18px; 
+    width: 100%;
+}
+
+.upload-area label { 
+    display: block; 
+    font-size: 0.7rem; 
+    color: var(--text-dim); 
+    margin-bottom: 8px; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    font-weight: 600; 
+}
+
+.upload-area input {
+    width: 100%; 
+    box-sizing: border-box; /* This is the fix! */
+    background: rgba(255,255,255,0.03); 
+    border: 1px dashed var(--border); /* Dashed looks better for uploads */
+    border-radius: 12px; 
+    padding: 12px; 
+    color: var(--text-main); 
+    font-size: 0.85rem; 
+    outline: none; 
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+/* Style the "Choose File" button inside the input */
+.upload-area input::file-selector-button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-right: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75rem;
+}
+
+.upload-area input:focus { 
+    border-color: var(--accent); 
+    background: rgba(0, 122, 255, 0.05); 
+}
+
+#uploadStatus {
+    font-size: 0.75rem;
+    margin-top: 8px;
+    color: var(--text-dim);
+}
+
+#saveSignedDocBtn {
+    box-sizing: border-box; /* Also apply fix here */
+    background-color: var(--success); 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+    width: 100%; 
+    margin-top: 15px; 
+    padding: 14px; 
+    border-radius: 12px; 
+    color: white; 
+    border: none; 
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+/* Active state for the button */
+#saveSignedDocBtn:not(:disabled) {
+    opacity: 1;
+    cursor: pointer;
+}
+
+#saveSignedDocBtn:not(:disabled):active {
+    transform: scale(0.98);
+}
