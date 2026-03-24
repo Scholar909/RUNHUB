@@ -69,6 +69,12 @@ function isValidMatric(matric) {
     return pattern.test(matric);
 }
 
+function isValidUsername(username) {
+    // Allows letters, numbers, and underscores only
+    const pattern = /^[a-zA-Z0-9_]+$/;
+    return pattern.test(username);
+}
+
 // Encode matric for Firestore
 function encodeMatric(matric) {
     return matric.replace(/\//g, "_"); // Replace all slashes with underscores
@@ -115,9 +121,21 @@ const checkUniqueness = async (field, value, statusId) => {
     }
 };
 
-document.getElementById("username").addEventListener("input",debounce(e=>{
-checkUniqueness("username",e.target.value.trim().toLowerCase(),"username-status");
-},500));
+document.getElementById("username").addEventListener("input", debounce(e => {
+    const val = e.target.value.trim();
+    const statusEl = document.getElementById("username-status");
+
+    if (!isValidUsername(val)) {
+        statusEl.innerText = "✕ Only a-z, 0 to 9, and _ allowed";
+        statusEl.style.color = "#ff3b30";
+        isUsernameValid = false;
+        return;
+    }
+
+    // If format is good, check database
+    checkUniqueness("username", val.toLowerCase(), "username-status");
+}, 500));
+
 
 document.getElementById("matricNumber").addEventListener("input", debounce(e => {
     const val = e.target.value.trim().toUpperCase();
@@ -488,9 +506,24 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   e.preventDefault();
   
+  const usernameInput = document.getElementById("username");
+  const emailInput = document.getElementById("email");
+  const matricInput = document.getElementById("matricNumber");
+  
   const submitBtn = e.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
   submitBtn.innerText = "Submitting Application...";
+  
+  const rawUsername = usernameInput.value.trim();
+  const rawEmail = emailInput.value.trim().toLowerCase(); // Lowercase email here
+  
+  // 1. Format Check for Username
+  if (!isValidUsername(rawUsername)) {
+      alert("Username can only contain letters, numbers, and underscores.");
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submitting Application...";
+      return;
+  }
 
   if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
     alert("Please capture all required files.");
