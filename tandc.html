@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms & Conditions | NOVAHUB</title>
+<link rel="manifest" href="/start/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/start/icon-512.png">
+
     <style>
     body {
         margin: 0;
@@ -94,6 +99,7 @@
         <div id="legalContent" class="content-area">Loading the latest terms...</div>
     </div>
 
+<script src="/start/pwa-handler.js"></script>
     <script type="module">
         import { db } from "./start/script.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
