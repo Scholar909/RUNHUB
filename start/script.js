@@ -20,66 +20,6 @@ const db = getFirestore(app);
 const customerCountEl = document.getElementById("customerCount");
 const merchantCountEl = document.getElementById("merchantCount");
 
-// Register service worker
-// Register service worker and auto-update
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => {
-        console.log('Service Worker registered:', reg);
-
-        // Listen for updates to the service worker
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Automatically activate new SW and reload page
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-
-              // Optional: slight delay to ensure skipWaiting finishes
-              setTimeout(() => window.location.reload(), 100);
-            }
-          });
-        });
-
-        // If a new SW is waiting from before, activate immediately
-        if (reg.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          setTimeout(() => window.location.reload(), 100);
-        }
-
-      })
-      .catch(err => console.log('Service Worker registration failed:', err));
-  });
-}
-
-// PWA Install Prompt
-let deferredPrompt;
-const installBtn = document.createElement('button');
-installBtn.textContent = 'Install NOVAHUB';
-installBtn.className = 'btn btn-filled';
-installBtn.style.position = 'fixed';
-installBtn.style.bottom = '20px';
-installBtn.style.right = '20px';
-installBtn.style.zIndex = '1000';
-installBtn.style.display = 'none';
-document.body.appendChild(installBtn);
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = 'block';
-});
-
-installBtn.addEventListener('click', async () => {
-  installBtn.style.display = 'none';
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  console.log('User response to install prompt:', outcome);
-  deferredPrompt = null;
-});
-
 const merchantBtn = document.getElementById("merchantAccess");
 
 if (merchantBtn) {
