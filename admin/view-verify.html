@@ -14,7 +14,7 @@
 
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-<link rel="stylesheet" href="css/view-verify.css?v=2">
+<link rel="stylesheet" href="css/view-verify.css?v=6">
 
 </head>
 
@@ -126,7 +126,29 @@ VERIFY APPLICATION
   <video id="verifyVideo" controls></video>
 
 </div>
+</div>
 
+<div class="trust-card">
+  <div class="card-tag">BINDING AGREEMENT</div>
+  
+  <div class="info-row">
+    <span class="label">Print & Sign</span>
+    <a id="downloadAgreement" href="#" target="_blank" class="btn-download" style="color: #007aff; text-decoration: underline;">
+      Download Blank Agreement
+    </a>
+  </div>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #333;">
+
+  <div class="upload-area">
+    <label for="signedDocInput" class="label">Upload Signed Agreement</label>
+    <input type="file" id="signedDocInput" accept="image/*,application/pdf">
+    <p id="uploadStatus"></p>
+  </div>
+
+  <button id="saveSignedDocBtn" disabled>
+    Save Signed Agreement
+  </button>
 </div>
 
 </section>
@@ -145,7 +167,7 @@ Back to Applications
 
 </div>
 <script src="/start/pwa-handler.js"></script>
-<script type="module" src="js/view-verify.js?v=10"></script>
+<script type="module" src="js/view-verify.js?v=11"></script>
 
 </body>
 </html>
