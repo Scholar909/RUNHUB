@@ -56,7 +56,7 @@ installContainer.style.cssText = `
 // 2. Create the Button
 const installBtn = document.createElement('button');
 installBtn.className = 'btn btn-filled';
-installBtn.style.cssText = 'margin: 0; padding: 8px 16px; font-size: 14px; cursor: pointer; border-radius: 8px; border: none; background: #000000; color: white; font-weight: 600;';
+installBtn.style.cssText = 'margin: 0; padding: 8px 16px; font-size: 14px; cursor: pointer; border-radius: 8px; border: none; background: #007aff; color: white; font-weight: 600;';
 installBtn.textContent = isIos() ? 'How to Install' : 'Install NOVAHUB';
 
 // 3. Create the Close (X) Button
