@@ -588,7 +588,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
   ]);
 
-  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
+  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.\n\nYou'll receive an email to set your password only if you successfully get verified.`);
 
   window.location.href = "./sign-login.html";
 
