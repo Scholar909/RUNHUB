@@ -181,23 +181,28 @@ bankDetails.innerHTML = `
 
 /* --- LEGAL DOCUMENTS SECTION --- */
 const legalDocsSection = document.getElementById("legalDocs"); // Ensure this ID exists in your HTML
+/* --- LEGAL DOCUMENTS SECTION --- */
 if (legalDocsSection) {
+    // Check both locations where the blank agreement might be stored
+    const blankDoc = data.files?.bindingAgreementBlank || data.bindingAgreementBlank;
+    const signedDoc = data.files?.signedAgreement || data.signedAgreementUrl;
+
     legalDocsSection.innerHTML = `
         <div class="info-row">
             <span class="label">Blank Agreement</span>
-            <a href="${data.files?.bindingAgreementBlank || '#'}" target="_blank" class="view-link">
-                View Original PDF
+            <a href="${blankDoc || '#'}" target="_blank" class="view-link">
+                View Original File
             </a>
         </div>
         <div class="info-row">
             <span class="label">Signed Agreement</span>
-            <a href="${data.files?.signedAgreement || '#'}" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">
+            <a href="${signedDoc || '#'}" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">
                 View Signed Version
             </a>
         </div>
     `;
-  }
 }
+
 
 // --- PHOTO MODAL LOGIC ---
 const createPhotoModal = () => {
