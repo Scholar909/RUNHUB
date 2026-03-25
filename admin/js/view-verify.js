@@ -175,41 +175,41 @@ downloadBtn.style.opacity = "0.5";
 }
 
 // 2. PERSISTENCE CHECK: If a signed agreement already exists in the DB
-// 2. PERSISTENCE CHECK: If a signed agreement already exists in the DB
 if (data.signedAgreementUrl) {
     if (uploadStatus) {
         uploadStatus.innerHTML = `✓ Signed agreement verified. <a href="#" id="viewSignedDoc" style="color:#34c759; text-decoration:underline;">View Signed Doc</a>`;
         
-        // Apply the exact same logic from the blank document
         document.getElementById("viewSignedDoc").onclick = (e) => {
             e.preventDefault();
             const printWindow = window.open('', '_blank');
+            
+            // Check if it's a PDF or an Image to determine the tag
+            const isPDF = data.signedAgreementUrl.toLowerCase().includes(".pdf");
+            const viewerHtml = isPDF 
+                ? `<iframe src="${data.signedAgreementUrl}" style="width:100%; height:100vh; border:none;"></iframe>`
+                : `<img src="${data.signedAgreementUrl}" style="max-width: 100%; height: auto;">`;
+
             printWindow.document.write(`
                 <html>
                     <head>
                         <title>Signed Agreement</title>
                         <style>
-                            body { margin: 0; padding: 0; display: flex; justify-content: center; }
-                            img { max-width: 100%; height: auto; display: block; }
-                            @media print {
-                                @page { size: A4; margin: 0; }
-                                body { margin: 0; }
-                                img { width: 100vw; height: 100vh; object-fit: contain; }
-                            }
+                            body { margin: 0; padding: 0; display: flex; justify-content: center; background: #525659; }
+                            @media print { body { background: white; } }
                         </style>
                     </head>
-                    <body>
-                        <img src="${data.signedAgreementUrl}" onload="window.focus();">
+                    <body style="margin:0;">
+                        ${viewerHtml}
                     </body>
                 </html>
             `);
             printWindow.document.close();
         };
     }
-    // Enable the final approval button
+    if (signedDocInput) signedDocInput.style.display = "none";
+    if (saveSignedDocBtn) saveSignedDocBtn.style.display = "none";
     safeSetDisabled("approveBtn", false);
 }
-
 
 // 3. Handle File Selection
 signedDocInput.onchange = (e) => {
@@ -242,10 +242,12 @@ try {
     });  
 
     // Update UI Success State  
-    uploadStatus.innerHTML = `✓ Saved! <a href="${uploadedUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View Uploaded PDF</a>`;  
+    uploadStatus.innerHTML = `✓ Saved! <a href="#" onclick="location.reload();" style="color:#34c759; text-decoration:underline;">Click to View Document</a>`;
 
     uploadStatus.style.color = "#34c759";  
     saveSignedDocBtn.innerText = "Upload Complete";
+    saveSignedDocBtn.disabled = true;
+    saveSignedDocBtn.style.opacity = "0.5";
       
     // UNLOCK the Approve Button for the Admin  
     const approveBtn = document.getElementById("approveBtn");  
