@@ -182,17 +182,21 @@ bankDetails.innerHTML = `
 /* --- LEGAL DOCUMENTS SECTION --- */
 const legalDocsSection = document.getElementById("legalDocs"); // Ensure this ID exists in your HTML
 /* --- LEGAL DOCUMENTS SECTION --- */
+/* --- LEGAL DOCUMENTS SECTION --- */
 if (legalDocsSection) {
-    // Check both locations where the blank agreement might be stored
-    const blankDoc = data.files?.bindingAgreementBlank || data.bindingAgreementBlank;
+    const blankDocData = data.files?.bindingAgreementBlank || data.bindingAgreementBlank;
     const signedDoc = data.files?.signedAgreement || data.signedAgreementUrl;
+
+    // If it's an array, point to the first page or create a "View All" logic
+    const blankDocUrl = Array.isArray(blankDocData) ? blankDocData[0] : blankDocData;
 
     legalDocsSection.innerHTML = `
         <div class="info-row">
             <span class="label">Blank Agreement</span>
-            <a href="${blankDoc || '#'}" target="_blank" class="view-link">
-                View Original File
-            </a>
+            ${Array.isArray(blankDocData) 
+                ? `<button onclick="window.openBlankAgreement()" class="view-link" style="background:none; border:none; color:#007aff; cursor:pointer; padding:0;">View All Pages (${blankDocData.length})</button>`
+                : `<a href="${blankDocUrl || '#'}" target="_blank" class="view-link">View Original File</a>`
+            }
         </div>
         <div class="info-row">
             <span class="label">Signed Agreement</span>
@@ -201,8 +205,16 @@ if (legalDocsSection) {
             </a>
         </div>
     `;
-}
 
+    // Add this helper to the window so the button works
+    window.openBlankAgreement = () => {
+        const pages = Array.isArray(blankDocData) ? blankDocData : [blankDocData];
+        const printWindow = window.open('', '_blank');
+        const imagesHtml = pages.map(url => `<img src="${url}" style="width:100%; margin-bottom:20px;">`).join('');
+        printWindow.document.write(`<html><body>${imagesHtml}</body></html>`);
+        printWindow.document.close();
+    };
+}
 
 // --- PHOTO MODAL LOGIC ---
 const createPhotoModal = () => {
