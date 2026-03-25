@@ -117,91 +117,88 @@ async function loadApplication() {
         <div class="info-row"><span class="label">Account Number</span><span>${data.accountNumber}</span></div>
     `;
 
-    // --- BINDING AGREEMENT & APPROVAL LOCK LOGIC ---
-    const downloadBtn = document.getElementById("downloadAgreement");
-    const signedDocInput = document.getElementById("signedDocInput");
-    const saveSignedDocBtn = document.getElementById("saveSignedDocBtn");
-    const uploadStatus = document.getElementById("uploadStatus");
+/* ---------------- BINDING AGREEMENT & APPROVAL LOCK LOGIC ---------------- */
 
-    // 1. Set the download link for the blank agreement
-    /* --- view-verify.js --- */
-    
-    // 1. Set the download link for the blank agreement
-    if (data.files && data.files.bindingAgreementBlank) {
-        downloadBtn.onclick = (e) => {
-            e.preventDefault();
-            const link = document.createElement('a');
-            link.href = data.files.bindingAgreementBlank;
-            link.download = `Agreement_${data.username}.pdf`; // Suggests a filename
-            link.target = "_blank"; // Opens in new tab if download is blocked
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-        downloadBtn.style.cursor = "pointer";
-    } else {
-        downloadBtn.textContent = "Agreement not found";
-        downloadBtn.style.pointerEvents = "none";
-    }
+const downloadBtn = document.getElementById("downloadAgreement");
+const signedDocInput = document.getElementById("signedDocInput");
+const saveSignedDocBtn = document.getElementById("saveSignedDocBtn");
+const uploadStatus = document.getElementById("uploadStatus");
 
-    // 2. CHECK PERSISTENCE: If document already exists, unlock the approve button immediately
-    if (data.signedAgreementUrl) {
-        const uploadStatus = document.getElementById("uploadStatus");
-        if(uploadStatus) {
-            uploadStatus.innerText = "✓ Signed agreement verified.";
-            uploadStatus.style.color = "#34c759";
-        }
-        safeSetDisabled("approveBtn", false); // Use the helper
-    }
-
-    // 3. Handle File Selection UI
-    signedDocInput.onchange = (e) => {
-        if (e.target.files.length > 0) {
-            saveSignedDocBtn.disabled = false;
-            saveSignedDocBtn.style.opacity = "1";
-            saveSignedDocBtn.style.cursor = "pointer";
-            uploadStatus.innerText = "File selected. Click Save to upload.";
-            uploadStatus.style.color = "orange";
-        }
+// 1. Set the "View" logic for the blank agreement (Opens in Modal)
+if (data.files && data.files.bindingAgreementBlank) {
+    downloadBtn.textContent = "View Blank Agreement"; // Changed text for clarity
+    downloadBtn.onclick = (e) => {
+        e.preventDefault();
+        // Use your existing modal function to show it like a receipt
+        openModal(data.files.bindingAgreementBlank);
     };
+    downloadBtn.style.cursor = "pointer";
+} else {
+    downloadBtn.textContent = "Agreement not generated";
+    downloadBtn.style.opacity = "0.5";
+}
 
-    // 4. Save Button Logic
-    saveSignedDocBtn.onclick = async () => {
-        const file = signedDocInput.files[0];
-        if (!file) return;
+// 2. PERSISTENCE CHECK: If a signed agreement already exists in the DB
+if (data.signedAgreementUrl) {
+    if(uploadStatus) {
+        uploadStatus.innerHTML = `✓ Signed agreement verified. <a href="${data.signedAgreementUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View Signed Doc</a>`;
+        uploadStatus.style.color = "#34c759";
+    }
+    // Enable the final approval button
+    safeSetDisabled("approveBtn", false); 
+}
 
-        saveSignedDocBtn.innerText = "Uploading...";
-        saveSignedDocBtn.disabled = true;
+// 3. Handle File Selection
+signedDocInput.onchange = (e) => {
+    if (e.target.files.length > 0) {
+        saveSignedDocBtn.disabled = false;
+        saveSignedDocBtn.style.opacity = "1";
+        saveSignedDocBtn.style.cursor = "pointer";
+        uploadStatus.innerText = "File selected. Click 'Save' to finalize.";
+        uploadStatus.style.color = "orange";
+    }
+};
 
-        try {
-            // Upload to Cloudinary using helper function
-            const uploadedUrl = await uploadImage(file); 
+// 4. Save Signed Agreement Logic
+saveSignedDocBtn.onclick = async () => {
+    const file = signedDocInput.files[0];
+    if (!file) return;
 
-            // Update the record in Firestore
-            const appRef = doc(db, "merchant_applications", appId);
-            await updateDoc(appRef, {
-                signedAgreementUrl: uploadedUrl
-            });
+    saveSignedDocBtn.innerText = "Uploading to Cloudinary...";
+    saveSignedDocBtn.disabled = true;
 
-            uploadStatus.innerText = "✓ Signed agreement uploaded and saved!";
-            uploadStatus.style.color = "#34c759";
-            saveSignedDocBtn.innerText = "Saved Successfully";
-            
-            // UNLOCK the Approve Button
+    try {
+        // Upload file to Cloudinary
+        const uploadedUrl = await uploadImage(file); 
+
+        // Update the specific merchant application document in Firestore
+        const appRef = doc(db, "merchant_applications", appId);
+        await updateDoc(appRef, {
+            signedAgreementUrl: uploadedUrl,
+            agreementUploadedAt: new Date().toISOString()
+        });
+
+        // Update UI Success State
+        uploadStatus.innerHTML = `✓ Saved! <a href="${uploadedUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View Upload</a>`;
+        uploadStatus.style.color = "#34c759";
+        saveSignedDocBtn.innerText = "Upload Complete";
+        
+        // UNLOCK the Approve Button for the Admin
+        const approveBtn = document.getElementById("approveBtn");
+        if (approveBtn) {
             approveBtn.disabled = false;
             approveBtn.style.opacity = "1";
             approveBtn.style.cursor = "pointer";
-
-        } catch (err) {
-            console.error(err);
-            uploadStatus.innerText = "Upload failed. Try again.";
-            uploadStatus.style.color = "#ff3b30";
-            saveSignedDocBtn.innerText = "Save Signed Agreement";
-            saveSignedDocBtn.disabled = false;
         }
-    };
-}
 
+    } catch (err) {
+        console.error("Upload Error:", err);
+        uploadStatus.innerText = "Upload failed. Please try again.";
+        uploadStatus.style.color = "#ff3b30";
+        saveSignedDocBtn.innerText = "Retry Upload";
+        saveSignedDocBtn.disabled = false;
+    }
+};
 
 // --- PHOTO MODAL LOGIC ---
 const createPhotoModal = () => {
@@ -276,4 +273,5 @@ async function uploadImage(file) {
 
   const data = await res.json();
   return data.secure_url;
+}
 }
