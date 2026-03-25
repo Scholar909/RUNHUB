@@ -188,9 +188,18 @@ if (data.signedAgreementUrl) {
         // View Logic
         document.getElementById("viewSignedDoc").onclick = (e) => {
             e.preventDefault();
-            const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(data.signedAgreementUrl)}&embedded=true`;
-            window.open(viewerUrl, '_blank');
+            const pdfUrl = data.signedAgreementUrl;
+            
+            // Open directly in a new tab - most modern browsers handle .pdf fine
+            const win = window.open(pdfUrl, '_blank');
+            if (win) {
+                win.focus();
+            } else {
+                // Fallback if popup is blocked
+                alert('Please allow popups to view the PDF');
+            }
         };
+
 
         // Remove Logic
         document.getElementById("removeSignedDoc").onclick = async (e) => {
