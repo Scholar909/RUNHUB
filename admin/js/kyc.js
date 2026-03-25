@@ -259,3 +259,4 @@ profilePhoto.onclick = () => openModal(profilePhoto.src);
   img.style.cursor = "pointer";
   img.onclick = () => openModal(img.src);
 });
+}
