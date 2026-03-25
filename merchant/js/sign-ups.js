@@ -689,18 +689,15 @@ function generateCatchPhrase() {
 });
 
 async function generateBindingAgreement(data, faceScanUrl) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const pages = [];
+    const canvasWidth = 2480;
+    const canvasHeight = 3508;
+    const margin = 150;
+    const contentWidth = canvasWidth - (margin * 2);
+    const lineHeight = 65;
+    const sectionSpacing = 100;
 
-    // A4 dimensions at 300 DPI for high quality
-    canvas.width = 2480;
-    canvas.height = 3508;
-
-    // 1. Background (White Paper)
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Helper to load images safely
+    // Helper to load images
     const loadImage = (url) => new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -708,124 +705,119 @@ async function generateBindingAgreement(data, faceScanUrl) {
         img.src = url;
     });
 
-    // 2. Watermark (backdrop.png)
-    try {
-        const watermark = await loadImage("/start/backdrop.png"); // Path to your root folder file
-        ctx.globalAlpha = 0.1; // Make it very faint
-        const wWidth = 1500;
-        const wHeight = (watermark.height / watermark.width) * wWidth;
-        ctx.drawImage(watermark, (canvas.width - wWidth) / 2, (canvas.height - wHeight) / 2, wWidth, wHeight);
-        ctx.globalAlpha = 1.0;
-    } catch (e) { console.log("Watermark failed to load, skipping..."); }
+    const faceImg = await loadImage(faceScanUrl).catch(() => null);
+    const watermark = await loadImage("/start/backdrop.png").catch(() => null);
 
-    const margin = 150;
-    const topY = 200;
-
-    // 3. Facial Scan (Top Right)
-    try {
-        const faceImg = await loadImage(faceScanUrl);
-        const imgW = 400;
-        const imgH = 500;
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 5;
-        ctx.strokeRect(canvas.width - margin - imgW, topY, imgW, imgH);
-        ctx.drawImage(faceImg, canvas.width - margin - imgW, topY, imgW, imgH);
-    } catch (e) { console.error("Face scan failed to draw"); }
-
-    // 4. Heading (Top Left, aligned with face scan)
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 80px Helvetica";
-    ctx.textAlign = "left";
-    ctx.fillText("BINDING AGREEMENT FOR NOVAHUB", margin, topY + 80);
-    
-    ctx.font = "40px Helvetica";
-    ctx.fillText("Redeemer's University, Ede", margin, topY + 150);
-    ctx.fillText("Official Merchant Engagement Document", margin, topY + 210);
-
-    // Divider Line
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(margin, topY + 280);
-    ctx.lineTo(canvas.width - margin - 450, topY + 280); // Stop before the face scan
-    ctx.stroke();
-
-    // 5. Merchant Details Section
-    let currentY = 800;
-    ctx.font = "bold 50px Helvetica";
-    ctx.fillText("PARTIES & IDENTIFICATION", margin, currentY);
-    
-    ctx.font = "45px Helvetica";
-    const details = [
-        `Full Name: ${data.fullName.toUpperCase()}`,
-        `Matriculation No: ${data.matricNumber}`,
-        `Department: ${data.department} | Level: ${data.level}`,
-        `Phone Number: ${data.phoneNumber}`,
-        `Residential Address: ${data.hostel}, Block ${data.block}, Room ${data.room}`
+    // Prepare Content Sections from your HTML
+    const sections = [
+        { type: 'header', title: "NOVAHUB MERCHANT BINDING AGREEMENT", sub: "Redeemer's University, Ede" },
+        { type: 'subhead', text: "NOVAHUB MERCHANT AGREEMENT & PLEDGE" },
+        { type: 'details', title: "PARTIES & IDENTIFICATION", content: [
+            `Merchant Name: ${data.fullName.toUpperCase()}`,
+            `Matriculation No: ${data.matricNumber}`,
+            `Department: ${data.department} | Level: ${data.level}`,
+            `Address: ${data.hostel}, Block ${data.block}, Room ${data.room}`
+        ]},
+        { type: 'body', title: "1. Merchant Identity", text: `I, ${data.fullName.toUpperCase()}, a student of Redeemer's University, with Matric Number ${data.matricNumber}, and Username ${data.username}, hereby register as a Merchant on the NovaHub platform.` },
+        { type: 'body', title: "2. Core Responsibility", text: "I understand that NovaHub connects me directly with customers who trust the platform. I agree that: I will honestly process all orders; I will only accept payments for orders I intend to fulfill; I will deliver correct items within a reasonable time." },
+        { type: 'body', title: "3. Refund Obligation", text: "In any situation where I am unable to complete an order, or items are unavailable, I must refund the FULL amount paid immediately. Failure to refund will be considered fraudulent behavior." },
+        { type: 'body', title: "4. Platform Commission", text: "I acknowledge NovaHub earns a commission. This is NOT my personal income. I will accurately remit all fees and not bypass the system. Failure is financial misconduct." },
+        { type: 'body', title: "5. Accountability & Enforcement", text: "My identity is recorded. Misconduct can be traced. Violations result in account suspension, reporting to school authorities (DSSS/CSO), or public blacklisting." },
+        { type: 'body', title: "6. Good Faith Commitment", text: "I agree to operate with honesty and respect. I understand this platform depends on trust, and abuse carries consequences." },
+        { type: 'body', title: "7. Agreement Confirmation", text: "By signing, I confirm I have read and understood this agreement and accept all responsibilities stated above." }
     ];
 
-    currentY += 100;
-    details.forEach(line => {
-        ctx.fillText(line, margin, currentY);
-        currentY += 80;
-    });
+    let currentSectionIndex = 0;
 
-    // 6. Agreement Content (The Affidavit)
-    currentY += 100;
-    ctx.font = "bold 55px Helvetica";
-    ctx.fillText("AFFIDAVIT & TERMS OF SERVICE", margin, currentY);
-    
-    ctx.font = "40px Helvetica";
-    const bodyText = `I, ${data.fullName.toUpperCase()}, being a student of Redeemer's University, Ede, do hereby solemnly declare and agree to the following:
+    while (currentSectionIndex < sections.length) {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvasWidth; canvas.height = canvasHeight;
+        const ctx = canvas.getContext("2d");
 
-1. TRUST & FINANCE: I acknowledge that funds received from customers for orders are held in trust. I shall use these funds strictly for the intended purchases.
-2. REFUND OBLIGATION: If an order is canceled or unfulfilled, I agree to return 100% of the funds to the customer within 30 minutes.
-3. CONDUCT: I will maintain professional conduct. Any report of extortion or theft will be forwarded directly to the Directorate of Student Services (DSSS) and the University Security (CSO).
-4. DATA CONSENT: I consent to NOVAHUB using my biometric and academic data for verification and security purposes.`;
+        // Background & Watermark
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        if (watermark) {
+            ctx.globalAlpha = 0.08;
+            ctx.drawImage(watermark, (canvasWidth - 1800) / 2, (canvasHeight - 1800) / 2, 1800, 1800);
+            ctx.globalAlpha = 1.0;
+        }
 
-    const wrapText = (text, x, y, maxWidth, lineHeight) => {
-        const words = text.split(' ');
+        // Persistent Face Scan
+        if (faceImg) {
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 5;
+            ctx.strokeRect(canvasWidth - margin - 400, 200, 400, 500);
+            ctx.drawImage(faceImg, canvasWidth - margin - 400, 200, 400, 500);
+        }
+
+        let y = 280;
+
+        // Render Page logic
+        for (let i = currentSectionIndex; i < sections.length; i++) {
+            const sec = sections[i];
+            ctx.fillStyle = "#000";
+            ctx.textAlign = "left";
+
+            if (sec.type === 'header') {
+                ctx.font = "bold 75px Helvetica";
+                ctx.fillText(sec.title, margin, y);
+                ctx.font = "45px Helvetica";
+                ctx.fillText(sec.sub, margin, y + 70);
+                y += 500; // Jump below face scan area
+            } else if (sec.type === 'details' || sec.type === 'body') {
+                ctx.font = "bold 50px Helvetica";
+                ctx.fillText(sec.title, margin, y);
+                y += 70;
+                ctx.font = "42px Helvetica";
+                const text = sec.content ? sec.content.join('\n') : sec.text;
+                y = wrapText(ctx, text, margin, y, contentWidth, lineHeight);
+                y += sectionSpacing;
+            }
+
+            currentSectionIndex++;
+            if (y > 2800) break; // Start new page if getting close to footer
+        }
+
+        // Signatures (Only on the last page)
+        if (currentSectionIndex >= sections.length) {
+            const sigY = 3100;
+            ctx.lineWidth = 4; ctx.beginPath();
+            ctx.moveTo(margin, sigY); ctx.lineTo(margin + 800, sigY);
+            ctx.moveTo(canvasWidth - margin - 800, sigY); ctx.lineTo(canvasWidth - margin, sigY);
+            ctx.stroke();
+            ctx.font = "italic 38px Helvetica";
+            ctx.fillText("Merchant Digital Signature & Date", margin, sigY + 60);
+            ctx.textAlign = "right";
+            ctx.fillText("Authorized NOVAHUB Representative", canvasWidth - margin, sigY + 60);
+        }
+
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        pages.push(blob);
+    }
+
+    return pages;
+}
+
+// Helper: Text Wrapping
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const paragraphs = text.split('\n');
+    paragraphs.forEach(p => {
+        const words = p.split(' ');
         let line = '';
         for (let n = 0; n < words.length; n++) {
             const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && n > 0) {
+            if (ctx.measureText(testLine).width > maxWidth && n > 0) {
                 ctx.fillText(line, x, y);
                 line = words[n] + ' ';
                 y += lineHeight;
-            } else {
-                line = testLine;
-            }
+            } else { line = testLine; }
         }
         ctx.fillText(line, x, y);
-        return y;
-    };
-
-    currentY += 100;
-    currentY = wrapText(bodyText, margin, currentY, canvas.width - (margin * 2), 70);
-
-    // 7. Signature Areas
-    const sigY = 3100;
-    ctx.lineWidth = 4;
-    
-    // Merchant Sig
-    ctx.beginPath();
-    ctx.moveTo(margin, sigY);
-    ctx.lineTo(margin + 700, sigY);
-    ctx.stroke();
-    ctx.font = "italic 35px Helvetica";
-    ctx.fillText("Merchant Digital Signature & Date", margin, sigY + 60);
-
-    // Admin Sig
-    ctx.beginPath();
-    ctx.moveTo(canvas.width - margin - 700, sigY);
-    ctx.lineTo(canvas.width - margin, sigY);
-    ctx.stroke();
-    ctx.textAlign = "right";
-    ctx.fillText("Authorized NOVAHUB Representative", canvas.width - margin, sigY + 60);
-
-    // Return as Blob
-    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        y += lineHeight;
+    });
+    return y;
 }
+
 
 async function sendAdminMerchantAlert(data) {
     const ADMIN_PHONE = "2349168873680";
