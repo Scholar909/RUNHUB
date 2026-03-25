@@ -583,20 +583,22 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   const catchPhrase = generateCatchPhrase();
   
   
-  // 1. Generate the PDF Blob
-  const pdfBlob = await generateBindingAgreement(data, urls.face);
+  // 1. Generate the Page Blobs (This is now an Array of Blobs)
+  const pageBlobs = await generateBindingAgreement(data, urls.face);
   
-  // 2. Upload PDF to Cloudinary (using your existing upload logic)
-  // 2. Upload PDF to Cloudinary
-  const pdfUrl = await uploadImage(pdfBlob); 
+  // 2. Upload all pages to Cloudinary individually
+  // We use Promise.all to upload them all at once and get an array of URLs back
+  const pageUrls = await Promise.all(pageBlobs.map(blob => uploadImage(blob)));
   
-  if (!pdfUrl) {
-      alert("Failed to generate or upload the Binding Agreement. Please try again.");
+  // Check if any upload failed
+  if (pageUrls.some(url => !url)) {
+      alert("Failed to generate or upload the Binding Agreement pages. Please try again.");
       submitBtn.disabled = false;
       submitBtn.innerText = "Submit Application";
-      return; // Stop here if PDF failed
+      return; 
   }
   
+  // 3. Save to Firestore
   await addDoc(collection(db, "merchant_applications"), {
     ...data,
     files: {
@@ -605,12 +607,14 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
       selfie: urls.selfie,
       faceScan: urls.face,
       verificationVideo: urls.video,
-      bindingAgreementBlank: pdfUrl
+      // Store the array of URLs so you can display page 1, then page 2, etc.
+      bindingAgreementSheets: pageUrls 
     },
     catchPhrase: catchPhrase,
     status: "pending",
     submittedAt: serverTimestamp()
   });
+
   
   // MOVE THE ALERT HERE - Before external API calls
   alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
