@@ -142,8 +142,6 @@ function renderTable(data){
     if(status==="rejected") statusClass="rejected";
 
     let actionButtons = "";
-    
-    // If pending: Show all buttons, but DISBALE the delete button
     if(status === "pending"){
       actionButtons = `
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
@@ -155,12 +153,11 @@ function renderTable(data){
         <button class="action-btn block-btn" title="Block Application" onclick="blockMerchant('${app.id}')">
           <i class="fi-x-circle"></i>
         </button>
-        <button class="action-btn delete-btn disabled-style" title="Approve/Reject before deleting" disabled onclick="deleteApplication('${app.id}')">
+        <button class="action-btn delete-btn" title="Delete Application" onclick="deleteApplication('${app.id}')">
           <i class="fi-trash"></i>
         </button>
       `;
     } else {
-      // If approved or rejected: Only show View and Delete (Delete is now ENABLED)
       actionButtons = `
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
           <i class="fi-eye"></i>
@@ -181,7 +178,6 @@ function renderTable(data){
     tableBody.appendChild(tr);
   });
 }
-
 
 /* -----------------------------
 SEARCH
@@ -235,6 +231,12 @@ window.approveMerchant = async(id) => {
 
     /* 4. SAVE KYC RECORD (Including Signed Agreement) */
     const files = data.files || {};
+    
+    // We need to handle both the old single string and the new array format for safety
+    const blankAgreementData = files.bindingAgreementSheets 
+    ? files.bindingAgreementSheets 
+    : (files.bindingAgreementBlank || "");
+    
     await setDoc(doc(db, "kyc", user.uid), {
       merchantUid: user.uid,
       fullName: data.fullName || "",
@@ -261,13 +263,14 @@ window.approveMerchant = async(id) => {
         idBack: files.idBack || "",
         faceScan: files.faceScan || "",
         verificationVideo: files.verificationVideo || "",
-        signedAgreement: data.signedAgreementUrl,
-        bindingAgreementBlank: data.files?.bindingAgreementBlank || ""
+        signedAgreement: data.signedAgreementUrl, // This comes from your view-verify.html upload
+        bindingAgreementBlank: blankAgreementData // Now safely handles the array or string
       },
       catchPhrase: data.catchPhrase || "",
       verifiedBy: auth.currentUser.uid,
       verifiedAt: serverTimestamp()
     });
+
 
     /* 5. REGISTER UNIQUE IDENTIFIERS */
     await Promise.all([
