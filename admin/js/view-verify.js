@@ -177,17 +177,53 @@ downloadBtn.style.opacity = "0.5";
 // 2. PERSISTENCE CHECK: If a signed agreement already exists in the DB
 if (data.signedAgreementUrl) {
     if (uploadStatus) {
-        uploadStatus.innerHTML = `✓ Signed agreement verified. <a href="#" id="viewSignedDoc" style="color:#34c759; text-decoration:underline;">View Signed Doc</a>`;
+        uploadStatus.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span>✓ Signed doc verified.</span>
+                <a href="#" id="viewSignedDoc" style="color:#34c759; text-decoration:underline;">View</a>
+                <a href="#" id="removeSignedDoc" style="color:#ff3b30; text-decoration:underline;">Remove</a>
+            </div>
+        `;
         
+        // View Logic
         document.getElementById("viewSignedDoc").onclick = (e) => {
             e.preventDefault();
             window.open(data.signedAgreementUrl, '_blank');
         };
+
+        // Remove Logic
+        document.getElementById("removeSignedDoc").onclick = async (e) => {
+            e.preventDefault();
+            if (!confirm("Are you sure you want to remove this document? You will need to upload a new one to approve this merchant.")) return;
+
+            try {
+                const appRef = doc(db, "merchant_applications", appId);
+                // Remove the field from Firestore
+                await updateDoc(appRef, {
+                    signedAgreementUrl: null,
+                    agreementUploadedAt: null
+                });
+                alert("Document removed successfully.");
+                location.reload(); // Reloads the page so the upload button reappears
+            } catch (err) {
+                console.error("Delete Error:", err);
+                alert("Failed to remove document.");
+            }
+        };
     }
+
+    // Hide upload controls since document is present
     if (signedDocInput) signedDocInput.style.display = "none";
     if (saveSignedDocBtn) saveSignedDocBtn.style.display = "none";
+    
     safeSetDisabled("approveBtn", false);
+} else {
+    // Ensure upload controls are visible if no URL exists
+    if (signedDocInput) signedDocInput.style.display = "block";
+    if (saveSignedDocBtn) saveSignedDocBtn.style.display = "block";
+    safeSetDisabled("approveBtn", true);
 }
+
 
 // 3. Handle File Selection
 signedDocInput.onchange = (e) => {
@@ -220,7 +256,7 @@ try {
     });  
 
     // Update UI Success State  
-    uploadStatus.innerHTML = `✓ Saved! <a href="#" onclick="location.reload();" style="color:#34c759; text-decoration:underline;">Click to View Document</a>`;
+    uploadStatus.innerHTML = `✓ Saved! <a href="#" onclick="location.reload();" style="color:#34c759; text-decoration:underline;">Click to View/Remove Doc</a>`;
 
     uploadStatus.style.color = "#34c759";  
     saveSignedDocBtn.innerText = "Upload Complete";
