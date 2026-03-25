@@ -694,105 +694,225 @@ function generateCatchPhrase() {
 
 async function generateBindingAgreement(data, faceScanUrl) {
     const pages = [];
-    const canvasWidth = 2480;
+    const canvasWidth = 2480; // A4 at 300 DPI
     const canvasHeight = 3508;
-    const margin = 150;
+    const margin = 200; // Standard professional margin
     const contentWidth = canvasWidth - (margin * 2);
-    const lineHeight = 65;
-    const sectionSpacing = 100;
+    const lineHeight = 60;
+    const sectionSpacing = 80;
 
-    // Helper to load images
     const loadImage = (url) => new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
         img.src = url;
     });
 
-    const faceImg = await loadImage(faceScanUrl).catch(() => null);
-    const watermark = await loadImage("/start/backdrop.png").catch(() => null);
+    const faceImg = await loadImage(faceScanUrl);
+    const watermark = await loadImage("/start/backdrop.png");
 
-    // Prepare Content Sections from your HTML
+    // NEW STRUCTURE: Exact human-worded pledge
     const sections = [
         { type: 'header', title: "NOVAHUB MERCHANT BINDING AGREEMENT", sub: "Redeemer's University, Ede" },
-        { type: 'subhead', text: "NOVAHUB MERCHANT AGREEMENT & PLEDGE" },
-        { type: 'details', title: "PARTIES & IDENTIFICATION", content: [
-            `Merchant Name: ${data.fullName.toUpperCase()}`,
-            `Matriculation No: ${data.matricNumber}`,
-            `Department: ${data.department} | Level: ${data.level}`,
-            `Address: ${data.hostel}, Block ${data.block}, Room ${data.room}`
-        ]},
-        { type: 'body', title: "1. Merchant Identity", text: `I, ${data.fullName.toUpperCase()}, a student of Redeemer's University, with Matric Number ${data.matricNumber}, and Username ${data.username}, hereby register as a Merchant on the NovaHub platform.` },
-        { type: 'body', title: "2. Core Responsibility", text: "I understand that NovaHub connects me directly with customers who trust the platform. I agree that: I will honestly process all orders; I will only accept payments for orders I intend to fulfill; I will deliver correct items within a reasonable time." },
-        { type: 'body', title: "3. Refund Obligation", text: "In any situation where I am unable to complete an order, or items are unavailable, I must refund the FULL amount paid immediately. Failure to refund will be considered fraudulent behavior." },
-        { type: 'body', title: "4. Platform Commission", text: "I acknowledge NovaHub earns a commission. This is NOT my personal income. I will accurately remit all fees and not bypass the system. Failure is financial misconduct." },
-        { type: 'body', title: "5. Accountability & Enforcement", text: "My identity is recorded. Misconduct can be traced. Violations result in account suspension, reporting to school authorities (DSSS/CSO), or public blacklisting." },
-        { type: 'body', title: "6. Good Faith Commitment", text: "I agree to operate with honesty and respect. I understand this platform depends on trust, and abuse carries consequences." },
-        { type: 'body', title: "7. Agreement Confirmation", text: "By signing, I confirm I have read and understood this agreement and accept all responsibilities stated above." }
+        { 
+            type: 'body', 
+            title: "1. Merchant Identity", 
+            text: `I, ${data.fullName.toUpperCase()},\na student of REDEEMER'S UNIVERSITY,\nwith Matric Number ${data.matricNumber},\nand Username ${data.username},\n\nhereby register as a Merchant on the NovaHub platform.` 
+        },
+        { 
+            type: 'body', 
+            title: "2. Core Responsibility", 
+            text: "I understand that NovaHub connects me directly with customers who trust the platform to deliver goods and services reliably.",
+            boldLabel: "I hereby agree that:",
+            bullets: [
+                "I will honestly receive and process all customer orders",
+                "I will only accept payments for orders I intend to fulfill",
+                "I will deliver the correct items requested by the customer within a reasonable time"
+            ]
+        },
+        { 
+            type: 'body', 
+            title: "3. Refund Obligation", 
+            boldLabel: "In any situation where:",
+            bullets: [
+                "I am unable to complete an order, OR",
+                "The requested item is unavailable, OR",
+                "I fail to deliver as agreed"
+            ],
+            footerText: "I must refund the FULL amount paid by the customer immediately. Failure to refund will be considered fraudulent behavior."
+        },
+        { 
+            type: 'body', 
+            title: "4. Platform Commission (NovaHub Fees)", 
+            boldLabel: "I acknowledge that:",
+            bullets: [
+                "NovaHub earns a commission or service fee from transactions conducted through the platform",
+                "Any amount owed to NovaHub is NOT my personal income"
+            ],
+            boldLabel2: "I agree that:",
+            bullets2: [
+                "I will accurately remit all platform fees owed",
+                "I will not bypass, avoid, or manipulate the system to withhold NovaHub’s earnings"
+            ],
+            footerText: "Failure to remit these funds will be treated as financial misconduct and breach of agreement."
+        },
+        { 
+            type: 'body', 
+            title: "5. Accountability & Enforcement", 
+            boldLabel: "I understand that:",
+            bullets: [
+                "My identity and student details have been recorded",
+                "Any misconduct can be traced back to me"
+            ],
+            boldLabel2: "If I violate this agreement, I accept that:",
+            bullets2: [
+                "My account will be suspended or permanently banned",
+                "I may be reported to school authorities (if applicable)",
+                "I may be publicly blacklisted from the platform",
+                "I may be required to repay all owed funds"
+            ]
+        },
+        { 
+            type: 'body', 
+            title: "6. Good Faith Commitment", 
+            boldLabel: "I agree to operate on NovaHub with:",
+            bullets: ["Honesty", "Responsibility", "Respect for customers and the platform"],
+            footerText: "I understand that this platform depends on trust, and any abuse of that trust will carry consequences."
+        },
+        { 
+            type: 'body', 
+            title: "7. Agreement Confirmation", 
+            boldLabel: "By signing below, I confirm that:",
+            bullets: [
+                "I have read and understood this agreement",
+                "I accept all responsibilities stated above",
+                "I agree to be held accountable for my actions on NovaHub"
+            ]
+        }
     ];
 
     let currentSectionIndex = 0;
+    let pageCount = 0;
 
     while (currentSectionIndex < sections.length) {
+        pageCount++;
         const canvas = document.createElement("canvas");
         canvas.width = canvasWidth; canvas.height = canvasHeight;
         const ctx = canvas.getContext("2d");
 
-        // Background & Watermark
+        // Background
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        
+        // Watermark on EVERY page
         if (watermark) {
-            ctx.globalAlpha = 0.08;
-            ctx.drawImage(watermark, (canvasWidth - 1800) / 2, (canvasHeight - 1800) / 2, 1800, 1800);
-            ctx.globalAlpha = 1.0;
+            ctx.save();
+            ctx.globalAlpha = 0.06;
+            ctx.drawImage(watermark, (canvasWidth - 1600) / 2, (canvasHeight - 1600) / 2, 1600, 1600);
+            ctx.restore();
         }
 
-        // Persistent Face Scan
-        if (faceImg) {
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 5;
-            ctx.strokeRect(canvasWidth - margin - 400, 200, 400, 500);
-            ctx.drawImage(faceImg, canvasWidth - margin - 400, 200, 400, 500);
+        // Face Scan - FIRST PAGE ONLY
+        if (faceImg && pageCount === 1) {
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
+            const faceW = 350; const faceH = 450;
+            ctx.strokeRect(canvasWidth - margin - faceW, margin, faceW, faceH);
+            ctx.drawImage(faceImg, canvasWidth - margin - faceW, margin, faceW, faceH);
         }
 
-        let y = 280;
+        let y = margin + 50;
 
-        // Render Page logic
         for (let i = currentSectionIndex; i < sections.length; i++) {
             const sec = sections[i];
+            
+            // Check if we need a new page BEFORE rendering a section
+            if (y > 2800) break; 
+
             ctx.fillStyle = "#000";
             ctx.textAlign = "left";
 
             if (sec.type === 'header') {
-                ctx.font = "bold 75px Helvetica";
+                ctx.font = "bold 70px Helvetica";
                 ctx.fillText(sec.title, margin, y);
-                ctx.font = "45px Helvetica";
-                ctx.fillText(sec.sub, margin, y + 70);
-                y += 500; // Jump below face scan area
-            } else if (sec.type === 'details' || sec.type === 'body') {
-                ctx.font = "bold 50px Helvetica";
+                y += 80;
+                ctx.font = "40px Helvetica";
+                ctx.fillText(sec.sub, margin, y);
+                y += (pageCount === 1) ? 550 : 150; // Extra space for face scan on P1
+            } else {
+                // Section Title
+                ctx.font = "bold 48px Helvetica";
                 ctx.fillText(sec.title, margin, y);
                 y += 70;
-                ctx.font = "42px Helvetica";
-                const text = sec.content ? sec.content.join('\n') : sec.text;
-                y = wrapText(ctx, text, margin, y, contentWidth, lineHeight);
+
+                ctx.font = "40px Helvetica";
+                // Main Text
+                if (sec.text) {
+                    y = wrapText(ctx, sec.text, margin, y, contentWidth, lineHeight);
+                    y += 30;
+                }
+
+                // Render first set of Bullets
+                if (sec.boldLabel) {
+                    ctx.font = "bold 40px Helvetica";
+                    ctx.fillText(sec.boldLabel, margin, y);
+                    y += 60;
+                }
+                if (sec.bullets) {
+                    ctx.font = "40px Helvetica";
+                    sec.bullets.forEach(b => {
+                        ctx.fillText("• " + b, margin + 40, y);
+                        y += lineHeight;
+                    });
+                    y += 20;
+                }
+
+                // Render second set of Bullets (if exists)
+                if (sec.boldLabel2) {
+                    ctx.font = "bold 40px Helvetica";
+                    ctx.fillText(sec.boldLabel2, margin, y);
+                    y += 60;
+                }
+                if (sec.bullets2) {
+                    ctx.font = "40px Helvetica";
+                    sec.bullets2.forEach(b => {
+                        ctx.fillText("• " + b, margin + 40, y);
+                        y += lineHeight;
+                    });
+                    y += 20;
+                }
+
+                if (sec.footerText) {
+                    ctx.font = "italic 40px Helvetica";
+                    y = wrapText(ctx, sec.footerText, margin, y, contentWidth, lineHeight);
+                }
+
                 y += sectionSpacing;
             }
-
             currentSectionIndex++;
-            if (y > 2800) break; // Start new page if getting close to footer
         }
 
-        // Signatures (Only on the last page)
+        // Signature logic: check if there's enough room
+        const sigHeight = 400;
         if (currentSectionIndex >= sections.length) {
-            const sigY = 3100;
-            ctx.lineWidth = 4; ctx.beginPath();
-            ctx.moveTo(margin, sigY); ctx.lineTo(margin + 800, sigY);
-            ctx.moveTo(canvasWidth - margin - 800, sigY); ctx.lineTo(canvasWidth - margin, sigY);
-            ctx.stroke();
-            ctx.font = "italic 38px Helvetica";
-            ctx.fillText("Merchant Digital Signature & Date", margin, sigY + 60);
-            ctx.textAlign = "right";
-            ctx.fillText("Authorized NOVAHUB Representative", canvasWidth - margin, sigY + 60);
+            if (y + sigHeight > canvasHeight - margin) {
+                // Not enough room for signature, push to a brand new page
+                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                pages.push(blob);
+                
+                // Create final signature-only page
+                const sigCanvas = document.createElement("canvas");
+                sigCanvas.width = canvasWidth; sigCanvas.height = canvasHeight;
+                const sigCtx = sigCanvas.getContext("2d");
+                sigCtx.fillStyle = "#fff"; sigCtx.fillRect(0,0, canvasWidth, canvasHeight);
+                if(watermark) { sigCtx.globalAlpha = 0.06; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
+                renderSignature(sigCtx, canvasWidth, margin, 500);
+                const sigBlob = await new Promise(res => sigCanvas.toBlob(res, 'image/png'));
+                pages.push(sigBlob);
+                return pages; 
+            } else {
+                renderSignature(ctx, canvasWidth, margin, 3100);
+            }
         }
 
         const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
@@ -802,26 +922,43 @@ async function generateBindingAgreement(data, faceScanUrl) {
     return pages;
 }
 
-// Helper: Text Wrapping
+// Helper to render signature lines
+function renderSignature(ctx, canvasWidth, margin, sigY) {
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(margin, sigY); ctx.lineTo(margin + 800, sigY);
+    ctx.moveTo(canvasWidth - margin - 800, sigY); ctx.lineTo(canvasWidth - margin, sigY);
+    ctx.stroke();
+    ctx.fillStyle = "#000";
+    ctx.font = "italic 38px Helvetica";
+    ctx.textAlign = "left";
+    ctx.fillText("Merchant Digital Signature & Date", margin, sigY + 60);
+    ctx.textAlign = "right";
+    ctx.fillText("Authorized NOVAHUB Representative", canvasWidth - margin, sigY + 60);
+}
+
+// Fixed WrapText to handle \n properly
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    const paragraphs = text.split('\n');
-    paragraphs.forEach(p => {
-        const words = p.split(' ');
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        let words = lines[i].split(' ');
         let line = '';
         for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+            let testLine = line + words[n] + ' ';
+            let metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
                 ctx.fillText(line, x, y);
                 line = words[n] + ' ';
                 y += lineHeight;
-            } else { line = testLine; }
+            } else {
+                line = testLine;
+            }
         }
         ctx.fillText(line, x, y);
         y += lineHeight;
-    });
+    }
     return y;
 }
-
 
 async function sendAdminMerchantAlert(data) {
     const ADMIN_PHONE = "2349168873680";
