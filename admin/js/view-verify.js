@@ -125,39 +125,12 @@ const saveSignedDocBtn = document.getElementById("saveSignedDocBtn");
 const uploadStatus = document.getElementById("uploadStatus");
 
 // 1. Set the "View" logic for the blank agreement (Opens in Modal)
+// 1. Updated Blank Agreement Logic
 if (data.files && data.files.bindingAgreementBlank) {
     downloadBtn.textContent = "View/Print Blank Agreement";
-    
     downloadBtn.onclick = (e) => {
         e.preventDefault();
-        
-        // Create a temporary window
-        const printWindow = window.open('', '_blank');
-        
-        // Write a mini-HTML document that forces the image to fit the page
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Print Binding Agreement</title>
-                    <style>
-                        body { margin: 0; display: flex; justify-content: center; }
-                        img { 
-                            max-width: 100%; 
-                            height: auto; 
-                            page-break-after: always; 
-                        }
-                        @page { size: auto; margin: 0; }
-                        @media print {
-                            img { width: 100vw; height: 100vh; object-fit: contain; }
-                        }
-                    </style>
-                </head>
-                <body onload="window.print();">
-                    <img src="${data.files.bindingAgreementBlank}">
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
+        window.openPrintWindow(data.files.bindingAgreementBlank);
     };
     downloadBtn.style.cursor = "pointer";
 } else {
@@ -165,15 +138,21 @@ if (data.files && data.files.bindingAgreementBlank) {
     downloadBtn.style.opacity = "0.5";
 }
 
-// 2. PERSISTENCE CHECK: If a signed agreement already exists in the DB
+// 2. Updated Signed Agreement Logic
 if (data.signedAgreementUrl) {
     if(uploadStatus) {
-        uploadStatus.innerHTML = `✓ Signed agreement verified. <a href="${data.signedAgreementUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View Signed Doc</a>`;
+        uploadStatus.innerHTML = `
+            ✓ Signed agreement verified. 
+            <a href="javascript:void(0)" 
+               onclick="window.openPrintWindow('${data.signedAgreementUrl}')" 
+               style="color:#34c759; text-decoration:underline; font-weight:bold;">
+               Print/View Signed Doc
+            </a>`;
         uploadStatus.style.color = "#34c759";
     }
-    // Enable the final approval button
     safeSetDisabled("approveBtn", false); 
 }
+
 
 // 3. Handle File Selection
 signedDocInput.onchange = (e) => {
@@ -283,22 +262,57 @@ profilePhoto.onclick = () => openModal(profilePhoto.src);
   img.onclick = () => openModal(img.src);
 });
 
-/* --- CLOUDINARY UPLOAD HELPER --- */
-async function uploadImage(file) {
-  const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
-  const UPLOAD_PRESET = "runhub_uploads"; 
+  /* --- CLOUDINARY UPLOAD HELPER --- */
+  async function uploadImage(file) {
+    const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
+    const UPLOAD_PRESET = "runhub_uploads"; 
 
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("upload_preset", UPLOAD_PRESET);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", UPLOAD_PRESET);
 
-  const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
-  
-  if (!res.ok) {
-    throw new Error("Failed to upload to Cloudinary");
+    const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+    
+    if (!res.ok) {
+      throw new Error("Failed to upload to Cloudinary");
+    }
+
+    const data = await res.json();
+    return data.secure_url;
   }
+} // <--- THIS is where loadApplication() should end.
 
-  const data = await res.json();
-  return data.secure_url;
-}
-}
+// Global Helper for Perfect A4 Printing (Now clearly in global scope)
+window.openPrintWindow = (imgUrl) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert("Please allow pop-ups to print this document.");
+        return;
+    }
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>NOVAHUB - Printing Document</title>
+                <style>
+                    @page { size: A4; margin: 0; }
+                    body { margin: 0; display: flex; justify-content: center; align-items: flex-start; background: #fff; }
+                    img { 
+                        width: 100%; 
+                        max-width: 2480px; 
+                        height: auto; 
+                        display: block;
+                    }
+                    @media print {
+                        body { -webkit-print-color-adjust: exact; }
+                        img { width: 100%; height: 100%; object-fit: contain; }
+                    }
+                </style>
+            </head>
+            <body onload="setTimeout(() => { window.print(); window.close(); }, 800);">
+                <img src="${imgUrl}">
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
+
