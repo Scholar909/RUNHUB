@@ -377,3 +377,27 @@ justify-content:flex-end;
 gap:10px;
 margin-top:15px;
 }
+
+#cancelReject, #sendReject {
+    box-sizing: border-box; /* Also apply fix here */
+    background-color: var(--error);
+    width: 100%; 
+    margin-top: 15px; 
+    padding: 14px; 
+    border-radius: 12px; 
+    color: white; 
+    border: none; 
+    font-weight: bold;
+}
+
+.delete-btn.disabled-btn {
+    background-color: #e0e0e0 !important; /* Light grey */
+    color: #a0a0a0 !important;            /* Muted text */
+    cursor: not-allowed !important;       /* Change cursor to 'no' sign */
+    opacity: 0.6;
+    border: none;
+}
+
+.delete-btn.disabled-btn:hover {
+    background-color: #e0e0e0 !important; /* Prevent hover effects */
+}
