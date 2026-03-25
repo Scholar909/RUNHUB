@@ -126,11 +126,11 @@ const uploadStatus = document.getElementById("uploadStatus");
 
 // 1. Set the "View" logic for the blank agreement (Opens in Modal)
 if (data.files && data.files.bindingAgreementBlank) {
-    downloadBtn.textContent = "View Blank Agreement"; // Changed text for clarity
+    downloadBtn.textContent = "View/Print Blank Agreement"; // Changed text for clarity
     downloadBtn.onclick = (e) => {
         e.preventDefault();
         // Use your existing modal function to show it like a receipt
-        openModal(data.files.bindingAgreementBlank);
+        window.open(data.files.bindingAgreementBlank, '_blank')
     };
     downloadBtn.style.cursor = "pointer";
 } else {
