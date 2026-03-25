@@ -181,29 +181,7 @@ if (data.signedAgreementUrl) {
         
         document.getElementById("viewSignedDoc").onclick = (e) => {
             e.preventDefault();
-            const printWindow = window.open('', '_blank');
-            
-            // Check if it's a PDF or an Image to determine the tag
-            const isPDF = data.signedAgreementUrl.toLowerCase().includes(".pdf");
-            const viewerHtml = isPDF 
-                ? `<iframe src="${data.signedAgreementUrl}" style="width:100%; height:100vh; border:none;"></iframe>`
-                : `<img src="${data.signedAgreementUrl}" style="max-width: 100%; height: auto;">`;
-
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Signed Agreement</title>
-                        <style>
-                            body { margin: 0; padding: 0; display: flex; justify-content: center; background: #525659; }
-                            @media print { body { background: white; } }
-                        </style>
-                    </head>
-                    <body style="margin:0;">
-                        ${viewerHtml}
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
+            window.open(data.signedAgreementUrl, '_blank');
         };
     }
     if (signedDocInput) signedDocInput.style.display = "none";
