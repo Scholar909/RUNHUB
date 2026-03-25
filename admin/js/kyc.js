@@ -182,39 +182,46 @@ bankDetails.innerHTML = `
 /* --- LEGAL DOCUMENTS SECTION --- */
 const legalDocsSection = document.getElementById("legalDocs"); // Ensure this ID exists in your HTML
 /* --- LEGAL DOCUMENTS SECTION --- */
-/* --- LEGAL DOCUMENTS SECTION --- */
 if (legalDocsSection) {
-    const blankDocData = data.files?.bindingAgreementBlank || data.bindingAgreementBlank;
-    const signedDoc = data.files?.signedAgreement || data.signedAgreementUrl;
-
-    // If it's an array, point to the first page or create a "View All" logic
-    const blankDocUrl = Array.isArray(blankDocData) ? blankDocData[0] : blankDocData;
+    // Correctly path to the data saved during approval
+    const blankDocPages = data.files?.bindingAgreementBlank || [];
+    const signedDocUrl = data.files?.signedAgreement || "";
 
     legalDocsSection.innerHTML = `
         <div class="info-row">
             <span class="label">Blank Agreement</span>
-            ${Array.isArray(blankDocData) 
-                ? `<button onclick="window.openBlankAgreement()" class="view-link" style="background:none; border:none; color:#007aff; cursor:pointer; padding:0;">View All Pages (${blankDocData.length})</button>`
-                : `<a href="${blankDocUrl || '#'}" target="_blank" class="view-link">View Original File</a>`
-            }
+            <button id="viewBlankBtn" class="view-link" style="background:none; border:none; color:#007aff; cursor:pointer; padding:0; text-decoration:underline;">
+                View All Pages (${Array.isArray(blankDocPages) ? blankDocPages.length : 1})
+            </button>
         </div>
         <div class="info-row">
             <span class="label">Signed Agreement</span>
-            <a href="${signedDoc || '#'}" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">
-                View Signed Version
-            </a>
+            ${signedDocUrl 
+                ? `<a href="${signedDocUrl}" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">View Signed Version</a>`
+                : `<span style="color: #86868b;">Not Uploaded</span>`
+            }
         </div>
     `;
 
-    // Add this helper to the window so the button works
-    window.openBlankAgreement = () => {
-        const pages = Array.isArray(blankDocData) ? blankDocData : [blankDocData];
+    // Click handler for Blank Agreement
+    document.getElementById("viewBlankBtn").onclick = () => {
+        const pages = Array.isArray(blankDocPages) ? blankDocPages : [blankDocPages];
         const printWindow = window.open('', '_blank');
-        const imagesHtml = pages.map(url => `<img src="${url}" style="width:100%; margin-bottom:20px;">`).join('');
-        printWindow.document.write(`<html><body>${imagesHtml}</body></html>`);
+        const imagesHtml = pages.map(url => `
+            <div style="text-align:center; margin-bottom:20px;">
+                <img src="${url}" style="max-width:100%; height:auto;">
+            </div>`).join('');
+            
+        printWindow.document.write(`
+            <html>
+                <head><title>Original Agreement Pages</title></head>
+                <body style="background:#525659; margin:0; padding:20px;">${imagesHtml}</body>
+            </html>
+        `);
         printWindow.document.close();
     };
 }
+
 
 // --- PHOTO MODAL LOGIC ---
 const createPhotoModal = () => {
