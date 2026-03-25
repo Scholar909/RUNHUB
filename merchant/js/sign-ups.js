@@ -612,15 +612,20 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     submittedAt: serverTimestamp()
   });
   
-  await sendAdminMerchantAlert(data);
-
-  await Promise.all([
-    setDoc(doc(db,"usernames",usernameId),{reserved:true}),
-    setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
-  ]);
-
+  // MOVE THE ALERT HERE - Before external API calls
   alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
-
+  
+  try {
+      // These are secondary; don't let them block the success message
+      await sendAdminMerchantAlert(data);
+      await Promise.all([
+          setDoc(doc(db,"usernames",usernameId),{reserved:true}),
+          setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
+      ]);
+  } catch (err) {
+      console.error("Secondary tasks failed:", err);
+  }
+  
   window.location.href = "./sign-login.html";
 
 });
