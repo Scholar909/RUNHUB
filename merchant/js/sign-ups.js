@@ -851,11 +851,16 @@ async function sendAdminMerchantAlert(data) {
             dayOptions = `1. Tomorrow (${tomorrowName})%0A2. ${nextTomorrowName}`;
         }
 
-        // 1. Prepare the greeting message (Using %0A for line breaks)
-        const responseGreeting = `Hello ${data.fullName},%0A%0AYour sign up request for NOVAHUB has been received! 🚀%0A%0AWe need to decide on a date and time for your physical verification and signing of the binding agreement.%0A%0APlease let us know which day works best for you:%0A%0A${dayOptions}%0A%0AOnce you've decided, we'll pick a specific time!`;
+        // 1. Prepare the greeting message (Use \n here, encodeURIComponent handles the rest)
+        const responseGreeting = `Hello ${data.fullName},\n\n` +
+            `Your sign up request for NOVAHUB has been received! 🚀\n\n` +
+            `We need to decide on a date and time for your physical verification and signing of the binding agreement.\n\n` +
+            `Please let us know which day works best for you:\n\n` +
+            `${dayOptions.replace(/%0A/g, '\n')}\n\n` + // Ensures the dayOptions uses \n for encoding
+            `Once you've decided, we'll pick a specific time!`;
 
-        // 2. Build the WhatsApp link (The greeting is already encoded via our %0A usage, but we wrap it in encodeURI for safety)
-        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${responseGreeting}`;
+        // 2. Build the WhatsApp link (Crucial: encodeURIComponent makes the WHOLE thing a link)
+        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
 
         // 3. Construct the Full Notification for CallMeBot
         // Note: We use \n here because encodeURIComponent will turn them into %0A for the CallMeBot API call
