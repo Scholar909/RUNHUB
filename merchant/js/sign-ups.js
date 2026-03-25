@@ -12,6 +12,9 @@ getDoc,
 setDoc
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+const ADMIN_PHONE = "2349168873680";
+const CALLMEBOT_API_KEY = "7465463"; 
+
 document.addEventListener("DOMContentLoaded", () => {
 
 /* ---------------- FIREBASE ---------------- */
@@ -47,9 +50,6 @@ const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
 const CLOUDINARY_VIDEO = "https://api.cloudinary.com/v1_1/dltoup0cz/video/upload";
 const UPLOAD_PRESET = "runhub_uploads";
 // Add this at the top with your other constants
-const ADMIN_PHONE = "2349168873680";
-const CALLMEBOT_API_KEY = "7465463"; 
-
 
 /* ---------------- VALIDATION ---------------- */
 
@@ -829,45 +829,52 @@ async function generateBindingAgreement(data, faceScanUrl) {
 
 
 async function sendAdminMerchantAlert(data) {
-    const now = new Date();
-    const currentHour = now.getHours();
-    
-    // Day formatting logic
-    const options = { weekday: 'long' };
-    const todayName = new Intl.DateTimeFormat('en-US', options).format(now);
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    const tomorrowName = new Intl.DateTimeFormat('en-US', options).format(tomorrow);
-    
-    const nextTomorrow = new Date(now);
-    nextTomorrow.setDate(now.getDate() + 2);
-    const nextTomorrowName = new Intl.DateTimeFormat('en-US', options).format(nextTomorrow);
-
-    // Determine available days based on 8:00 PM (20:00) cutoff
-    let dayOptions = "";
-    if (currentHour < 20) {
-        dayOptions = `1. Today (${todayName})\n2. Tomorrow (${tomorrowName})\n3. ${nextTomorrowName}`;
-    } else {
-        dayOptions = `1. Tomorrow (${tomorrowName})\n2. ${nextTomorrowName}`;
-    }
-
-    const responseGreeting = `Hello ${data.fullName},\n\nYour sign up request for NOVAHUB has been received! 🚀\n\nWe need to decide on a date and time for your physical verification and signing of the binding agreement.\n\nPlease let us know which day works best for you:\n\n${dayOptions}\n\nOnce you've decided, we'll pick a specific time!`;
-
-    const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
-
-    const notificationText = encodeURIComponent(
-        `*MERCHANT SIGN UP ALERT - NOVAHUB*\n\n` +
-        `*Name:* ${data.fullName}\n` +
-        `*Username:* ${data.username}\n` +
-        `*Matric:* ${data.matricNumber}\n` +
-        `*Submitted:* ${now.toLocaleTimeString()}\n\n` +
-        `*REPLY TO MERCHANT:* \n${adminReplyUrl}`
-    );
-
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${ADMIN_PHONE}&text=${notificationText}&apikey=${CALLMEBOT_API_KEY}`;
-
     try {
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        // Day formatting logic
+        const options = { weekday: 'long' };
+        const todayName = new Intl.DateTimeFormat('en-US', options).format(now);
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        const tomorrowName = new Intl.DateTimeFormat('en-US', options).format(tomorrow);
+        
+        const nextTomorrow = new Date(now);
+        nextTomorrow.setDate(now.getDate() + 2);
+        const nextTomorrowName = new Intl.DateTimeFormat('en-US', options).format(nextTomorrow);
+
+        // Determine available days based on 8:00 PM (20:00) cutoff
+        let dayOptions = "";
+        if (currentHour < 20) {
+            dayOptions = `1. Today (${todayName})\n2. Tomorrow (${tomorrowName})\n3. ${nextTomorrowName}`;
+        } else {
+            dayOptions = `1. Tomorrow (${tomorrowName})\n2. ${nextTomorrowName}`;
+        }
+
+        // 1. Prepare the greeting message for the merchant
+        const responseGreeting = `Hello ${data.fullName},\n\nYour sign up request for NOVAHUB has been received! 🚀\n\nWe need to decide on a date and time for your physical verification and signing of the binding agreement.\n\nPlease let us know which day works best for you:\n\n${dayOptions}\n\nOnce you've decided, we'll pick a specific time!`;
+
+        // 2. Encode the WhatsApp link for the Admin to click
+        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
+
+        // 3. Construct the Full Notification for the Admin
+        const notificationText = encodeURIComponent(
+            `*MERCHANT SIGN UP ALERT - NOVAHUB*\n\n` +
+            `*Name:* ${data.fullName}\n` +
+            `*Username:* ${data.username}\n` +
+            `*Matric:* ${data.matricNumber}\n` +
+            `*Submitted:* ${now.toLocaleTimeString()}\n\n` +
+            `*REPLY TO MERCHANT:* \n${adminReplyUrl}`
+        );
+
+        // 4. Final API Call
+        const url = `https://api.callmebot.com/whatsapp.php?phone=${ADMIN_PHONE}&text=${notificationText}&apikey=${CALLMEBOT_API_KEY}`;
+
+        // Use 'no-cors' as CallMeBot doesn't always return standard CORS headers
         await fetch(url, { mode: 'no-cors' });
+        console.log("CallMeBot alert triggered.");
+
     } catch (err) {
         console.error("CallMeBot Error:", err);
     }
