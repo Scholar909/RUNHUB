@@ -848,7 +848,7 @@ async function sendAdminMerchantAlert(data) {
 
         // ✅ ONE-LINE MESSAGE (no \n at all)
         const replyMessage = 
-`Hello ${data.fullName}, your sign up request for NOVAHUB has been received 🚀, we need to decide on a date and time for your physical verification and signing of the binding agreement, please let us know which day works best for you, ${dayOptions}, once you've decided, we'll pick a specific time.`;
+`Hello ${data.fullName}, your sign up request for NOVAHUB has been received 🚀, we need to decide on a date and time for your physical verification and signing of the binding agreement, please let us know which day works best for you, ${dayOptions}, once you have decided, we will pick a specific time.`;
 
         // ✅ Encode once (safe now)
         const encodedMessage = encodeURIComponent(replyMessage);
