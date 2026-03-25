@@ -121,39 +121,48 @@ const signedDocInput = document.getElementById("signedDocInput");
 const saveSignedDocBtn = document.getElementById("saveSignedDocBtn");
 const uploadStatus = document.getElementById("uploadStatus");
 
-// 1. Set the "View" logic with Print Scaling Fix
-if (data.files && data.files.bindingAgreementBlank) {
+// 1. Set the "View" logic for Multiple Pages
+if (data.files && data.files.bindingAgreementSheets) {
+    const sheets = data.files.bindingAgreementSheets; // This is the array
+    
     downloadBtn.textContent = "View/Print Blank Agreement";
     downloadBtn.onclick = (e) => {
         e.preventDefault();
         
-        // Create a new window
         const printWindow = window.open('', '_blank');
         
-        // Write a small HTML wrapper with Print CSS
+        // Generate <img> tags for every page in the array
+        const imagesHtml = sheets.map(url => 
+            `<div class="page-break"><img src="${url}"></div>`
+        ).join('');
+
         printWindow.document.write(`
             <html>
                 <head>
                     <title>Print Agreement</title>
                     <style>
-                        body { margin: 0; padding: 0; display: flex; justify-content: center; }
+                        body { margin: 0; padding: 0; background: #525659; }
+                        .page-break { 
+                            display: flex; 
+                            justify-content: center; 
+                            background: white;
+                            margin-bottom: 20px;
+                        }
                         img { max-width: 100%; height: auto; display: block; }
                         
                         @media print {
-                            @page { size: A4; margin: 0; }
-                            body { margin: 0; }
-                            img { 
-                                width: 100vw; 
-                                height: 100vh; 
-                                object-fit: contain; 
-                                page-break-after: avoid;
-                                page-break-before: avoid;
-                            }
+                            body { background: white; margin: 0; }
+                            .page-break { margin: 0; page-break-after: always; }
+                            img { width: 100vw; height: 100vh; object-fit: contain; }
                         }
                     </style>
                 </head>
                 <body>
-                    <img src="${data.files.bindingAgreementBlank}" onload="window.focus();">
+                    ${imagesHtml}
+                    <script>
+                        // Wait for all images to load before focus
+                        window.onload = () => { window.focus(); };
+                    </script>
                 </body>
             </html>
         `);
@@ -233,15 +242,7 @@ try {
     });  
 
     // Update UI Success State  
-    uploadStatus.innerHTML = `✓ Saved! <a href="#" id="viewNewSignedDoc" style="color:#34c759; text-decoration:underline;">View Upload</a>`;  
-    
-    // Apply same viewing logic to the new upload
-    document.getElementById("viewNewSignedDoc").onclick = (e) => {
-        e.preventDefault();
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`<html><head><style>body{margin:0;display:flex;justify-content:center;}img{max-width:100%;height:auto;}@media print{@page{size:A4;margin:0;}img{width:100vw;height:100vh;object-fit:contain;}}</style></head><body><img src="${uploadedUrl}"></body></html>`);
-        printWindow.document.close();
-    };
+    uploadStatus.innerHTML = `✓ Saved! <a href="${uploadedUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View Uploaded PDF</a>`;  
 
     uploadStatus.style.color = "#34c759";  
     saveSignedDocBtn.innerText = "Upload Complete";
@@ -306,20 +307,24 @@ img.onclick = () => openModal(img.src);
 
 /* --- CLOUDINARY UPLOAD HELPER --- */
 async function uploadImage(file) {
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
-const UPLOAD_PRESET = "runhub_uploads";
+    const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
+    const UPLOAD_PRESET = "runhub_uploads";
 
-const fd = new FormData();
-fd.append("file", file);
-fd.append("upload_preset", UPLOAD_PRESET);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", UPLOAD_PRESET);
+    // CRITICAL: This allows PDFs and other file types to be accepted
+    fd.append("resource_type", "auto"); 
 
-const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+    const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
 
-if (!res.ok) {
-throw new Error("Failed to upload to Cloudinary");
-}
+    if (!res.ok) {
+        const err = await res.json();
+        console.error("Cloudinary Error:", err);
+        throw new Error("Failed to upload to Cloudinary");
+    }
 
-const data = await res.json();
-return data.secure_url;
+    const data = await res.json();
+    return data.secure_url;
 }
 }
