@@ -142,6 +142,8 @@ function renderTable(data){
     if(status==="rejected") statusClass="rejected";
 
     let actionButtons = "";
+    
+    // If pending: Show all buttons, but DISBALE the delete button
     if(status === "pending"){
       actionButtons = `
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
@@ -153,11 +155,12 @@ function renderTable(data){
         <button class="action-btn block-btn" title="Block Application" onclick="blockMerchant('${app.id}')">
           <i class="fi-x-circle"></i>
         </button>
-        <button class="action-btn delete-btn" title="Delete Application" onclick="deleteApplication('${app.id}')">
+        <button class="action-btn delete-btn disabled-style" title="Approve/Reject before deleting" disabled onclick="deleteApplication('${app.id}')">
           <i class="fi-trash"></i>
         </button>
       `;
     } else {
+      // If approved or rejected: Only show View and Delete (Delete is now ENABLED)
       actionButtons = `
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
           <i class="fi-eye"></i>
@@ -178,6 +181,7 @@ function renderTable(data){
     tableBody.appendChild(tr);
   });
 }
+
 
 /* -----------------------------
 SEARCH
