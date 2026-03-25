@@ -833,7 +833,6 @@ async function sendAdminMerchantAlert(data) {
         const now = new Date();
         const currentHour = now.getHours();
         
-        // Day formatting logic
         const options = { weekday: 'long' };
         const todayName = new Intl.DateTimeFormat('en-US', options).format(now);
         const tomorrow = new Date(now);
@@ -844,21 +843,22 @@ async function sendAdminMerchantAlert(data) {
         nextTomorrow.setDate(now.getDate() + 2);
         const nextTomorrowName = new Intl.DateTimeFormat('en-US', options).format(nextTomorrow);
 
-        // Determine available days based on 8:00 PM (20:00) cutoff
+        // Using %0A instead of \n for the internal message
         let dayOptions = "";
         if (currentHour < 20) {
-            dayOptions = `1. Today (${todayName})\n2. Tomorrow (${tomorrowName})\n3. ${nextTomorrowName}`;
+            dayOptions = `1. Today (${todayName})%0A2. Tomorrow (${tomorrowName})%0A3. ${nextTomorrowName}`;
         } else {
-            dayOptions = `1. Tomorrow (${tomorrowName})\n2. ${nextTomorrowName}`;
+            dayOptions = `1. Tomorrow (${tomorrowName})%0A2. ${nextTomorrowName}`;
         }
 
-        // 1. Prepare the greeting message for the merchant
-        const responseGreeting = `Hello ${data.fullName},\n\nYour sign up request for NOVAHUB has been received! 🚀\n\nWe need to decide on a date and time for your physical verification and signing of the binding agreement.\n\nPlease let us know which day works best for you:\n\n${dayOptions}\n\nOnce you've decided, we'll pick a specific time!`;
+        // 1. Prepare the greeting message (Using %0A for line breaks)
+        const responseGreeting = `Hello ${data.fullName},%0A%0AYour sign up request for NOVAHUB has been received! 🚀%0A%0AWe need to decide on a date and time for your physical verification and signing of the binding agreement.%0A%0APlease let us know which day works best for you:%0A%0A${dayOptions}%0A%0AOnce you've decided, we'll pick a specific time!`;
 
-        // 2. Encode the WhatsApp link for the Admin to click
-        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
+        // 2. Build the WhatsApp link (The greeting is already encoded via our %0A usage, but we wrap it in encodeURI for safety)
+        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${responseGreeting}`;
 
-        // 3. Construct the Full Notification for the Admin
+        // 3. Construct the Full Notification for CallMeBot
+        // Note: We use \n here because encodeURIComponent will turn them into %0A for the CallMeBot API call
         const notificationText = encodeURIComponent(
             `*MERCHANT SIGN UP ALERT - NOVAHUB*\n\n` +
             `*Name:* ${data.fullName}\n` +
@@ -871,9 +871,8 @@ async function sendAdminMerchantAlert(data) {
         // 4. Final API Call
         const url = `https://api.callmebot.com/whatsapp.php?phone=${ADMIN_PHONE}&text=${notificationText}&apikey=${CALLMEBOT_API_KEY}`;
 
-        // Use 'no-cors' as CallMeBot doesn't always return standard CORS headers
         await fetch(url, { mode: 'no-cors' });
-        console.log("CallMeBot alert triggered.");
+        console.log("CallMeBot alert triggered with line breaks.");
 
     } catch (err) {
         console.error("CallMeBot Error:", err);
