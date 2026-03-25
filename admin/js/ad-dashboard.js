@@ -215,6 +215,11 @@ function renderUserTable(users) {
     });
 }
 
+function encodeMatric(matric) {
+    if (!matric) return "";
+    return matric.replace(/\//g, "_"); // Replace all slashes with underscores
+}
+
 
 /**
  * 5. INSTANT SEARCH LOGIC
@@ -294,11 +299,11 @@ window.toggleUserLock = async (userId, currentStatus) => {
 };
 
 window.deleteUser = async (userId) => {
-    const confirmation = confirm("PERMANENT ACTION: This user will be blacklisted and deleted. They will not be able to sign up again with the same credentials. Continue?");
+    const confirmation = confirm("PERMANENT ACTION: This user will be blacklisted and all unique identifiers (Username/Matric) will be cleared. Continue?");
     
     if (confirmation) {
         try {
-            // 1. Fetch the user's data before deleting so we know what to blacklist
+            // 1. Fetch user data to get identifiers before deletion
             const userRef = doc(db, "users", userId);
             const userSnap = await getDoc(userRef);
 
@@ -308,26 +313,50 @@ window.deleteUser = async (userId) => {
             }
 
             const userData = userSnap.data();
-            const userEmail = userData.email;
-            const userMatric = userData.matricNumber; // Matches your signup field
+            const email = userData.email;
+            const username = userData.username;
+            const matric = userData.matricNumber;
+            const role = (userData.role || "").toLowerCase();
 
-            // 2. Add to Blacklist Collection
-            // We use the email as the Document ID for easy lookups during future Signups
-            await setDoc(doc(db, "blacklist", userEmail), {
-                email: userEmail,
-                matricNumber: userMatric || "N/A",
+            // 2. Prepare Deletion Batch for Identifiers
+            const cleanupTasks = [];
+
+            // Delete Username reference
+            if (username) {
+                cleanupTasks.push(deleteDoc(doc(db, "usernames", username.toLowerCase())));
+            }
+
+            // Delete Matric reference (handles both customer and merchant formats)
+            if (matric) {
+                const matricKey = role === 'merchant' 
+                    ? `${encodeMatric(matric.toUpperCase())}_merchant` 
+                    : encodeMatric(matric.toUpperCase());
+                cleanupTasks.push(deleteDoc(doc(db, "matricNumbers", matricKey)));
+            }
+            
+            // Delete KYC record if they are a merchant
+            if (role === 'merchant') {
+                cleanupTasks.push(deleteDoc(doc(db, "kyc", userId)));
+            }
+
+            // 3. Add to Blacklist
+            cleanupTasks.push(setDoc(doc(db, "blacklist", email.toLowerCase()), {
+                email: email.toLowerCase(),
+                matricNumber: matric || "N/A",
                 name: userData.fullName || "Unknown",
+                role: role,
                 reason: "Account deleted by administrator",
                 deletedAt: new Date().toISOString()
-            });
+            }));
 
-            // 3. Physically delete the document from the 'users' collection
-            // Your global security listener will detect this and log them out
+            // 4. Run all cleanup tasks and delete the main user document
+            await Promise.all(cleanupTasks);
             await deleteDoc(userRef);
 
-            alert("User has been successfully blacklisted and deleted.");
+            alert("User fully purged and blacklisted. Remember to manually delete the email from the Firebase Auth list.");
+
         } catch (error) {
-            console.error("Deletion/Blacklist Error:", error);
+            console.error("Purge Error:", error);
             alert("Action failed: " + error.message);
         }
     }
