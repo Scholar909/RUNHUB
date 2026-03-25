@@ -142,7 +142,11 @@ function renderTable(data){
     if(status==="rejected") statusClass="rejected";
 
     let actionButtons = "";
-    if(status === "pending"){
+    
+    // Check if the status is pending to determine if delete is allowed
+    const isPending = status === "pending";
+
+    if(isPending){
       actionButtons = `
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
           <i class="fi-eye"></i>
@@ -153,11 +157,12 @@ function renderTable(data){
         <button class="action-btn block-btn" title="Block Application" onclick="blockMerchant('${app.id}')">
           <i class="fi-x-circle"></i>
         </button>
-        <button class="action-btn delete-btn" title="Delete Application" onclick="deleteApplication('${app.id}')">
+        <button class="action-btn delete-btn disabled-btn" title="Cannot delete pending applications" disabled>
           <i class="fi-trash"></i>
         </button>
       `;
     } else {
+      // Status is Approved or Rejected - Only View and Delete remain
       actionButtons = `
         <a href="view-verify.html?id=${app.id}" class="action-btn view-btn" title="View Application">
           <i class="fi-eye"></i>
@@ -178,6 +183,7 @@ function renderTable(data){
     tableBody.appendChild(tr);
   });
 }
+
 
 /* -----------------------------
 SEARCH
