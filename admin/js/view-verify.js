@@ -124,8 +124,21 @@ async function loadApplication() {
     const uploadStatus = document.getElementById("uploadStatus");
 
     // 1. Set the download link for the blank agreement
+    /* --- view-verify.js --- */
+    
+    // 1. Set the download link for the blank agreement
     if (data.files && data.files.bindingAgreementBlank) {
-        downloadBtn.href = data.files.bindingAgreementBlank;
+        downloadBtn.onclick = (e) => {
+            e.preventDefault();
+            const link = document.createElement('a');
+            link.href = data.files.bindingAgreementBlank;
+            link.download = `Agreement_${data.username}.pdf`; // Suggests a filename
+            link.target = "_blank"; // Opens in new tab if download is blocked
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        downloadBtn.style.cursor = "pointer";
     } else {
         downloadBtn.textContent = "Agreement not found";
         downloadBtn.style.pointerEvents = "none";
