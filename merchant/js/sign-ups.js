@@ -827,59 +827,59 @@ async function generateBindingAgreement(data, faceScanUrl) {
     return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
 
-
 async function sendAdminMerchantAlert(data) {
+    const ADMIN_PHONE = "2349168873680";
+    const CALLMEBOT_API_KEY = "7465463"; 
+
     try {
         const now = new Date();
         const currentHour = now.getHours();
-        
+
         const options = { weekday: 'long' };
         const todayName = new Intl.DateTimeFormat('en-US', options).format(now);
+
         const tomorrow = new Date(now);
         tomorrow.setDate(now.getDate() + 1);
         const tomorrowName = new Intl.DateTimeFormat('en-US', options).format(tomorrow);
-        
+
         const nextTomorrow = new Date(now);
         nextTomorrow.setDate(now.getDate() + 2);
         const nextTomorrowName = new Intl.DateTimeFormat('en-US', options).format(nextTomorrow);
 
-        // Using %0A instead of \n for the internal message
-        let dayOptions = "";
-        if (currentHour < 20) {
-            dayOptions = `1. Today (${todayName})%0A2. Tomorrow (${tomorrowName})%0A3. ${nextTomorrowName}`;
-        } else {
-            dayOptions = `1. Tomorrow (${tomorrowName})%0A2. ${nextTomorrowName}`;
-        }
+        let dayOptions = (currentHour < 20) 
+            ? `1. Today (${todayName}), 2. Tomorrow (${tomorrowName}), 3. ${nextTomorrowName}`
+            : `1. Tomorrow (${tomorrowName}), 2. ${nextTomorrowName}`;
 
-        // 1. Prepare the greeting message (Use \n here, encodeURIComponent handles the rest)
-        const responseGreeting = `Hello ${data.fullName},\n\n` +
-            `Your sign up request for NOVAHUB has been received! 🚀\n\n` +
-            `We need to decide on a date and time for your physical verification and signing of the binding agreement.\n\n` +
-            `Please let us know which day works best for you:\n\n` +
-            `${dayOptions.replace(/%0A/g, '\n')}\n\n` + // Ensures the dayOptions uses \n for encoding
-            `Once you've decided, we'll pick a specific time!`;
+        // ✅ ONE-LINE MESSAGE (no \n at all)
+        const replyMessage = 
+`Hello ${data.fullName}, your sign up request for NOVAHUB has been received 🚀, we need to decide on a date and time for your physical verification and signing of the binding agreement, please let us know which day works best for you, ${dayOptions}, once you've decided, we'll pick a specific time.`;
 
-        // 2. Build the WhatsApp link (Crucial: encodeURIComponent makes the WHOLE thing a link)
-        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodeURIComponent(responseGreeting)}`;
+        // ✅ Encode once (safe now)
+        const encodedMessage = encodeURIComponent(replyMessage);
 
-        // 3. Construct the Full Notification for CallMeBot
-        // Note: We use \n here because encodeURIComponent will turn them into %0A for the CallMeBot API call
-        const notificationText = encodeURIComponent(
-            `*MERCHANT SIGN UP ALERT - NOVAHUB*\n\n` +
-            `*Name:* ${data.fullName}\n` +
-            `*Username:* ${data.username}\n` +
-            `*Matric:* ${data.matricNumber}\n` +
-            `*Submitted:* ${now.toLocaleTimeString()}\n\n` +
-            `*REPLY TO MERCHANT:* \n${adminReplyUrl}`
-        );
+        // ✅ Single clean clickable link
+        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodedMessage}`;
 
-        // 4. Final API Call
+        const notificationRaw = 
+`*MERCHANT SIGN UP ALERT - NOVAHUB*
+
+*Name:* ${data.fullName}
+*Username:* ${data.username}
+*Matric:* ${data.matricNumber}
+*Submitted:* ${now.toLocaleTimeString()}
+
+*REPLY TO MERCHANT:*
+${adminReplyUrl}`;
+
+        const notificationText = encodeURIComponent(notificationRaw);
+
         const url = `https://api.callmebot.com/whatsapp.php?phone=${ADMIN_PHONE}&text=${notificationText}&apikey=${CALLMEBOT_API_KEY}`;
 
         await fetch(url, { mode: 'no-cors' });
-        console.log("CallMeBot alert triggered with line breaks.");
+
+        console.log("✅ Perfect: One clean link + clean readable message.");
 
     } catch (err) {
-        console.error("CallMeBot Error:", err);
+        console.error("❌ Error:", err);
     }
 }
