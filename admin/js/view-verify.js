@@ -126,11 +126,38 @@ const uploadStatus = document.getElementById("uploadStatus");
 
 // 1. Set the "View" logic for the blank agreement (Opens in Modal)
 if (data.files && data.files.bindingAgreementBlank) {
-    downloadBtn.textContent = "View/Print Blank Agreement"; // Changed text for clarity
+    downloadBtn.textContent = "View/Print Blank Agreement";
+    
     downloadBtn.onclick = (e) => {
         e.preventDefault();
-        // Use your existing modal function to show it like a receipt
-        window.open(data.files.bindingAgreementBlank, '_blank')
+        
+        // Create a temporary window
+        const printWindow = window.open('', '_blank');
+        
+        // Write a mini-HTML document that forces the image to fit the page
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print Binding Agreement</title>
+                    <style>
+                        body { margin: 0; display: flex; justify-content: center; }
+                        img { 
+                            max-width: 100%; 
+                            height: auto; 
+                            page-break-after: always; 
+                        }
+                        @page { size: auto; margin: 0; }
+                        @media print {
+                            img { width: 100vw; height: 100vh; object-fit: contain; }
+                        }
+                    </style>
+                </head>
+                <body onload="window.print();">
+                    <img src="${data.files.bindingAgreementBlank}">
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
     };
     downloadBtn.style.cursor = "pointer";
 } else {
