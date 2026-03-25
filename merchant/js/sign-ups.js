@@ -714,16 +714,16 @@ async function generateBindingAgreement(data, faceScanUrl) {
 
     // NEW STRUCTURE: Exact human-worded pledge
     const sections = [
-        { type: 'header', title: "NOVAHUB MERCHANT BINDING AGREEMENT", sub: "Redeemer's University, Ede" },
+        { type: 'header', title: "NOVAHUB MERCHANT BINDING AGREEMENT", sub: "Redeemer's University, Ede, Osun State" },
         { 
             type: 'body', 
             title: "1. Merchant Identity", 
-            text: `I, ${data.fullName.toUpperCase()},\na student of REDEEMER'S UNIVERSITY,\nwith Matric Number ${data.matricNumber},\nand Username ${data.username},\n\nhereby register as a Merchant on the NovaHub platform.` 
+            text: `I, ${data.fullName.toUpperCase()},\na student of REDEEMER'S UNIVERSITY, EDE\nwith Matric Number ${data.matricNumber},\nand Username ${data.username},\n\nhereby register as a Merchant on the NOVAHUB platform.` 
         },
         { 
             type: 'body', 
             title: "2. Core Responsibility", 
-            text: "I understand that NovaHub connects me directly with customers who trust the platform to deliver goods and services reliably.",
+            text: "I understand that NOVAHUB connects me directly with customers who trust the platform to deliver goods and services reliably.",
             boldLabel: "I hereby agree that:",
             bullets: [
                 "I will honestly receive and process all customer orders",
@@ -744,16 +744,16 @@ async function generateBindingAgreement(data, faceScanUrl) {
         },
         { 
             type: 'body', 
-            title: "4. Platform Commission (NovaHub Fees)", 
+            title: "4. Platform Commission", 
             boldLabel: "I acknowledge that:",
             bullets: [
-                "NovaHub earns a commission or service fee from transactions conducted through the platform",
-                "Any amount owed to NovaHub is NOT my personal income"
+                "NOVAHUB earns a commission or service fee from transactions conducted through the platform",
+                "Any amount owed to NOVAHUB is NOT my personal income"
             ],
             boldLabel2: "I agree that:",
             bullets2: [
                 "I will accurately remit all platform fees owed",
-                "I will not bypass, avoid, or manipulate the system to withhold NovaHub’s earnings"
+                "I will not bypass, avoid, or manipulate the system to withhold NOVAHUB’s earnings"
             ],
             footerText: "Failure to remit these funds will be treated as financial misconduct and breach of agreement."
         },
@@ -776,7 +776,7 @@ async function generateBindingAgreement(data, faceScanUrl) {
         { 
             type: 'body', 
             title: "6. Good Faith Commitment", 
-            boldLabel: "I agree to operate on NovaHub with:",
+            boldLabel: "I agree to operate on NOVAHUB with:",
             bullets: ["Honesty", "Responsibility", "Respect for customers and the platform"],
             footerText: "I understand that this platform depends on trust, and any abuse of that trust will carry consequences."
         },
@@ -787,7 +787,7 @@ async function generateBindingAgreement(data, faceScanUrl) {
             bullets: [
                 "I have read and understood this agreement",
                 "I accept all responsibilities stated above",
-                "I agree to be held accountable for my actions on NovaHub"
+                "I agree to be held accountable for my actions on NOVAHUB"
             ]
         }
     ];
