@@ -188,7 +188,8 @@ if (data.signedAgreementUrl) {
         // View Logic
         document.getElementById("viewSignedDoc").onclick = (e) => {
             e.preventDefault();
-            window.open(data.signedAgreementUrl, '_blank');
+            const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(data.signedAgreementUrl)}&embedded=true`;
+            window.open(viewerUrl, '_blank');
         };
 
         // Remove Logic
