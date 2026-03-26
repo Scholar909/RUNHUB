@@ -122,6 +122,9 @@
                     
                     <label>School ID Number (Matric)</label>
                     <input type="text" id="ambId" required placeholder="RUN/CPE/...">
+                    
+                    <label>Phone Number</label>
+                    <input type="text" id="ambphone" required placeholder="08123456789">
 
                     <label>Institution</label>
                     <input type="text" id="ambInst" required value="Redeemer's University">
@@ -183,6 +186,7 @@ function loadAmbassadors() {
             card.innerHTML = `
                 <img src="${amb.photoUrl}" class="profile-img">
                 <div class="amb-name">${amb.fullName}</div>
+                <div class="amb-name">${amb.phone}</div>
                 <div class="amb-info">${amb.matricNo} • ${amb.institution}</div>
                 <button class="btn-view" onclick="window.open('${amb.contractUrl}', '_blank')">View Contract</button>
             `;
@@ -207,6 +211,7 @@ ambassadorForm.onsubmit = async (e) => {
     const data = {
         fullName: document.getElementById('ambName').value,
         matricNo: document.getElementById('ambId').value,
+        phone: document.getElementById('ambphone').value,
         institution: document.getElementById('ambInst').value,
     };
 
@@ -363,14 +368,31 @@ async function generateAmbassadorContract(data, photoUrl) {
         "The Ambassador agrees to keep all internal strategies and merchant data confidential.",
         "The Ambassador is an Independent Contractor, not an employee."
     ]);
+  
+      // 5. Final Agreement Statement
+      y += 40;
+      ctx.font = "bold 40px Helvetica";
+      ctx.fillText("7. AGREEMENT SIGN-OFF", margin, y);
+      y += 70;
+      ctx.font = "italic 38px Helvetica"; // Slightly smaller to ensure fit
+      
+      const finalStatement = `I, ${data.fullName.toUpperCase()}, with the matric number ${data.matricNo.toUpperCase()}, and phone number ${data.phone}, hereby agree to the terms listed above.`;
+      
+      // Wrapping logic for the final statement
+      const words = finalStatement.split(' ');
+      let currentLine = "";
+      words.forEach(word => {
+          let testLine = currentLine + word + " ";
+          if (ctx.measureText(testLine).width > contentWidth) {
+              ctx.fillText(currentLine, margin, y);
+              y += 50;
+              currentLine = word + " ";
+          } else {
+              currentLine = testLine;
+          }
+      });
+      ctx.fillText(currentLine, margin, y);
 
-    // 5. Final Agreement Statement
-    y += 40;
-    ctx.font = "bold 40px Helvetica";
-    ctx.fillText("7. AGREEMENT SIGN-OFF", margin, y);
-    y += 60;
-    ctx.font = "italic 42px Helvetica";
-    ctx.fillText(`I, ${data.fullName.toUpperCase()}, hereby agree to the terms listed above.`, margin, y);
 
     // 6. Signatures
     const sigY = 3200;
