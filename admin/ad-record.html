@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Records | NOVAHUB</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-    <style>
+    <style> 
         :root {
             --bg-dark: #0a0b10;
             --accent: #007aff;
@@ -60,15 +60,16 @@
         .stat-value { font-size: 2.2rem; font-weight: 800; color: var(--text-main); }
         .currency { font-size: 1.2rem; color: var(--text-dim); margin-right: 5px; }
 
-        /* Profit Table */
+        /* Table Styling */
         .table-card { padding: 25px; margin-top: 20px; overflow: hidden; }
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; min-width: 800px; }
         .admin-table th {
-            text-align: left; font-size: 0.7rem; color: var(--text-dim);
+            text-align: left; font-size: 0.65rem; color: var(--text-dim);
             text-transform: uppercase; letter-spacing: 1px; padding: 15px 10px;
             border-bottom: 2px solid var(--border);
         }
-        .admin-table td { padding: 15px 10px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .admin-table td { padding: 15px 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        .stat-num { font-weight: 600; color: var(--accent); }
 
         /* Bottom Nav */
         .bottom-nav {
@@ -91,52 +92,52 @@
     <div class="main-wrapper">
         <nav class="navbar">
             <div class="logo">NOVA<span class="accent">HUB</span></div>
-            <div class="status-indicator" style="font-size: 0.7rem; color: var(--text-dim);">
-                SECURE LEDGER
-            </div>
+            <div class="status-indicator" style="font-size: 0.7rem; color: var(--text-dim);">SECURE LEDGER</div>
         </nav>
 
         <main class="content-body">
             <header class="hero-section">
                 <h1>Financial <span class="highlight">Overview</span></h1>
-                <p style="color: var(--text-dim); margin-bottom: 40px;">Live monitoring of merchant credits and platform profits.</p>
+                <p style="color: var(--text-dim); margin-bottom: 40px;">Live tracking of promo liabilities and growth metrics.</p>
             </header>
 
             <section class="trust-grid">
                 <div class="trust-card">
-                    <div class="card-tag">TOTAL WALLET CREDIT</div>
+                    <div class="card-tag">GROSS WALLET BALANCE</div>
                     <h3 class="stat-value"><span class="currency">₦</span><span id="totalWallet">0.00</span></h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim);">Sum of all active merchant balances</p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Combined value of all user wallets</p>
                 </div>
 
                 <div class="trust-card">
                     <div class="card-tag">PROMO LIABILITY</div>
                     <h3 class="stat-value" style="color: var(--error);"><span class="currency">₦</span><span id="promoAmount">0.00</span></h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim);">Total sign-up bonuses issued (₦200/merch)</p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Early Merchant & Ambassador bonuses</p>
                 </div>
                 
                 <div class="trust-card">
                     <div class="card-tag">NET PLATFORM PROFIT</div>
                     <h3 class="stat-value" style="color: var(--success);"><span class="currency">₦</span><span id="netProfit">0.00</span></h3>
-                    <p style="font-size: 0.8rem; color: var(--text-dim);">Revenue minus promotional credits</p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Available capital after liabilities</p>
                 </div>
             </section>
 
             <section class="management-section">
                 <div class="trust-card table-card">
-                    <div class="card-tag">MONTHLY PROFIT LOGS</div>
+                    <div class="card-tag">MONTHLY PERFORMANCE LOGS</div>
                     <div style="overflow-x: auto;">
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Amount</th>
+                                    <th>Month</th>
+                                    <th>New Merchants</th>
+                                    <th>New Customers</th>
+                                    <th>Total New Users</th>
+                                    <th>Total Profit</th>
                                 </tr>
                             </thead>
                             <tbody id="profitTableBody">
                                 <tr>
-                                    <td colspan="3" style="text-align: center; color: var(--text-dim); padding: 30px;">Calculating historical data...</td>
+                                    <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">Syncing monthly records...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -156,16 +157,14 @@
     <script type="module">
         import { db, auth } from './firebase-config.js';
         import { 
-            collection, 
-            query, 
-            where, 
-            onSnapshot, 
-            getDocs,
-            doc,
-            setDoc,
-            orderBy
+            collection, query, where, onSnapshot, doc, setDoc, orderBy, getCountFromServer 
         } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+        // --- MANUAL CONTROLS: CHANGE THESE VALUES ANYTIME ---
+        const AMBASSADORS_COUNT = 0; // Update this when an ambassador signs up as a merchant
+        const PROMO_MERCHANTS_COUNT = 0; // Update this for the first 30 merchants (max 30)
+        // ---------------------------------------------------
 
         const totalWalletEl = document.getElementById('totalWallet');
         const promoAmountEl = document.getElementById('promoAmount');
@@ -173,91 +172,77 @@
         const profitTableBody = document.getElementById('profitTableBody');
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                initFinanceDashboard();
-            } else {
-                window.location.href = "./admin-login.html";
-            }
+            if (user) initFinanceDashboard();
+            else window.location.href = "./admin-login.html";
         });
 
         async function initFinanceDashboard() {
-            // 1. Live Listen to Approved Merchants for Real-time Cards
-            const merchQuery = query(collection(db, "users"), where("role", "==", "merchant"));
+            // 1. Live Calculation for Dashboard Cards
+            const allUsersQuery = collection(db, "users");
             
-            onSnapshot(merchQuery, (snapshot) => {
-                let totalCredit = 0;
-                let merchantCount = 0;
-
-                if (snapshot.empty) {
-                    // Reset to zero explicitly if no merchants exist
-                    updateDisplay(0, 0, 0);
-                    return;
-                }
+            onSnapshot(allUsersQuery, (snapshot) => {
+                let totalWalletBalance = 0;
                 
                 snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    // Assumes only approved merchants are in 'users' with 'merchant' role 
-                    // or you can add: if(data.status === 'Approved')
-                    totalCredit += parseFloat(data.walletCredit || 0);
-                    merchantCount++;
+                    totalWalletBalance += parseFloat(doc.data().walletCredit || 0);
                 });
 
-                const promoTotal = merchantCount * 200;
-                const netProfit = totalCredit - promoTotal;
+                // Calculation logic based on your requirements
+                const merchantPromoLoss = PROMO_MERCHANTS_COUNT * 3000;
+                const ambassadorLoss = AMBASSADORS_COUNT * 5000;
+                const totalLiability = merchantPromoLoss + ambassadorLoss;
+                const netProfit = totalWalletBalance - totalLiability;
 
-                totalWalletEl.textContent = totalCredit.toLocaleString(undefined, {minimumFractionDigits: 2});
-                promoAmountEl.textContent = promoTotal.toLocaleString(undefined, {minimumFractionDigits: 2});
+                totalWalletEl.textContent = totalWalletBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                promoAmountEl.textContent = totalLiability.toLocaleString(undefined, {minimumFractionDigits: 2});
                 netProfitEl.textContent = netProfit.toLocaleString(undefined, {minimumFractionDigits: 2});
 
-                // Check for Monthly Snapshot logic
+                // Handle snapshot trigger for 1st of the month
                 handleMonthlyLogging(netProfit);
             });
 
-            // 2. Load Historical Monthly Profits
+            // 2. Load Historical Monthly Records
             const logsQuery = query(collection(db, "profit_logs"), orderBy("timestamp", "desc"));
             onSnapshot(logsQuery, (snapshot) => {
                 profitTableBody.innerHTML = '';
                 if(snapshot.empty) {
-                    profitTableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-dim);">No monthly records found yet.</td></tr>';
+                    profitTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-dim);">No monthly records found.</td></tr>';
                     return;
                 }
                 snapshot.forEach(doc => {
                     const log = doc.data();
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${log.date}</td>
-                        <td>${log.title}</td>
-                        <td style="color: var(--success); font-weight: 700;">₦${log.amount.toLocaleString()}</td>
+                        <td>${log.monthName}</td>
+                        <td class="stat-num">${log.merchantsGotten || 0}</td>
+                        <td class="stat-num">${log.customersGotten || 0}</td>
+                        <td class="stat-num">${log.totalUsersGotten || 0}</td>
+                        <td style="color: var(--success); font-weight: 700;">₦${(log.amount || 0).toLocaleString()}</td>
                     `;
                     profitTableBody.appendChild(tr);
                 });
             });
         }
 
-        /**
-         * Logic to auto-log profit on the 1st of every month
-         */
         async function handleMonthlyLogging(currentProfit) {
             const now = new Date();
-            const day = now.getDate();
-            
-            // We only trigger this logic on the first day of the month
-            if (day === 1) {
-                const monthYear = `${now.getMonth() + 1}/${now.getFullYear()}`;
-                const logId = `profit_${now.getMonth()}_${now.getFullYear()}`;
+            if (now.getDate() === 1) {
+                const logId = `record_${now.getMonth()}_${now.getFullYear()}`;
                 const logRef = doc(db, "profit_logs", logId);
 
-                // Use the previous month's name for the title
+                // Fetch counts for the previous month (Example: if it's March 1st, we fetch Feb stats)
+                // Note: For real stats, you would need 'createdAt' timestamps on your user docs.
+                // For now, this sets the structure for your monthly snapshot.
+
                 const lastMonthDate = new Date();
                 lastMonthDate.setMonth(now.getMonth() - 1);
-                const monthName = lastMonthDate.toLocaleString('default', { month: 'long' });
+                const monthName = lastMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-                const dateString = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-
-                // setDoc ensures we don't create duplicate entries for the same 1st day
                 await setDoc(logRef, {
-                    date: dateString,
-                    title: `${monthName} Total Profit`,
+                    monthName: monthName,
+                    merchantsGotten: 0, // Manual update or automated via timestamp query
+                    customersGotten: 0, 
+                    totalUsersGotten: 0,
                     amount: currentProfit,
                     timestamp: Date.now()
                 }, { merge: true });
