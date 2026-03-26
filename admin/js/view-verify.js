@@ -139,7 +139,7 @@ if (data.files && data.files.bindingAgreementSheets) {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Print Agreement</title>
+                    <title>Binding_Agreement_${data.fullName}</title>
                     <style>
                         body { margin: 0; padding: 0; background: #525659; }
                         .page-break { 
@@ -190,16 +190,11 @@ if (data.signedAgreementUrl) {
             e.preventDefault();
             const pdfUrl = data.signedAgreementUrl;
             
-            // Open directly in a new tab - most modern browsers handle .pdf fine
-            const win = window.open(pdfUrl, '_blank');
-            if (win) {
-                win.focus();
-            } else {
-                // Fallback if popup is blocked
-                alert('Please allow popups to view the PDF');
-            }
+            // Using Google Docs viewer ensures the PDF renders even if the headers are set to download
+            const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+            
+            window.open(viewerUrl, '_blank');
         };
-
 
         // Remove Logic
         document.getElementById("removeSignedDoc").onclick = async (e) => {
