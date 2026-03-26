@@ -808,7 +808,7 @@ async function generateBindingAgreement(data, faceScanUrl) {
         // Watermark on EVERY page
         if (watermark) {
             ctx.save();
-            ctx.globalAlpha = 0.06;
+            ctx.globalAlpha = 0.20;
             ctx.drawImage(watermark, (canvasWidth - 1600) / 2, (canvasHeight - 1600) / 2, 1600, 1600);
             ctx.restore();
         }
@@ -905,7 +905,7 @@ async function generateBindingAgreement(data, faceScanUrl) {
                 sigCanvas.width = canvasWidth; sigCanvas.height = canvasHeight;
                 const sigCtx = sigCanvas.getContext("2d");
                 sigCtx.fillStyle = "#fff"; sigCtx.fillRect(0,0, canvasWidth, canvasHeight);
-                if(watermark) { sigCtx.globalAlpha = 0.06; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
+                if(watermark) { sigctx.globalAlpha = 0.20; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
                 renderSignature(sigCtx, canvasWidth, margin, 500);
                 const sigBlob = await new Promise(res => sigCanvas.toBlob(res, 'image/png'));
                 pages.push(sigBlob);
