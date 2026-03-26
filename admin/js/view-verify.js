@@ -190,10 +190,8 @@ if (data.signedAgreementUrl) {
             e.preventDefault();
             const pdfUrl = data.signedAgreementUrl;
             
-            // Using Google Docs viewer ensures the PDF renders even if the headers are set to download
-            const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
-            
-            window.open(viewerUrl, '_blank');
+            // view doc
+            window.open(pdfUrl + "#toolbar=1", "_blank");
         };
 
         // Remove Logic
