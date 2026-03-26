@@ -154,100 +154,155 @@
         </footer>
     </div>
 
-    <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { 
-            collection, query, where, onSnapshot, doc, setDoc, orderBy, getCountFromServer 
-        } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+<script type="module">
+import { db, auth } from './js/firebase-config.js';
+import { 
+    collection, query, where, onSnapshot, doc, setDoc, orderBy, getDoc, getDocs 
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-        // --- MANUAL CONTROLS: CHANGE THESE VALUES ANYTIME ---
-        const AMBASSADORS_COUNT = 0; // Update this when an ambassador signs up as a merchant
-        const PROMO_MERCHANTS_COUNT = 0; // Update this for the first 30 merchants (max 30)
-        // ---------------------------------------------------
+// --- MANUAL CONTROLS ---
+const AMBASSADORS_COUNT = 0;
+const PROMO_MERCHANTS_COUNT = 0;
+// ------------------------
 
-        const totalWalletEl = document.getElementById('totalWallet');
-        const promoAmountEl = document.getElementById('promoAmount');
-        const netProfitEl = document.getElementById('netProfit');
-        const profitTableBody = document.getElementById('profitTableBody');
+const totalWalletEl = document.getElementById('totalWallet');
+const promoAmountEl = document.getElementById('promoAmount');
+const netProfitEl = document.getElementById('netProfit');
+const profitTableBody = document.getElementById('profitTableBody');
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) initFinanceDashboard();
-            else window.location.href = "./admin-login.html";
+// 🔐 AUTH CHECK
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        initFinanceDashboard();
+        initMonthlyCheck(); // ✅ runs once on load
+    } else {
+        window.location.href = "./admin-login.html";
+    }
+});
+
+// ===============================
+// 💰 1. REAL-TIME WALLET SYSTEM
+// ===============================
+function initFinanceDashboard() {
+
+    const merchantQuery = query(
+        collection(db, "users"),
+        where("role", "==", "merchant")
+    );
+
+    onSnapshot(merchantQuery, (snapshot) => {
+        let totalWalletBalance = 0;
+
+        snapshot.forEach((doc) => {
+            const credit = Number(doc.data().walletCredit);
+            totalWalletBalance += isNaN(credit) ? 0 : credit;
         });
+        
+        
 
-        async function initFinanceDashboard() {
-            // 1. Live Calculation for Dashboard Cards
-            const allUsersQuery = collection(db, "users");
-            
-            onSnapshot(allUsersQuery, (snapshot) => {
-                let totalWalletBalance = 0;
-                
-                snapshot.forEach((doc) => {
-                    totalWalletBalance += parseFloat(doc.data().walletCredit || 0);
-                });
+        const merchantPromoLoss = PROMO_MERCHANTS_COUNT * 3000;
+        const ambassadorLoss = AMBASSADORS_COUNT * 5000;
+        const totalLiability = merchantPromoLoss + ambassadorLoss;
+        const netProfit = totalWalletBalance - totalLiability;
 
-                // Calculation logic based on your requirements
-                const merchantPromoLoss = PROMO_MERCHANTS_COUNT * 3000;
-                const ambassadorLoss = AMBASSADORS_COUNT * 5000;
-                const totalLiability = merchantPromoLoss + ambassadorLoss;
-                const netProfit = totalWalletBalance - totalLiability;
+        totalWalletEl.textContent = totalWalletBalance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        promoAmountEl.textContent = totalLiability.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        netProfitEl.textContent = netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 });
+    });
 
-                totalWalletEl.textContent = totalWalletBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
-                promoAmountEl.textContent = totalLiability.toLocaleString(undefined, {minimumFractionDigits: 2});
-                netProfitEl.textContent = netProfit.toLocaleString(undefined, {minimumFractionDigits: 2});
+    // ===============================
+    // 📊 2. LOAD MONTHLY LOG TABLE
+    // ===============================
+    const logsQuery = query(
+        collection(db, "profit_logs"),
+        orderBy("timestamp", "desc")
+    );
 
-                // Handle snapshot trigger for 1st of the month
-                handleMonthlyLogging(netProfit);
-            });
+    onSnapshot(logsQuery, (snapshot) => {
+        profitTableBody.innerHTML = '';
 
-            // 2. Load Historical Monthly Records
-            const logsQuery = query(collection(db, "profit_logs"), orderBy("timestamp", "desc"));
-            onSnapshot(logsQuery, (snapshot) => {
-                profitTableBody.innerHTML = '';
-                if(snapshot.empty) {
-                    profitTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-dim);">No monthly records found.</td></tr>';
-                    return;
-                }
-                snapshot.forEach(doc => {
-                    const log = doc.data();
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${log.monthName}</td>
-                        <td class="stat-num">${log.merchantsGotten || 0}</td>
-                        <td class="stat-num">${log.customersGotten || 0}</td>
-                        <td class="stat-num">${log.totalUsersGotten || 0}</td>
-                        <td style="color: var(--success); font-weight: 700;">₦${(log.amount || 0).toLocaleString()}</td>
-                    `;
-                    profitTableBody.appendChild(tr);
-                });
-            });
+        if (snapshot.empty) {
+            profitTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align:center; color:var(--text-dim); padding:30px;">
+                        No monthly records yet.
+                    </td>
+                </tr>`;
+            return;
         }
 
-        async function handleMonthlyLogging(currentProfit) {
-            const now = new Date();
-            if (now.getDate() === 1) {
-                const logId = `record_${now.getMonth()}_${now.getFullYear()}`;
-                const logRef = doc(db, "profit_logs", logId);
+        snapshot.forEach(doc => {
+            const log = doc.data();
 
-                // Fetch counts for the previous month (Example: if it's March 1st, we fetch Feb stats)
-                // Note: For real stats, you would need 'createdAt' timestamps on your user docs.
-                // For now, this sets the structure for your monthly snapshot.
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${log.monthName}</td>
+                <td class="stat-num">${log.merchantsGotten || 0}</td>
+                <td class="stat-num">${log.customersGotten || 0}</td>
+                <td class="stat-num">${log.totalUsersGotten || 0}</td>
+                <td style="color: var(--success); font-weight: 700;">
+                    ₦${(log.amount || 0).toLocaleString()}
+                </td>
+            `;
 
-                const lastMonthDate = new Date();
-                lastMonthDate.setMonth(now.getMonth() - 1);
-                const monthName = lastMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            profitTableBody.appendChild(tr);
+        });
+    });
+}
 
-                await setDoc(logRef, {
-                    monthName: monthName,
-                    merchantsGotten: 0, // Manual update or automated via timestamp query
-                    customersGotten: 0, 
-                    totalUsersGotten: 0,
-                    amount: currentProfit,
-                    timestamp: Date.now()
-                }, { merge: true });
-            }
-        }
-    </script>
+// ===============================
+// 📅 3. MONTHLY LOGGING SYSTEM
+// ===============================
+async function initMonthlyCheck() {
+    const now = new Date();
+
+    // ❌ NOT 1st → DO NOTHING
+    if (now.getDate() !== 1) return;
+
+    const logId = `record_${now.getMonth()}_${now.getFullYear()}`;
+    const logRef = doc(db, "profit_logs", logId);
+
+    const existing = await getDoc(logRef);
+
+    // ❌ Already logged → STOP
+    if (existing.exists()) return;
+
+    // ✅ Calculate current totals ONCE
+    const usersSnapshot = await getDocs(query(
+        collection(db, "users"),
+        where("role", "==", "merchant")
+    ));
+
+    let totalWalletBalance = 0;
+
+    usersSnapshot.forEach((doc) => {
+        const credit = Number(doc.data().walletCredit);
+        totalWalletBalance += isNaN(credit) ? 0 : credit;
+    });
+
+    const merchantPromoLoss = PROMO_MERCHANTS_COUNT * 3000;
+    const ambassadorLoss = AMBASSADORS_COUNT * 5000;
+    const totalLiability = merchantPromoLoss + ambassadorLoss;
+    const netProfit = totalWalletBalance - totalLiability;
+
+    const lastMonthDate = new Date();
+    lastMonthDate.setMonth(now.getMonth() - 1);
+
+    const monthName = lastMonthDate.toLocaleString('default', {
+        month: 'long',
+        year: 'numeric'
+    });
+
+    await setDoc(logRef, {
+        monthName,
+        merchantsGotten: 0,
+        customersGotten: 0,
+        totalUsersGotten: 0,
+        amount: netProfit,
+        timestamp: Date.now()
+    });
+}
+</script>
 </body>
 </html>
