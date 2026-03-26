@@ -718,7 +718,7 @@ async function generateBindingAgreement(data, faceScanUrl) {
         { 
             type: 'body', 
             title: "1. Merchant Identity", 
-            text: `I, ${data.fullName.toUpperCase()},\na student of REDEEMER'S UNIVERSITY, EDE\nwith Matric Number ${data.matricNumber},\nand Username ${data.username},\n\nhereby register as a Merchant on the NOVAHUB platform.` 
+            text: `I, ${data.fullName.toUpperCase()},a student of REDEEMER'S UNIVERSITY, EDE with Matric Number ${data.matricNumber},and Username ${data.username}, hereby register as a Merchant on the NOVAHUB platform.` 
         },
         { 
             type: 'body', 
