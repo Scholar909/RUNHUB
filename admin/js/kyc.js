@@ -197,7 +197,7 @@ if (legalDocsSection) {
         <div class="info-row">
             <span class="label">Signed Agreement</span>
             ${signedDocUrl 
-                ? `<a href="${signedDocUrl}" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">View Signed Version</a>`
+                ? `<a href="${signedDocUrl}#toolbar=1" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">View Signed Version</a>`
                 : `<span style="color: #86868b;">Not Uploaded</span>`
             }
         </div>
@@ -208,9 +208,20 @@ if (legalDocsSection) {
         const pages = Array.isArray(blankDocPages) ? blankDocPages : [blankDocPages];
         const printWindow = window.open('', '_blank');
         const imagesHtml = pages.map(url => `
-            <div style="text-align:center; margin-bottom:20px;">
-                <img src="${url}" style="max-width:100%; height:auto;">
-            </div>`).join('');
+            <div style="
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 20px;
+                background: white;
+            ">
+                <img src="${url}" style="
+                    max-width: 90%;
+                    height: auto;
+                    display: block;
+                ">
+            </div>
+        `).join('');
             
         printWindow.document.write(`
             <html>
