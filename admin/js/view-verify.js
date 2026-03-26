@@ -333,14 +333,12 @@ img.onclick = () => openModal(img.src);
 
 /* --- CLOUDINARY UPLOAD HELPER --- */
 async function uploadImage(file) {
-    const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/image/upload";
+    const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dltoup0cz/raw/upload";
     const UPLOAD_PRESET = "runhub_uploads";
 
     const fd = new FormData();
     fd.append("file", file);
     fd.append("upload_preset", UPLOAD_PRESET);
-    // CRITICAL: This allows PDFs and other file types to be accepted
-    fd.append("resource_type", "auto"); 
 
     const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
 
