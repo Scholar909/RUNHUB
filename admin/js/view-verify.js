@@ -139,7 +139,7 @@ if (data.files && data.files.bindingAgreementSheets) {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Binding_Agreement_${data.fullName}</title>
+                    <title>Blank_Binding_Agreement_${data.fullName}_${data.matricNumber}</title>
                     <style>
                         body { margin: 0; padding: 0; background: #525659; }
                         .page-break { 
