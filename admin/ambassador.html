@@ -255,89 +255,151 @@ async function uploadToCloudinary(fileOrBlob) {
     return data.secure_url;
 }
 
-// 🎨 CONTRACT GENERATION (Merchant-Style Implementation)
+// 🎨 UPDATED CONTRACT GENERATION (A4 Precision & Exact Content)
 async function generateAmbassadorContract(data, photoUrl) {
     const canvas = document.createElement('canvas');
-    canvas.width = 2480; // A4 300 DPI
+    canvas.width = 2480; // Standard A4 at 300 DPI
     canvas.height = 3508;
     const ctx = canvas.getContext('2d');
-    const margin = 200;
+    const margin = 180;
+    const contentWidth = canvas.width - (margin * 2);
 
-    // Helper to load images safely
     const loadImage = (src) => new Promise(res => {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => res(img);
+        img.onerror = () => res(null); // Fallback if image fails
         img.src = src;
     });
 
     const passportImg = await loadImage(photoUrl);
-    const watermark = await loadImage("/start/backdrop.png"); // Using your existing backdrop
+    const watermark = await loadImage("/start/backdrop.png");
 
-    // Background
+    // 1. Background
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Watermark
-    if(watermark) {
+    // 2. Watermark
+    if (watermark) {
         ctx.save();
-        ctx.globalAlpha = 0.15;
-        ctx.drawImage(watermark, (canvas.width - 1600)/2, (canvas.height - 1600)/2, 1600, 1600);
+        ctx.globalAlpha = 0.20;
+        ctx.drawImage(watermark, (canvas.width - 1800) / 2, (canvas.height - 1800) / 2, 1800, 1800);
         ctx.restore();
     }
 
-    // Passport Photo
-    ctx.drawImage(passportImg, canvas.width - margin - 400, margin, 400, 480);
-    ctx.strokeRect(canvas.width - margin - 400, margin, 400, 480);
-
-    // Header
+    // 3. Header & Passport
     ctx.fillStyle = "#000";
-    ctx.font = "bold 80px Helvetica";
-    ctx.fillText("NOVAHUB AMBASSADOR AGREEMENT", margin, margin + 100);
-    ctx.font = "40px Helvetica";
-    ctx.fillText("Official Campus Representative Binding Document", margin, margin + 180);
+    ctx.font = "bold 70px Helvetica";
+    ctx.fillText("NOVAHUB AMBASSADOR AGREEMENT", margin, 250);
+    
+    ctx.font = "38px Helvetica";
+    ctx.fillText('This Agreement is made between NOVAHUB ("the Platform")', margin, 330);
+    ctx.fillText('and the undersigned Ambassador ("the Ambassador").', margin, 385);
 
-    let y = margin + 400;
+    if (passportImg) {
+        ctx.drawImage(passportImg, canvas.width - margin - 350, 150, 350, 420);
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(canvas.width - margin - 350, 150, 350, 420);
+    }
 
-    const content = [
-        { t: "1. ROLE & RESPONSIBILITIES", b: ["Active Promotion within and outside campus", "User Acquisition (Customers & Vendors)", "Merchant Verification Support", "Brand Alignment & Professionalism"] },
-        { t: "2. COMPENSATION", b: ["30% Referral Revenue Commission", "₦5,000 Merchant Credit (if applicable)", "Tier-based Profit Sharing for top performers"] },
-        { t: "3. DURATION", b: ["Term: 1 Year (12 Months)", "Renewal: Optional based on performance"] },
-        { t: "4. TERMINATION", b: ["Immediate termination for fraud or misconduct", "Termination for 30 days of inactivity"] }
-    ];
-
-    content.forEach(section => {
-        ctx.font = "bold 50px Helvetica";
-        ctx.fillText(section.t, margin, y);
-        y += 70;
-        ctx.font = "40px Helvetica";
-        section.b.forEach(bullet => {
-            ctx.fillText("• " + bullet, margin + 50, y);
-            y += 60;
+    // 4. Contract Body Text
+    let y = 550;
+    const drawSection = (title, lines) => {
+        ctx.font = "bold 42px Helvetica";
+        ctx.fillText(title, margin, y);
+        y += 60;
+        ctx.font = "36px Helvetica";
+        lines.forEach(line => {
+            // Simple text wrapping for long lines
+            const words = line.split(' ');
+            let currentLine = " * ";
+            words.forEach(word => {
+                let testLine = currentLine + word + " ";
+                if (ctx.measureText(testLine).width > contentWidth - 40) {
+                    ctx.fillText(currentLine, margin + 20, y);
+                    y += 50;
+                    currentLine = "   " + word + " ";
+                } else {
+                    currentLine = testLine;
+                }
+            });
+            ctx.fillText(currentLine, margin + 20, y);
+            y += 55;
         });
-        y += 50;
-    });
+        y += 30;
+    };
 
-    // Identity Part
-    ctx.font = "italic 45px Helvetica";
-    ctx.fillText(`I, ${data.fullName.toUpperCase()}, representing ${data.institution.toUpperCase()}`, margin, y + 100);
-    ctx.fillText(`(ID: ${data.matricNo}), hereby agree to the terms stated above.`, margin, y + 170);
+    drawSection("1. ROLE AND RESPONSIBILITIES", [
+        "Active Promotion: Consistently promoting NOVAHUB to students both on and off-campus.",
+        "User Acquisition: Introducing and onboarding new Customers and Vendors to the platform.",
+        "Merchant Support: Assisting in the verification process for new Merchants.",
+        "Brand Alignment: Maintaining a professional and honest representation of the brand."
+    ]);
 
-    // Signature Area (Merchant Style)
-    const sigY = 3100;
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
+    drawSection("2. COMPENSATION AND REWARDS", [
+        "Referral Commission: The Ambassador shall receive 30% of the platform revenue generated.",
+        "Merchant Credit: A one-time credit of ₦5,000 if registered and verified as a Merchant.",
+        "Profit Sharing: Eligibility for a higher share of monthly profit based on performance."
+    ]);
+
+    drawSection("3. PAYMENT TERMS", [
+        "Cycle: Earnings calculated based on verified data from the previous month.",
+        "Disbursement: Payments made on the 1st day of every new month.",
+        "Method: Paid into the Ambassador's registered bank account or platform wallet."
+    ]);
+
+    drawSection("4. TRACKING AND VERIFICATION", [
+        "Referral Tracking: Must use unique tracking links to ensure accurate calculation.",
+        "Admin Representation: Acts as an official representative during merchant verification."
+    ]);
+
+    drawSection("5. TERM AND TERMINATION", [
+        "Duration: Valid for one (1) year (12 months) from the date of signing.",
+        "Termination: Immediate termination for fraud or 30 days of inactivity."
+    ]);
+
+    drawSection("6. CONFIDENTIALITY AND CONDUCT", [
+        "The Ambassador agrees to keep all internal strategies and merchant data confidential.",
+        "The Ambassador is an Independent Contractor, not an employee."
+    ]);
+
+    // 5. Final Agreement Statement
+    y += 40;
+    ctx.font = "bold 40px Helvetica";
+    ctx.fillText("7. AGREEMENT SIGN-OFF", margin, y);
+    y += 60;
+    ctx.font = "italic 42px Helvetica";
+    ctx.fillText(`I, ${data.fullName.toUpperCase()}, hereby agree to the terms listed above.`, margin, y);
+
+    // 6. Signatures
+    const sigY = 3200;
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 4;
+    
+    // Left Line (Ambassador)
     ctx.beginPath();
-    ctx.moveTo(margin, sigY); ctx.lineTo(margin + 800, sigY);
-    ctx.moveTo(canvas.width - margin - 800, sigY); ctx.lineTo(canvas.width - margin, sigY);
+    ctx.moveTo(margin, sigY);
+    ctx.lineTo(margin + 700, sigY);
+    ctx.stroke();
+    
+    // Right Line (Founder)
+    ctx.beginPath();
+    ctx.moveTo(canvas.width - margin - 700, sigY);
+    ctx.lineTo(canvas.width - margin, sigY);
     ctx.stroke();
 
-    ctx.font = "bold 35px Helvetica";
+    ctx.font = "bold 36px Helvetica";
+    ctx.textAlign = "left";
     ctx.fillText("Ambassador Signature & Date", margin, sigY + 60);
+    
     ctx.textAlign = "right";
     ctx.fillText("Founder, NOVAHUB / Authorized Rep", canvas.width - margin, sigY + 60);
 
-    return new Promise(res => canvas.toBlob(res, 'image/png'));
+    // Return as Blob
+    return new Promise(res => canvas.toBlob(res, 'image/png', 0.9));
 }
+
 </script>
 </body>
 </html>
