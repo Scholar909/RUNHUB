@@ -188,10 +188,26 @@ if (data.signedAgreementUrl) {
         // View Logic
         document.getElementById("viewSignedDoc").onclick = (e) => {
             e.preventDefault();
+        
             const pdfUrl = data.signedAgreementUrl;
-            
-            // view doc
-            window.open(pdfUrl + "#toolbar=1", "_blank");
+        
+            const viewWindow = window.open('', '_blank');
+        
+            viewWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Signed_Binding_Agreement_${data.fullName}_${data.matricNumber}</title>
+                    </head>
+                    <body style="margin:0">
+                        <iframe 
+                            src="${pdfUrl}#toolbar=1" 
+                            style="width:100%; height:100vh; border:none;">
+                        </iframe>
+                    </body>
+                </html>
+            `);
+        
+            viewWindow.document.close();
         };
 
         // Remove Logic
