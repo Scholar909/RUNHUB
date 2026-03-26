@@ -20,6 +20,16 @@ let isMatricValid = false;
 const blockSelect = document.getElementById("block");
 const roomSelect = document.getElementById("room");
 
+// --- Referral Link Logic ---
+const urlParams = new URLSearchParams(window.location.search);
+const referrerFromURL = urlParams.get('ref'); // Looks for ?ref=name
+const referrerInput = document.getElementById('referrerInput');
+
+if (referrerFromURL) {
+    referrerInput.value = referrerFromURL.toLowerCase();
+}
+
+
 // Blocks 00 - 100
 for (let i = 0; i <= 100; i++) {
     const option = document.createElement("option");
@@ -212,6 +222,7 @@ signupForm.addEventListener('submit', async (e) => {
     const department = inputs[5].value;
     const phone = inputs[6].value;
     
+    const referrerName = document.getElementById('referrerInput').value || "";
     const gender = document.getElementById("gender").value;
     const hostel = document.getElementById("hostel").value;
     const block = document.getElementById("block").value;
@@ -263,6 +274,7 @@ signupForm.addEventListener('submit', async (e) => {
             bankDetails: { bankName, accName, accNo },
             role: "customer",
             status: "Active",
+            referrerName: referrerName,
             createdAt: serverTimestamp()
           }),
           setDoc(doc(db, "usernames", username), { uid: user.uid }),
