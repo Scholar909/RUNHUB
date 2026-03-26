@@ -126,15 +126,16 @@
                     <div class="card-tag">MONTHLY PERFORMANCE LOGS</div>
                     <div style="overflow-x: auto;">
                         <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Month</th>
-                                    <th>New Merchants</th>
-                                    <th>New Customers</th>
-                                    <th>Total New Users</th>
-                                    <th>Total Profit</th>
-                                </tr>
-                            </thead>
+                          <thead>
+                              <tr id="tableHeaderRow">
+                                  <th>Month</th>
+                                  <th>Total Users</th>
+                                  <th>Total Customers</th>
+                                  <th>Total Merchants</th>
+                                  <th>Total Profit</th>
+                                  </tr>
+                          </thead>
+
                             <tbody id="profitTableBody">
                                 <tr>
                                     <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">Syncing monthly records...</td>
@@ -157,7 +158,7 @@
 <script type="module">
 import { db, auth } from './js/firebase-config.js';
 import { 
-    collection, query, where, onSnapshot, doc, setDoc, orderBy, getDoc, getDocs 
+    collection, query, where, onSnapshot, doc, setDoc, orderBy, getDoc, getDocs, limit
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
@@ -184,7 +185,7 @@ onAuthStateChanged(auth, (user) => {
 // ===============================
 // 💰 1. REAL-TIME WALLET SYSTEM
 // ===============================
-function initFinanceDashboard() {
+async function initFinanceDashboard() {
 
     const merchantQuery = query(
         collection(db, "users"),
@@ -214,6 +215,21 @@ function initFinanceDashboard() {
     // ===============================
     // 📊 2. LOAD MONTHLY LOG TABLE
     // ===============================
+    const ambSnap = await getDocs(collection(db, "ambassadors"));
+    const activeAmbassadors = [];
+    const headerRow = document.getElementById('tableHeaderRow');
+    
+    ambSnap.forEach(doc => {
+        const data = doc.data();
+        activeAmbassadors.push(data.referName); // e.g., "skylar"
+        
+        // Add dynamic header column
+        const th = document.createElement('th');
+        th.textContent = data.referName.toUpperCase();
+        headerRow.appendChild(th);
+    });
+
+    // 2. Load Monthly Log Table with Dynamic Columns
     const logsQuery = query(
         collection(db, "profit_logs"),
         orderBy("timestamp", "desc")
@@ -223,29 +239,32 @@ function initFinanceDashboard() {
         profitTableBody.innerHTML = '';
 
         if (snapshot.empty) {
-            profitTableBody.innerHTML = `
-                <tr>
-                    <td colspan="5" style="text-align:center; color:var(--text-dim); padding:30px;">
-                        No monthly records yet.
-                    </td>
-                </tr>`;
+            const colSpan = 5 + activeAmbassadors.length;
+            profitTableBody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding:30px;">No records.</td></tr>`;
             return;
         }
 
         snapshot.forEach(doc => {
             const log = doc.data();
-
             const tr = document.createElement('tr');
-            tr.innerHTML = `
+            
+            // Standard Columns
+            let rowHTML = `
                 <td>${log.monthName}</td>
-                <td class="stat-num">${log.merchantsGotten || 0}</td>
-                <td class="stat-num">${log.customersGotten || 0}</td>
                 <td class="stat-num">${log.totalUsersGotten || 0}</td>
-                <td style="color: var(--success); font-weight: 700;">
-                    ₦${(log.amount || 0).toLocaleString()}
-                </td>
+                <td class="stat-num">${log.customersGotten || 0}</td>
+                <td class="stat-num">${log.merchantsGotten || 0}</td>
+                <td style="color: var(--success); font-weight: 700;">₦${(log.amount || 0).toLocaleString()}</td>
             `;
 
+            // Dynamic Ambassador Columns
+            activeAmbassadors.forEach(refName => {
+                // Check if this month's log has data for this specific ambassador
+                const count = (log.ambassadors && log.ambassadors[refName]) ? log.ambassadors[refName] : 0;
+                rowHTML += `<td class="stat-num">${count}</td>`;
+            });
+
+            tr.innerHTML = rowHTML;
             profitTableBody.appendChild(tr);
         });
     });
@@ -256,17 +275,55 @@ function initFinanceDashboard() {
 // ===============================
 async function initMonthlyCheck() {
     const now = new Date();
+    
+    // 1. SET YOUR ACTUAL LAUNCH MONTH (March = 2, because Jan is 0)
+    const LAUNCH_MONTH = 2; 
+    const LAUNCH_YEAR = 2026;
 
-    // ❌ NOT 1st → DO NOTHING
-    if (now.getDate() !== 1) return;
+    // 2. Identify the month we want to log (The previous month)
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const yearOfLastMonth = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
 
-    const logId = `record_${now.getMonth()}_${now.getFullYear()}`;
+    // 3. EXIT if the "last month" is before we even launched
+    if (yearOfLastMonth < LAUNCH_YEAR || (yearOfLastMonth === LAUNCH_YEAR && lastMonth < LAUNCH_MONTH)) {
+        console.log("Skipping log generation: Previous month is prior to platform launch.");
+        return;
+    }
+
+    const logId = `record_${lastMonth}_${yearOfLastMonth}`;
     const logRef = doc(db, "profit_logs", logId);
-
+    
     const existing = await getDoc(logRef);
-
-    // ❌ Already logged → STOP
     if (existing.exists()) return;
+
+    // A. Calculate date range for previous month
+    const firstOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    // B. Fetch all users created last month
+    const userSnap = await getDocs(query(
+        collection(db, "users"),
+        where("createdAt", ">=", firstOfPrevMonth),
+        where("createdAt", "<=", lastOfPrevMonth)
+    ));
+
+    let stats = {
+        merchants: 0,
+        customers: 0,
+        ambassadorCounts: {} // { "skylar": 5, "alex": 2 }
+    };
+
+    userSnap.forEach(uDoc => {
+        const uData = uDoc.data();
+        if (uData.role === 'merchant') stats.merchants++;
+        if (uData.role === 'customer') {
+            stats.customers++;
+            // Increment ambassador tally if referrerName exists
+            if (uData.referrerName) {
+                stats.ambassadorCounts[uData.referrerName] = (stats.ambassadorCounts[uData.referrerName] || 0) + 1;
+            }
+        }
+    });
 
     // ✅ Calculate current totals ONCE
     const usersSnapshot = await getDocs(query(
@@ -289,17 +346,15 @@ async function initMonthlyCheck() {
     const lastMonthDate = new Date();
     lastMonthDate.setMonth(now.getMonth() - 1);
 
-    const monthName = lastMonthDate.toLocaleString('default', {
-        month: 'long',
-        year: 'numeric'
-    });
+    const monthName = firstOfPrevMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
 
     await setDoc(logRef, {
         monthName,
-        merchantsGotten: 0,
-        customersGotten: 0,
-        totalUsersGotten: 0,
+        merchantsGotten: stats.merchants,
+        customersGotten: stats.customers,
+        totalUsersGotten: stats.merchants + stats.customers,
         amount: netProfit,
+        ambassadors: stats.ambassadorCounts, // Key: referName, Value: count
         timestamp: Date.now()
     });
 }
