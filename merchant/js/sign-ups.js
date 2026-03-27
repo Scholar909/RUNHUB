@@ -1045,6 +1045,13 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 async function sendAdminMerchantAlert(data) {
     const ADMIN_PHONE = "2349168873680";
     const CALLMEBOT_API_KEY = "7465463"; 
+// --- FORMAT PHONE NUMBER TO 234 FORMAT ---
+    let formattedPhone = data.phoneNumber.trim().replace(/\D/g, ''); // Remove non-digits
+    if (formattedPhone.startsWith('0')) {
+        formattedPhone = '234' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('234')) {
+        formattedPhone = '234' + formattedPhone;
+    }
 
     try {
         const now = new Date();
@@ -1073,7 +1080,7 @@ async function sendAdminMerchantAlert(data) {
         const encodedMessage = encodeURIComponent(replyMessage);
 
         // ✅ Single clean clickable link
-        const adminReplyUrl = `https://wa.me/${data.phoneNumber}?text=${encodedMessage}`;
+        const adminReplyUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 
         const notificationRaw = 
 `*MERCHANT SIGN UP ALERT - NOVAHUB*
