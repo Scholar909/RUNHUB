@@ -91,7 +91,7 @@ const showBanner = () => {
 const dismissBanner = () => {
   installContainer.style.transform = 'translateX(120%)';
   installContainer.style.opacity = '0';
-  localStorage.setItem('pwa-dismissed-v2', 'true'); 
+  localStorage.setItem('pwa-dismissed', 'true'); 
   setTimeout(() => { installContainer.style.display = 'none'; }, 300);
 };
 
