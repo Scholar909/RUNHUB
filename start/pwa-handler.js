@@ -1,10 +1,17 @@
 // Register service worker
 // Register service worker and auto-update
 if ('serviceWorker' in navigator) {
+  let refreshing = false;
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(reg => {
         console.log('Service Worker registered:', reg);
+        
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
 
         // Listen for updates to the service worker
         reg.addEventListener('updatefound', () => {
@@ -14,9 +21,6 @@ if ('serviceWorker' in navigator) {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // Automatically activate new SW and reload page
               newWorker.postMessage({ type: 'SKIP_WAITING' });
-
-              // Optional: slight delay to ensure skipWaiting finishes
-              setTimeout(() => window.location.reload(), 100);
             }
           });
         });
@@ -24,7 +28,6 @@ if ('serviceWorker' in navigator) {
         // If a new SW is waiting from before, activate immediately
         if (reg.waiting) {
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          setTimeout(() => window.location.reload(), 100);
         }
 
       })
@@ -88,7 +91,7 @@ const showBanner = () => {
 const dismissBanner = () => {
   installContainer.style.transform = 'translateX(120%)';
   installContainer.style.opacity = '0';
-  localStorage.setItem('pwa-dismissed', 'true'); 
+  localStorage.setItem('pwa-dismissed-v2', 'true'); 
   setTimeout(() => { installContainer.style.display = 'none'; }, 300);
 };
 
@@ -125,3 +128,4 @@ installBtn.addEventListener('click', async () => {
     // Note: We don't call dismissBanner() here so they can re-read if they miss the icon
   }
 });
+  
