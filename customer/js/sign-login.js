@@ -234,8 +234,8 @@ signupForm.addEventListener('submit', async (e) => {
     const accName = inputs[8].value;
     const accNo = inputs[9].value;
     
-    const password = inputs[10].value;
-    const confirmPass = inputs[11].value;
+    const password = document.getElementById("password").value;
+    const confirmPass = document.getElementById("confirmPassword").value;
 
     if (password !== confirmPass) return alert("Passwords do not match!");
     if (password.length < 6) return alert("Password must be at least 6 characters.");
