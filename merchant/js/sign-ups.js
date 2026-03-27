@@ -601,6 +601,8 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
     alert("Please capture all required files.");
+    submitBtn.disabled = false; // Add this
+    submitBtn.innerText = "Submit Application";
     return;
   }
 
@@ -616,21 +618,33 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     return;
   }
   
+  // Define these first so they can be used in the data object
+  const phoneNumber = document.getElementById("phoneNumber").value;
+  const department = document.getElementById("department").value;
+  const level = document.getElementById("level").value;
+  const gender = document.getElementById("gender").value;
+  const hostel = document.getElementById("hostel").value;
+  const block = document.getElementById("block").value;
+  const room = document.getElementById("room").value;
+  const bankName = document.getElementById("bankName").value;
+  const accountName = document.getElementById("accountName").value;
+  const accountNumber = document.getElementById("accountNumber").value;
+  
   const data = {
-    fullName: nameVal.value,
-    email: email.value.trim().toLowerCase(),
-    username: username.value.trim().toLowerCase(),
-    phoneNumber: phoneNumber.value,
-    matricNumber: matricNumber.value.trim().toUpperCase(),
-    department: department.value,
-    level: level.value,
-    gender: gender.value,
-    hostel: hostel.value,
-    block: block.value,
-    room: room.value,
-    bankName: bankName.value,
-    accountName: accountName.value,
-    accountNumber: accountNumber.value
+      fullName: rawName, // Use the rawName variable you defined earlier
+      email: rawEmail,   // Use the rawEmail variable you defined earlier
+      username: rawUsername, // Use the rawUsername variable you defined earlier
+      phoneNumber: phoneNumber,
+      matricNumber: matricInput.value.trim().toUpperCase(),
+      department: department,
+      level: level,
+      gender: gender,
+      hostel: hostel,
+      block: block,
+      room: room,
+      bankName: bankName,
+      accountName: accountName,
+      accountNumber: accountNumber
   };
 
   const usernameId = data.username;
