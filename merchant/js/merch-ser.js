@@ -97,3 +97,12 @@ window.submitDispute = async () => {
         submitBtn.innerText = "Submit to Admin";
     }
 };
+
+window.handleLogout = async () => {
+    try {
+        await signOut(auth);
+        window.location.href = "./sign-login.html";
+    } catch (error) {
+        console.error("Logout failed", error);
+    }
+};
