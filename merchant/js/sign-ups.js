@@ -67,10 +67,15 @@ const debounce=(func,delay)=>{
 // Add this immediately after debounce
 // Keep your validation as-is
 function isValidMatric(matric) {
-    // Example pattern: RUN/CPE/23/14551
-    const pattern = /^[A-Z]{2,5}\/[A-Z]{2,5}\/\d{2}\/\d{4,6}$/;
+    // Breakdown:
+    // ^RUN\/      -> Must start with 'RUN/'
+    // [A-Z]{3}\/  -> Followed by exactly 3 uppercase letters and a '/'
+    // \d{2}\/     -> Followed by exactly 2 digits (year) and a '/'
+    // \d{5}$      -> Ends with exactly 5 digits
+    const pattern = /^RUN\/[A-Z]{3}\/\d{2}\/\d{5}$/;
     return pattern.test(matric);
 }
+
 
 function isValidUsername(username) {
     // Allows letters, numbers, and underscores only
@@ -145,7 +150,7 @@ document.getElementById("matricNumber").addEventListener("input", debounce(e => 
     const statusEl = document.getElementById("matric-status");
 
     if (!isValidMatric(val)) {
-        statusEl.innerText = "✕ Invalid format. Example: RUN/ABC/12/12345";
+        statusEl.innerText = "✕ Invalid format.";
         statusEl.style.color = "#ff3b30";
         isMatricValid = false;
         return;
@@ -532,7 +537,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   
   // 1. Format Check for Username
   if (!isValidUsername(rawUsername)) {
-      alert("Username can only contain letters, numbers, and underscores.");
+      alert("Only a-Z, 0-9 & _");
       submitBtn.disabled = false;
       submitBtn.innerText = "Submitting Application...";
       return;
