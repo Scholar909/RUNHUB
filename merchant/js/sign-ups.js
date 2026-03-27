@@ -53,8 +53,9 @@ const UPLOAD_PRESET = "runhub_uploads";
 
 /* ---------------- VALIDATION ---------------- */
 
-let isUsernameValid=false;
-let isMatricValid=false;
+let isUsernameValid = false;
+let isMatricValid = false;
+let isEmailValid = false;
 
 const debounce=(func,delay)=>{
     let timeout;
@@ -82,6 +83,37 @@ function isValidUsername(username) {
     const pattern = /^[a-zA-Z0-9_]+$/;
     return pattern.test(username);
 }
+
+/* ---------------- EMAIL VALIDATION ---------------- */
+
+function isValidRunEmail(email, fullName, matric) {
+    const emailLower = email.trim().toLowerCase();
+    const runSuffix = "@run.edu.ng";
+
+    // 1. Basic Suffix Check
+    if (!emailLower.endsWith(runSuffix)) return { valid: false, msg: "Must end with @run.edu.ng" };
+
+    // 2. Extract parts
+    const prefix = emailLower.split('@')[0]; // e.g., "ogbole14551"
+    const emailDigits = prefix.slice(-5);     // e.g., "14551"
+    const emailSurname = prefix.slice(0, -5); // e.g., "ogbole"
+
+    // 3. Check Matric Digits (Last 5 of RUN/CMP/23/14551)
+    const matricDigits = matric.trim().slice(-5);
+    if (emailDigits !== matricDigits) {
+        return { valid: false, msg: `Digits must match matric (${matricDigits})` };
+    }
+
+    // 4. Check Surname
+    // Split full name into parts and check if email prefix (minus digits) matches any part
+    const nameParts = fullName.trim().toLowerCase().split(/\s+/);
+    if (!nameParts.includes(emailSurname)) {
+        return { valid: false, msg: "Email must start with your surname" };
+    }
+
+    return { valid: true, msg: "✓ Valid School Email" };
+}
+
 
 // Encode matric for Firestore
 function encodeMatric(matric) {
@@ -159,6 +191,28 @@ document.getElementById("matricNumber").addEventListener("input", debounce(e => 
     // Continue checking uniqueness
     checkUniqueness("matricNumber", val, "matric-status");
 }, 500));
+
+document.getElementById("email").addEventListener("input", debounce(e => {
+    const emailVal = e.target.value.trim();
+    const nameVal = document.getElementById("fullName").value.trim();
+    const matricVal = document.getElementById("matricNumber").value.trim();
+    const statusEl = document.getElementById("email-status"); // Ensure this ID exists in your HTML
+
+    if (!nameVal || !isValidMatric(matricVal)) {
+        statusEl.innerText = "✕ Enter Full Name & valid Matric first";
+        statusEl.style.color = "#ff3b30";
+        return;
+    }
+
+    const result = isValidRunEmail(emailVal, nameVal, matricVal);
+    
+    statusEl.innerText = result.msg;
+    statusEl.style.color = result.valid ? "#34c759" : "#ff3b30";
+    
+    // You can use a global isEmailValid let variable similar to isMatricValid
+    isEmailValid = result.valid; 
+}, 500));
+
 
 
 /* ---------------- MULTI STEP FORM ---------------- */
@@ -534,6 +588,8 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   
   const rawUsername = usernameInput.value.trim();
   const rawEmail = emailInput.value.trim().toLowerCase(); // Lowercase email here
+  const rawName = document.getElementById("fullName").value.trim(); // Add this line
+  const emailResult = isValidRunEmail(rawEmail, rawName, matricInput.value);
   
   // 1. Format Check for Username
   if (!isValidUsername(rawUsername)) {
@@ -548,13 +604,20 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     return;
   }
 
-  if(!isUsernameValid || !isMatricValid){
-    alert("Username or Matric already exists.");
+  if(!isUsernameValid || !isMatricValid || !isEmailValid){
+    alert("Username or Matric already exists.\n or Please correct the errors in Username, Matric, or Email.");
+    return;
+  }
+  
+  if (!emailResult.valid) {
+    alert(`Email Error: ${emailResult.msg}`);
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Submit Application";
     return;
   }
   
   const data = {
-    fullName: fullName.value,
+    fullName: nameVal.value,
     email: email.value.trim().toLowerCase(),
     username: username.value.trim().toLowerCase(),
     phoneNumber: phoneNumber.value,
@@ -910,7 +973,7 @@ async function generateBindingAgreement(data, faceScanUrl) {
                 sigCanvas.width = canvasWidth; sigCanvas.height = canvasHeight;
                 const sigCtx = sigCanvas.getContext("2d");
                 sigCtx.fillStyle = "#fff"; sigCtx.fillRect(0,0, canvasWidth, canvasHeight);
-                if(watermark) { sigctx.globalAlpha = 0.20; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
+                if(watermark) { sigCtx.globalAlpha = 0.20; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
                 renderSignature(sigCtx, canvasWidth, margin, 500);
                 const sigBlob = await new Promise(res => sigCanvas.toBlob(res, 'image/png'));
                 pages.push(sigBlob);
