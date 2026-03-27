@@ -79,10 +79,15 @@ const debounce = (func, delay = 500) => {
 // Add this immediately after debounce
 // Keep your validation as-is
 function isValidMatric(matric) {
-    // Example pattern: RUN/CPE/23/14551
-    const pattern = /^[A-Z]{2,5}\/[A-Z]{2,5}\/\d{2}\/\d{4,6}$/;
+    // Breakdown:
+    // ^RUN\/      -> Must start with 'RUN/'
+    // [A-Z]{3}\/  -> Followed by exactly 3 uppercase letters and a '/'
+    // \d{2}\/     -> Followed by exactly 2 digits (year) and a '/'
+    // \d{5}$      -> Ends with exactly 5 digits
+    const pattern = /^RUN\/[A-Z]{3}\/\d{2}\/\d{5}$/;
     return pattern.test(matric);
 }
+
 
 // Add this below isValidMatric
 function isValidUsername(username) {
@@ -178,7 +183,7 @@ matricInput.addEventListener('input', debounce((e) => {
 
     // Validate pattern first
     if (!isValidMatric(val)) {
-        statusEl.innerText = "✕ Invalid format. Example: RUN/ABC/12/12345";
+        statusEl.innerText = "✕ Invalid format.";
         statusEl.style.color = "#ff3b30";
         isMatricValid = false;  // mark invalid
         return;  // stop here
@@ -209,13 +214,13 @@ signupForm.addEventListener('submit', async (e) => {
     const matricNo = inputs[4].value.trim().toUpperCase();
     
     if (!isValidUsername(rawUsername)) {
-        alert("Username can only contain letters, numbers, and underscores.");
+        alert("only a-z, 0-9 & _!!");
         return;
     }
     
      // Check format
     if (!isValidMatric(matricNo)) {
-        alert("Invalid Matric Number format. Example: RUN/ABC/12/12345");
+        alert("Invalid format.");
         return;
     }
     
