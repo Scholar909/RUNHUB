@@ -12,8 +12,8 @@ getDoc,
 setDoc
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-const ADMIN_PHONE = "2349168873680";
-const CALLMEBOT_API_KEY = "7465463"; 
+const ADMIN_PHONE = "2348118663849";
+const CALLMEBOT_API_KEY = "4093230"; 
 
 document.addEventListener("DOMContentLoaded", () => {
 
