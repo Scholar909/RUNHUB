@@ -202,10 +202,12 @@ window.saveSession = async () => {
     deliveryInput.value = finalDeliveryCharge;
     slotsInput.value = finalMaxSlots;
     
-    const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
-        name: row.querySelectorAll('input')[0].value,
-        price: Number(row.querySelectorAll('input')[1].value)
+        const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
+        name: row.querySelectorAll('input[type="text"]')[0].value,
+        price: Number(row.querySelectorAll('input[type="number"]')[0].value),
+        available: row.querySelector('.item-availability').checked // New field
     }));
+
 
     if (!nameInput.value || !fromInput.value || menuItems.length === 0) {
         alert("Please fill all fields and add items.");
@@ -297,16 +299,22 @@ window.handleLogout = async () => {
     } catch (error) { console.error("Logout failed", error); }
 };
 
-window.addMenuItem = (name = "", price = "") => {
+window.addMenuItem = (name = "", price = "", isAvailable = true) => {
     const div = document.createElement('div');
     div.className = "menu-item-input";
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.gap = "8px";
+
     div.innerHTML = `
-        <input type="text" placeholder="Food Name" value="${name}" required>
-        <input type="number" placeholder="Price" value="${price}" required>
+        <input type="checkbox" class="item-availability" ${isAvailable ? 'checked' : ''} title="Available?">
+        <input type="text" placeholder="Food Name" value="${name}" required style="flex: 2;">
+        <input type="number" placeholder="Price" value="${price}" required style="flex: 1;">
         <i class="fi-x remove-btn" onclick="this.parentElement.remove()"></i>
     `;
     menuContainer.appendChild(div);
 };
+
 
 window.showForm = (mode, id = null) => {
     sessionListView.style.display = 'none';
@@ -324,7 +332,7 @@ window.showForm = (mode, id = null) => {
         document.querySelector('input[placeholder="Destination"]').value = s.toLocation;
         document.getElementById('deliveryChargeInput').value = s.deliveryCharge;
         document.getElementById('maxSlotsInput').value = s.maxSlots;
-        s.menu.forEach(item => window.addMenuItem(item.name, item.price));
+        s.menu.forEach(item => window.addMenuItem(item.name, item.price, item.available !== false));
     } else {
         editingSessionId = null;
         document.getElementById('formTitle').innerText = "CREATE NEW SESSION";
