@@ -44,6 +44,9 @@ async function deactivateActiveSession(uid) {
 async function forceLogout() {
     if (locationWatcher) navigator.geolocation.clearWatch(locationWatcher);
     
+    // RESET the tracker so the next login starts fresh
+    lastSavedLoc = null; 
+    
     // Deactivate session so customers don't see an offline merchant
     if (auth.currentUser) {
         await deactivateActiveSession(auth.currentUser.uid);
@@ -68,6 +71,25 @@ function updateUIStatus(enabled) {
     }
 }
 
+// Calculate distance in meters between two points (Haversine formula)
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Earth radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // returns distance in meters
+}
+
+let lastSavedLoc = null; // Track last coordinates written to DB
+const MOVE_THRESHOLD_METERS = 10; // Only update if moved 10m
+
 function startLocationMonitoring() {
     if (!isMonitoringActive) {
         updateUIStatus(true); 
@@ -76,35 +98,57 @@ function startLocationMonitoring() {
 
     if ("geolocation" in navigator) {
         let lastLocationTimestamp = Date.now();
-        const GPS_GRACE_MS = 2 * 60 * 1000; // 2 minutes grace
-
-      let gpsAlertShown = false;
+        const GPS_GRACE_MS = 2 * 60 * 1000;
+        let gpsAlertShown = false;
       
-      locationWatcher = navigator.geolocation.watchPosition(
-          (pos) => {
-              lastLocationTimestamp = Date.now();
-              gpsAlertShown = false; // reset on successful read
-              updateUIStatus(true);
-              const mLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-              
-              // 1. Update the Merchant's Profile (for the map to see)
-              updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                  location: mLoc,
-                  lastSeen: serverTimestamp() 
-              });
-          },
-          () => {
-              const now = Date.now();
-              if (!gpsAlertShown && now - lastLocationTimestamp > GPS_GRACE_MS) {
-                  gpsAlertShown = true;
-                  alert("Please turn on your location to remain visible.");
-                  forceLogout();
-              } else {
-                  updateUIStatus(false);
-              }
-          },
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-      );
+        locationWatcher = navigator.geolocation.watchPosition(
+            (pos) => {
+                const now = Date.now();
+                const { latitude: lat, longitude: lng } = pos.coords;
+                
+                lastLocationTimestamp = now;
+                gpsAlertShown = false;
+                updateUIStatus(true);
+
+                // --- THROTTLE LOGIC START ---
+                let distanceMoved = 0;
+                if (lastSavedLoc) {
+                    distanceMoved = getDistance(lastSavedLoc.lat, lastSavedLoc.lng, lat, lng);
+                }
+
+                // Only update DB if:
+                // 1. We have no previous record OR
+                // 2. Merchant moved more than 10 meters OR
+                // 3. It's been more than 5 minutes since last update (heartbeat)
+                const FIVE_MINS = 5 * 60 * 1000;
+                const timeSinceLastUpdate = lastSavedLoc ? (now - lastSavedLoc.time) : Infinity;
+
+                if (!lastSavedLoc || distanceMoved >= MOVE_THRESHOLD_METERS || timeSinceLastUpdate > FIVE_MINS) {
+                    
+                    lastSavedLoc = { lat, lng, time: now }; // Update local cache
+
+                    updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                        location: { lat, lng },
+                        locationUpdatedAt: serverTimestamp(),
+                        lastSeen: serverTimestamp() 
+                    }).catch(err => console.error("Firestore update failed:", err));
+                    
+                    console.log(`Location updated: Moved ${Math.round(distanceMoved)}m`);
+                }
+                // --- THROTTLE LOGIC END ---
+            },
+            () => {
+                const now = Date.now();
+                if (!gpsAlertShown && now - lastLocationTimestamp > GPS_GRACE_MS) {
+                    gpsAlertShown = true;
+                    alert("Please turn on your location to remain visible.");
+                    forceLogout();
+                } else {
+                    updateUIStatus(false);
+                }
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+        );
     } else {
         handleLocationFailure();
     }
