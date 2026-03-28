@@ -1,11 +1,9 @@
 import { auth, db } from "./firebase-config.js";
 import { sendWhatsAppAlert } from "./send-alert.js"; 
-
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     doc, getDoc, collection, addDoc, updateDoc, increment, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
 
 // --- State ---
 let merchantData = null;
@@ -13,21 +11,15 @@ let activeSessionData = null;
 let platformFee = 25;
 let packagingCost = 200;
 
-// --- 1. Initialization ---
 onAuthStateChanged(auth, (user) => {
     const params = new URLSearchParams(window.location.search);
     const mId = params.get('m');
-
-    // Save merchant ID if provided in URL (WhatsApp link)
-    if (mId) {
-        localStorage.setItem("selectedMerchantId", mId);
-    }
+    if (mId) localStorage.setItem("selectedMerchantId", mId);
 
     if (!user) {
         sessionStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
     } else {
-        // Entry Requirement: We just need to know WHO the merchant is
         if (localStorage.getItem("selectedMerchantId")) {
             loadMerchantAndMenu();
         } else {
@@ -38,23 +30,15 @@ onAuthStateChanged(auth, (user) => {
 
 async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
-    const urlSessionId = params.get('s'); // Session from WhatsApp link
+    const urlSessionId = params.get('s');
     const merchantId = localStorage.getItem("selectedMerchantId");
 
     try {
-        // 1. Fetch Merchant Global Info
         const merchantDoc = await getDoc(doc(db, "users", merchantId));
         if (!merchantDoc.exists()) throw new Error("Merchant not found");
         merchantData = merchantDoc.data();
 
-        // 2. Determine the Session ID to load
-        // Use the link ID if available, otherwise use the merchant's current session
         const targetSessionId = urlSessionId || merchantData.currentSessionId;
-
-        // 3. The "Safety" Check
-        // Kick them out if: 
-        // - Merchant is offline (isActive is false)
-        // - OR they came from a WhatsApp link that is no longer the "current" one
         const isSessionStillLive = merchantData.isActive === true && 
                                    (urlSessionId ? urlSessionId === merchantData.currentSessionId : true);
 
@@ -64,7 +48,7 @@ async function loadMerchantAndMenu() {
             return;
         }
 
-        // 4. Listen to the Session Data in Real-Time
+        // --- REAL-TIME LISTENER ---
         onSnapshot(doc(db, "merchants", merchantId, "sessions", targetSessionId), (sessionDoc) => {
             if (!sessionDoc.exists()) {
                 alert("This delivery session is no longer available.");
@@ -74,34 +58,33 @@ async function loadMerchantAndMenu() {
 
             activeSessionData = sessionDoc.data();
 
-            // 5. Real-time Slot Check
             if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
                  alert("Sorry, all slots for this session are now full.");
                  window.location.href = "./home.html";
                  return;
             }
 
-            // This will re-run every time the merchant toggles an item!
-            renderOrderUI(); 
+            renderOrderUI(); // Re-renders whenever availability changes
         });
 
-// --- 2. UI Rendering ---
+    } catch (e) {
+        console.error("Initialization error:", e);
+        alert("Error loading menu. Please try again.");
+    }
+}
+
 function renderOrderUI() {
-    // Header Info
     document.querySelector('.merchant-meta h2').innerHTML = `Order from <span class="accent">@${merchantData.username}</span>`;
     
-    // Bank Details
     const bank = merchantData.bankDetails || {};
     document.querySelector('.bank-card h4').innerText = bank.bankName || "N/A";
     document.querySelector('.acc-num').innerText = bank.accountNumber || "N/A";
     document.querySelector('.acc-name').innerText = bank.accountName || "N/A";
 
-    // Menu Items
     const menuContainer = document.querySelector('.selection-section');
-    // Clear existing placeholder items but keep the header
     menuContainer.innerHTML = '<h3>Select Items</h3>';
 
-    // Add Packaging/Food Pack toggle first (Requirement: default checked)
+    // Packaging Toggle
     const packDiv = document.createElement('div');
     packDiv.className = 'food-item';
     packDiv.innerHTML = `
@@ -116,9 +99,8 @@ function renderOrderUI() {
     `;
     menuContainer.appendChild(packDiv);
     
-    // Add Merchant Menu Items
+    // Filtered Menu Items
     activeSessionData.menu.forEach((item, index) => {
-        // ONLY render if available is not explicitly false
         if (item.available !== false) { 
             const itemDiv = document.createElement('div');
             itemDiv.className = 'food-item';
@@ -144,9 +126,10 @@ function renderOrderUI() {
     updateTotal();
 }
 
-// --- 3. Calculation Logic ---
+// Global functions for HTML onclicks
 window.changeQty = (index, delta) => {
     const qtySpan = document.getElementById(`qty-${index}`);
+    if (!qtySpan) return;
     let currentQty = parseInt(qtySpan.innerText);
     currentQty = Math.max(1, currentQty + delta);
     qtySpan.innerText = currentQty;
@@ -171,29 +154,23 @@ window.updateTotal = () => {
     const currentPackCost = packChecked ? packagingCost : 0;
     const grandTotal = subtotal + delivery + currentPackCost + platformFee;
 
-    // Update Breakdown UI
     const rows = document.querySelectorAll('.price-row span:last-child');
-    rows[0].innerText = `₦${subtotal.toLocaleString()}`; // Subtotal
-    rows[1].innerText = `₦${delivery.toLocaleString()}`; // Delivery
-    rows[2].innerText = `₦${currentPackCost.toLocaleString()}`; // Packaging
-    rows[3].innerText = `₦${platformFee}`; // Platform
-    
+    if (rows.length >= 4) {
+        rows[0].innerText = `₦${subtotal.toLocaleString()}`;
+        rows[1].innerText = `₦${delivery.toLocaleString()}`;
+        rows[2].innerText = `₦${currentPackCost.toLocaleString()}`;
+        rows[3].innerText = `₦${platformFee}`;
+    }
     document.querySelector('.total-row .accent').innerText = `₦${grandTotal.toLocaleString()}`;
 };
 
-// --- 4. Final Order Submission ---
 window.submitOrder = async () => {
     const submitBtn = document.querySelector('.btn-filled');
-    
-    // 1. Initial UI Lock
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.6';
 
     try {
         const merchantId = localStorage.getItem("selectedMerchantId");
-        
-        // --- SECURITY CHECK: VERIFY AVAILABILITY BEFORE SAVING ---
-        // We use the 'activeSessionData' which is now kept fresh by the listener
         const selectedItems = [];
         const itemCheckboxes = document.querySelectorAll('.menu-item-checkbox');
         let unavailableFound = false;
@@ -201,18 +178,17 @@ window.submitOrder = async () => {
         itemCheckboxes.forEach(cb => {
             if (cb.checked) {
                 const index = cb.dataset.index;
-                const itemName = activeSessionData.menu[index].name;
+                const item = activeSessionData.menu[index];
                 
-                // Check if the item in our local 'activeSessionData' is marked unavailable
-                // This data is synced real-time, but checking here prevents "ghost" orders
-                if (activeSessionData.menu[index].available === false) {
+                // Final Availability Check
+                if (item.available === false) {
                     unavailableFound = true;
-                    alert(`Sorry, "${itemName}" was just marked unavailable by the merchant.`);
+                    alert(`Sorry, "${item.name}" was just marked unavailable.`);
                 }
 
                 selectedItems.push({
-                    name: itemName,
-                    price: activeSessionData.menu[index].price,
+                    name: item.name,
+                    price: item.price,
                     qty: parseInt(document.getElementById(`qty-${index}`).innerText)
                 });
             }
@@ -221,23 +197,18 @@ window.submitOrder = async () => {
         if (unavailableFound) {
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
-            return; // Stop the order from being created
+            return;
         }
-        // --- END OF SECURITY CHECK ---
 
-        // Proceed with your existing code (fetching location, customer data, etc.)
         if (selectedItems.length === 0 && !document.getElementById('pack-checkbox').checked) {
-            alert("Please select at least one item to order.");
+            alert("Please select at least one item.");
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
             return;
         }
 
-    try {
-        const merchantId = localStorage.getItem("selectedMerchantId");
         const customerSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
         const customerData = customerSnap.exists() ? customerSnap.data() : {};
-        const customerUsername = customerData.username || "Guest";
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
         const customerLoc = await getCustomerLocation();
@@ -253,45 +224,22 @@ window.submitOrder = async () => {
             status: "pending",
             timestamp: Date.now(),
             route: `${merchantData.fromLocation} to ${merchantData.toLocation}`,
-            customerLocation: customerLoc // <--- store as object
+            customerLocation: customerLoc
         };
 
-        // 1. Save Order
         const orderRef = await addDoc(collection(db, "orders"), orderObj);
         
-        const orderId = orderRef.id;
-
-        // 2. Increment Slots Filled
+        // Update Slots
         const merchantRef = doc(db, "users", merchantId);
         const sessionRef = doc(db, "merchants", merchantId, "sessions", merchantData.currentSessionId);
-
         await updateDoc(merchantRef, { slotsFilled: increment(1) });
         await updateDoc(sessionRef, { slotsFilled: increment(1) });
 
-        try {
-            // Check if THIS specific merchant has alerts enabled
-            const alertRef = doc(db, "merchant_alerts", merchantId);
-            const alertSnap = await getDoc(alertRef);
-
-            if (alertSnap.exists()) {
-                const alertData = alertSnap.data();
-
-                if (alertData.enabled) {
-                    const message = `*New Order Received — NOVAHUB* 🔔
-Order ID: ${orderId}
-Customer: @${customerUsername}
-Total: ₦${totalAmount.toLocaleString()}
-Route: ${orderObj.route}
-
-Please confirm the payment, then log in to your dashboard to Approve or Decline the order.`;
-
-                    // Send to the merchant's saved phone number
-                    await sendWhatsAppAlert(merchantId, message, "merchant_alerts"); 
-                }
-            }
-        } catch (alertErr) {
-            console.error("Alert failed to send, but order was placed:", alertErr);
-            // We don't alert the customer if the merchant's notification fails
+        // WhatsApp Notification
+        const alertSnap = await getDoc(doc(db, "merchant_alerts", merchantId));
+        if (alertSnap.exists() && alertSnap.data().enabled) {
+            const msg = `*New Order - NOVAHUB*\nID: ${orderRef.id}\nCustomer: @${customerData.username || 'Guest'}\nTotal: ₦${totalAmount.toLocaleString()}\nRoute: ${orderObj.route}`;
+            await sendWhatsAppAlert(merchantId, msg, "merchant_alerts");
         }
 
         alert("Order Sent! Awaiting Merchant Approval.");
@@ -299,12 +247,9 @@ Please confirm the payment, then log in to your dashboard to Approve or Decline 
 
     } catch (e) {
         console.error(e);
-        alert("Failed to process order. Please try again.");
-
-        // Re-enable button if order fails
+        alert("Failed to process order.");
         submitBtn.disabled = false;
         submitBtn.style.opacity = '1';
-        submitBtn.style.cursor = 'pointer';
     }
 };
 
@@ -312,15 +257,12 @@ async function getCustomerLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) return reject("Geolocation not supported");
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            },
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             (err) => reject(err.message)
         );
     });
 }
 
-// --- 5. Navigation ---
 document.querySelector('.close-btn').onclick = () => window.location.href = "./home.html";
 document.querySelector('.btn-outline').onclick = () => window.location.href = "./home.html";
-document.querySelector('.btn-filled').onclick = submitOrder;
+document.querySelector('.btn-filled').onclick = window.submitOrder;
