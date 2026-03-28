@@ -109,14 +109,12 @@ function syncMerchantLiveLocation() {
 }
 
 function updateClosestAndETA(mLoc, mode) {
-  
-  console.log("Customer:", customerLocation);
-  console.log("Merchant:", mLoc);
+    console.log("Merchant:", mLoc);
+    console.log("Customer:", customerLocation);
 
+    // 1. Handle Closest Static Location (UI Only)
     let closest = null;
     let minDist = Infinity;
-
-    // ✅ KEEP THIS PART (for "closest location")
     staticLocations.forEach(loc => {
         const dist = Math.hypot(mLoc.lat - loc.lat, mLoc.lng - loc.lng);
         if (dist < minDist) {
@@ -124,11 +122,13 @@ function updateClosestAndETA(mLoc, mode) {
             closest = loc.name;
         }
     });
-
     document.getElementById('closestLoc').innerText = closest || "In Transit";
 
-    // ❗ NOW FIX ETA (use CUSTOMER location instead)
-    if (!customerLocation) return;
+    // 2. Fix ETA Logic
+    if (!customerLocation) {
+        document.getElementById('timeLeft').innerText = "Syncing...";
+        return;
+    }
 
     const distanceKm = getDistanceKm(
         mLoc.lat,
@@ -137,19 +137,26 @@ function updateClosestAndETA(mLoc, mode) {
         customerLocation.lng
     );
 
-    // ✅ ARRIVAL CHECK (ADD HERE)
-    if (distanceKm < 0.05) {
+    const distanceMeters = distanceKm * 1000;
+
+    // Consistency Check: Use the same 30m threshold as track-order.js
+    if (distanceMeters < 30) {
         document.getElementById('timeLeft').innerText = "Arrived";
-    
         return;
     }
-    
-    const speed = (mode === "trekking") ? 5 : 25; // km/h
-    
-    const minutes = Math.ceil((distanceKm / speed) * 60);
-    
-    document.getElementById('timeLeft').innerText = `${minutes} mins`;
+
+    // Calculate time based on mode
+    // Walking: ~80m/min | Bike/Car: ~400m/min (25km/h)
+    const speedInMetersPerMin = (mode === "trekking") ? 80 : 416; 
+    const minutes = Math.ceil(distanceMeters / speedInMetersPerMin);
+
+    if (minutes <= 1) {
+        document.getElementById('timeLeft').innerText = "Arriving now";
+    } else {
+        document.getElementById('timeLeft').innerText = `${minutes} mins`;
+    }
 }
+
 
 function getDistanceKm(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -189,16 +196,15 @@ function showLiveTracker(text) {
 
 initPage();
 
-// --- Keep trying to get customer location every 5 seconds if not yet set ---
-const locInterval = setInterval(async () => {
-    if (!customerLocation) {
-        try { 
-            customerLocation = await getLiveLocation(); 
-            console.log("Got live customer location:", customerLocation);
-        } catch(err){ 
-            console.warn("Customer location unavailable:", err); 
-        }
-    } else {
-        clearInterval(locInterval); // stop polling once location is set
-    }
-}, 5000);
+// Replace the setInterval at the bottom of map-detail.js with this:
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition((pos) => {
+        customerLocation = { 
+            lat: pos.coords.latitude, 
+            lng: pos.coords.longitude 
+        };
+        console.log("Live Customer Update:", customerLocation);
+    }, (err) => console.warn("Location update failed", err), {
+        enableHighAccuracy: true
+    });
+}
