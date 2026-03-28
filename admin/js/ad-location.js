@@ -116,26 +116,18 @@ function syncMerchants() {
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-
-          if (data.location?.lat && data.location?.lng) {
-              // NEW: Check location freshness
-              const lastUpdate = data.locationUpdatedAt?.toDate?.() || new Date(0);
-              const ageMs = Date.now() - lastUpdate.getTime();
-          
-              const MAX_AGE = 2 * 60 * 1000; // 2 minutes
-              if (ageMs < MAX_AGE) {
-                  updateMerchantMarker(id, data);
-                  renderMerchantCard(id, data);
-              } else if (merchantMarkers[id]) {
-                  // Remove stale marker
-                  map.removeLayer(merchantMarkers[id]);
-                  delete merchantMarkers[id];
-              }
-          } else if (merchantMarkers[id]) {
-              map.removeLayer(merchantMarkers[id]);
-              delete merchantMarkers[id];
-          }
+        
+            // Only check if lat/lng exist, ignoring the session-based "locationUpdatedAt"
+            if (data.location?.lat && data.location?.lng) {
+                updateMerchantMarker(id, data);
+                renderMerchantCard(id, data);
+            } else if (merchantMarkers[id]) {
+                // Remove marker if they somehow lose their location data
+                map.removeLayer(merchantMarkers[id]);
+                delete merchantMarkers[id];
+            }
         });
+
     });
 }
 
