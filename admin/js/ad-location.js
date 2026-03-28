@@ -13,14 +13,15 @@ import {
     where
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-async function getClosestLocationName(merchantLatLng) {
-    const staticSnap = await getDocs(collection(db, "staticLocations"));
+function getClosestLocationName(merchantLatLng) {
+    if (cachedStaticLocations.length === 0) return "Calculating...";
+
     let closest = null;
     let minDist = Infinity;
 
-    staticSnap.forEach(doc => {
-        const loc = doc.data();
-        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng); // rough distance
+    cachedStaticLocations.forEach(loc => {
+        // Standard distance formula
+        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng);
         if (dist < minDist) {
             minDist = dist;
             closest = loc.name;
@@ -30,10 +31,13 @@ async function getClosestLocationName(merchantLatLng) {
     return closest || "N/A";
 }
 
+
 let map;
 let merchantMarkers = {};
 let staticMarkers = {};
 let tempMarker = null;
+let cachedStaticLocations = []; // This will store the buildings in memory
+
 
 // --- Get User Location Before Map Sync ---
 function initMap() {
@@ -130,19 +134,21 @@ function syncMerchants() {
     });
 }
 
-async function updateMerchantMarker(id, data) {
-    const pos = { lat: data.location.lat, lng: data.location.lng };
-    const closestName = await getClosestLocationName(pos);
+function updateMerchantMarker(id, data) {
+    const pos = [data.location.lat, data.location.lng];
+    // This is now instant because it doesn't wait for the database
+    const closestName = getClosestLocationName(data.location);
 
     if (merchantMarkers[id]) {
-        merchantMarkers[id].setLatLng([pos.lat, pos.lng]);
-        merchantMarkers[id].bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
+        merchantMarkers[id].setLatLng(pos);
+        merchantMarkers[id].setPopupContent(`<b>${data.username}</b><br>Near: ${closestName}`);
     } else {
-        const marker = L.marker([pos.lat, pos.lng]).addTo(map)
-            .bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
+        const marker = L.marker(pos).addTo(map)
+            .bindPopup(`<b>${data.username}</b><br>Near: ${closestName}`);
         merchantMarkers[id] = marker;
     }
 }
+
 
 // --- 3. Static Location Management (Buildings/Restaurants) ---
 async function syncStaticLocations() {
@@ -151,6 +157,8 @@ async function syncStaticLocations() {
     onSnapshot(q, (snapshot) => {
         const tray = document.getElementById('restaurantFooter');
         tray.innerHTML = '';
+        
+        cachedStaticLocations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         snapshot.docs.forEach(docSnap => {
 
