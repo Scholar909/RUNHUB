@@ -122,7 +122,9 @@ function updateClosestAndETA(mLoc, mode) {
     document.getElementById('closestLoc').innerText = closest || "In Transit";
 
     // 2. SYNCED ETA LOGIC (Matches track-order.js exactly)
-    if (!customerLocation) {
+    const effectiveCustLoc = customerLocation; 
+
+    if (!effectiveCustLoc) {
         document.getElementById('timeLeft').innerText = "Syncing...";
         return;
     }
