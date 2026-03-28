@@ -4,36 +4,116 @@ import {
     collection,
     onSnapshot,
     doc,
-    addDoc,
     updateDoc,
-    deleteDoc,
     serverTimestamp,
     getDocs,
     query,
     where
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-async function getClosestLocationName(merchantLatLng) {
-    const staticSnap = await getDocs(collection(db, "staticLocations"));
-    let closest = null;
-    let minDist = Infinity;
+// --- 1. Background Location Tracking ---
+// This function monitors the location 24/7 as long as the app is open/logged in
+function startLocationTracking(userId) {
+    if (!navigator.geolocation) {
+        console.error("Geolocation is not supported by this browser.");
+        return;
+    }
 
-    staticSnap.forEach(doc => {
-        const loc = doc.data();
-        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng); // rough distance
-        if (dist < minDist) {
-            minDist = dist;
-            closest = loc.name;
-        }
-    });
+    // Options for high accuracy security monitoring
+    const geoOptions = {
+        enableHighAccuracy: true,
+        maximumAge: 30000,
+        timeout: 27000
+    };
 
-    return closest || "N/A";
+    const watchId = navigator.geolocation.watchPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            try {
+                const userRef = doc(db, "users", userId);
+                await updateDoc(userRef, {
+                    location: {
+                        lat: latitude,
+                        lng: longitude
+                    },
+                    locationUpdatedAt: serverTimestamp()
+                });
+                console.log("Security: Location updated for user", userId);
+            } catch (err) {
+                console.error("Error updating security location:", err);
+            }
+        },
+        (error) => console.error("Location Watch Error:", error),
+        geoOptions
+    );
+
+    return watchId;
 }
 
-let map;
-let merchantMarkers = {};
-let staticMarkers = {};
-let tempMarker = null;
+// --- 2. Live Merchant Sync (Displaying Pins) ---
+function syncMerchants() {
+    const q = query(
+        collection(db, "users"),
+        where("role", "==", "merchant")
+    );
+    
+    onSnapshot(q, (snapshot) => {
+        const tray = document.getElementById('merchantFooter');
+        tray.innerHTML = '';
+
+        snapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+
+            if (data.location?.lat && data.location?.lng) {
+                // REMOVED: The 2-minute freshness check. 
+                // We now display the merchant's last known location 24/7.
+                updateMerchantMarker(id, data);
+                renderMerchantCard(id, data);
+            } else if (merchantMarkers[id]) {
+                map.removeLayer(merchantMarkers[id]);
+                delete merchantMarkers[id];
+            }
+        });
+    });
+}
+
+// --- Modified Auth Logic ---
+let locationWatchId = null;
+
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        if (locationWatchId) navigator.geolocation.clearWatch(locationWatchId);
+        window.location.href = "./admin-login.html";
+        return;
+    }
+
+    // 1. Initialize the Map
+    initMap();
+
+    // 2. Start 24/7 Security Tracking for the logged-in user
+    locationWatchId = startLocationTracking(user.uid);
+});
+
+// --- UI & Helper Functions (Kept same as your original) ---
+
+async function updateMerchantMarker(id, data) {
+    const pos = { lat: data.location.lat, lng: data.location.lng };
+    const closestName = await getClosestLocationName(pos);
+
+    if (merchantMarkers[id]) {
+        merchantMarkers[id].setLatLng([pos.lat, pos.lng]);
+        merchantMarkers[id].getPopup().setContent(`<b>${data.username}</b><br>Closest to: ${closestName}`);
+    } else {
+        const marker = L.marker([pos.lat, pos.lng]).addTo(map)
+            .bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
+        merchantMarkers[id] = marker;
+    }
+}
+
+// ... Rest of your initMap, syncStaticLocations, and UI Helper functions remain the same ...
+
 
 // --- Get User Location Before Map Sync ---
 function initMap() {
@@ -90,67 +170,6 @@ function initMap() {
         syncMerchants();
         syncStaticLocations();
     }, 200);
-}
-
-// --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
-function syncMerchants() {
-    const q = query(
-        collection(db, "users"),
-        where("role", "==", "merchant")
-    );
-    
-    onSnapshot(q, async (snapshot) => {
-      console.log("Snapshot size:", snapshot.size);
-        // Remove markers for merchants no longer in the snapshot
-        const activeIds = new Set(snapshot.docs.map(d => d.id));
-        Object.keys(merchantMarkers).forEach(id => {
-            if (!activeIds.has(id)) {
-                map.removeLayer(merchantMarkers[id]);
-                delete merchantMarkers[id];
-            }
-        });
-        
-        const tray = document.getElementById('merchantFooter');
-        tray.innerHTML = '';
-
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const id = doc.id;
-
-          if (data.location?.lat && data.location?.lng) {
-              // NEW: Check location freshness
-              const lastUpdate = data.locationUpdatedAt?.toDate?.() || new Date(0);
-              const ageMs = Date.now() - lastUpdate.getTime();
-          
-              const MAX_AGE = 2 * 60 * 1000; // 2 minutes
-              if (ageMs < MAX_AGE) {
-                  updateMerchantMarker(id, data);
-                  renderMerchantCard(id, data);
-              } else if (merchantMarkers[id]) {
-                  // Remove stale marker
-                  map.removeLayer(merchantMarkers[id]);
-                  delete merchantMarkers[id];
-              }
-          } else if (merchantMarkers[id]) {
-              map.removeLayer(merchantMarkers[id]);
-              delete merchantMarkers[id];
-          }
-        });
-    });
-}
-
-async function updateMerchantMarker(id, data) {
-    const pos = { lat: data.location.lat, lng: data.location.lng };
-    const closestName = await getClosestLocationName(pos);
-
-    if (merchantMarkers[id]) {
-        merchantMarkers[id].setLatLng([pos.lat, pos.lng]);
-        merchantMarkers[id].bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
-    } else {
-        const marker = L.marker([pos.lat, pos.lng]).addTo(map)
-            .bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
-        merchantMarkers[id] = marker;
-    }
 }
 
 // --- 3. Static Location Management (Buildings/Restaurants) ---
