@@ -25,17 +25,42 @@ onAuthStateChanged(auth, (user) => {
 function listenToActiveMerchants() {
     const q = query(
         collection(db, "users"),
-        where("isActive", "==", true) // Merchant toggled session ON
+        where("isActive", "==", true) 
     );
 
-    onSnapshot(q, (snapshot) => {
-        merchants = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(m => m.slotsFilled < m.maxSlots); // Filter out full slots
+    onSnapshot(q, async (snapshot) => {
+        const merchantPromises = snapshot.docs.map(async (userDoc) => {
+            const mData = userDoc.data();
+            const mId = userDoc.id;
+
+            // If the merchant has a current session, fetch its LIVE slot count
+            if (mData.currentSessionId) {
+                const sessionRef = doc(db, "merchants", mId, "sessions", mData.currentSessionId);
+                const sessionSnap = await getDoc(sessionRef);
+                
+                if (sessionSnap.exists()) {
+                    const sData = sessionSnap.data();
+                    // Override the user-level slots with the actual Session-level slots
+                    return { 
+                        id: mId, 
+                        ...mData, 
+                        slotsFilled: sData.slotsFilled || 0,
+                        maxSlots: sData.maxSlots || mData.maxSlots 
+                    };
+                }
+            }
+            return { id: mId, ...mData };
+        });
+
+        const resolvedMerchants = await Promise.all(merchantPromises);
+        
+        // Filter out full slots and update the global state
+        merchants = resolvedMerchants.filter(m => m.slotsFilled < m.maxSlots);
         
         renderMerchantGrid();
     });
 }
+
 
 // --- 3. UI Rendering ---
 function renderMerchantGrid() {

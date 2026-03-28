@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { collection, query, where, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 onAuthStateChanged(auth, (user) => {
     if (!user) { window.location.href = "sign-login.html"; return; }
@@ -32,19 +32,40 @@ function calculateETA(lat1, lon1, lat2, lon2) {
     return `~${timeInMinutes} mins away`;
 }
 
-
 function initTracking(uid) {
-    // 1. Start watching the CUSTOMER'S live location immediately
     let liveCustomerLoc = null;
-    navigator.geolocation.watchPosition((pos) => {
-        liveCustomerLoc = { 
-            lat: pos.coords.latitude, 
-            lng: pos.coords.longitude 
-        };
-    }, (err) => console.error("Location error", err), {
-        enableHighAccuracy: true
-    });
 
+    // 1. WATCH & PUSH: This ensures the Merchant always sees the Customer
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(async (pos) => {
+            liveCustomerLoc = { 
+                lat: pos.coords.latitude, 
+                lng: pos.coords.longitude 
+            };
+
+            // ✅ CRITICAL: Update the customer's current position for ALL active orders
+            // This allows the merchant's app to stay in sync
+            const activeOrdersQuery = query(
+                collection(db, "orders"),
+                where("customerId", "==", uid),
+                where("status", "in", ["approved", "picked_up"])
+            );
+            
+            const activeSnaps = await getDocs(activeOrdersQuery);
+            activeSnaps.forEach(async (orderDoc) => {
+                await updateDoc(doc(db, "orders", orderDoc.id), {
+                    customerLocation: liveCustomerLoc,
+                    lastCustomerUpdate: serverTimestamp()
+                });
+            });
+
+        }, (err) => console.error("Location error", err), {
+            enableHighAccuracy: true,
+            maximumAge: 0
+        });
+    }
+
+    // 2. RENDER THE LIST
     const q = query(
         collection(db, "orders"),
         where("customerId", "==", uid),
@@ -64,21 +85,21 @@ function initTracking(uid) {
             const order = orderDoc.data();
             const orderId = orderDoc.id;
             
-            // Create the card immediately
             const card = document.createElement('div');
             card.className = 'trust-card history-card';
-            card.innerHTML = `<p style="padding:20px; text-align:center;">Syncing with Merchant...</p>`;
+            card.innerHTML = `<p style="padding:20px; text-align:center;">Syncing...</p>`;
             grid.appendChild(card);
 
-            // Real-time listener for the Merchant's specific location
+            // Listen to the Merchant's live location from their User Profile
             onSnapshot(doc(db, "users", order.merchantId), (mSnap) => {
                 const mData = mSnap.data();
-                const customerLoc = order.customerLocation; // Saved during submitOrder
-                const merchantLoc = mData.location; // Updated by merchant's location.js
+                if (!mData || !mData.location) return;
 
-                let etaText = "Tracking...";
+                const merchantLoc = mData.location;
+                // Use the live local GPS if available, otherwise fallback to the DB version
                 const effectiveCustLoc = liveCustomerLoc || order.customerLocation;
 
+                let etaText = "Tracking...";
                 if (effectiveCustLoc && merchantLoc) {
                     etaText = calculateETA(
                         merchantLoc.lat, merchantLoc.lng,
@@ -90,18 +111,18 @@ function initTracking(uid) {
                 card.innerHTML = `
                     <div class="order-info-stack">
                         <div class="card-tag status-success" style="display:flex; justify-content:space-between; align-items:center;">
-                            <span>IN TRANSIT</span>
+                            <span>${order.status.replace('_', ' ').toUpperCase()}</span>
                             <span style="font-weight:bold; color:var(--text-main)">${etaText}</span>
                         </div>
                         <div class="order-header">
-                            <h3>@${order.merchantName}</h3>
+                            <h3>@${order.merchantName || 'Merchant'}</h3>
                         </div>
                         <div class="order-summary">
                             <p>${order.route || 'Campus Delivery'}</p>
-                            <p style="font-size:0.7rem; color:var(--accent)">Order ID: ...${orderId.slice(-5)}</p>
+                            <p style="font-size:0.7rem; color:var(--accent)">ID: ...${orderId.slice(-5)}</p>
                         </div>
                     </div>
-                    <button class="btn btn-outline">View Map</button>
+                    <button class="btn btn-outline" style="margin-top:10px; width:100%">View Live Map</button>
                 `;
             });
         });

@@ -198,14 +198,32 @@ function showLiveTracker(text) {
 initPage();
 
 // Replace the setInterval at the bottom of map-detail.js with this:
+// Replace the watchPosition at the bottom of the customer tracking page
 if (navigator.geolocation) {
-    navigator.geolocation.watchPosition((pos) => {
-        customerLocation = { 
+    navigator.geolocation.watchPosition(async (pos) => {
+        const coords = { 
             lat: pos.coords.latitude, 
             lng: pos.coords.longitude 
         };
-        console.log("Live Customer Update:", customerLocation);
+        
+        // Update local variable for UI math
+        customerLocation = coords;
+
+        // ✅ PUSH TO FIREBASE: Save to the specific order document
+        // This allows the merchant's app to see exactly where the customer is
+        if (orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    customerLocation: coords,
+                    lastCustomerUpdate: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Failed to sync customer location to Firebase:", err);
+            }
+        }
     }, (err) => console.warn("Location update failed", err), {
-        enableHighAccuracy: true
+        enableHighAccuracy: true,
+        maximumAge: 0
     });
 }
+
