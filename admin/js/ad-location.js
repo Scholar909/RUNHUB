@@ -13,14 +13,28 @@ import {
     where
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-async function getClosestLocationName(merchantLatLng) {
-    const staticSnap = await getDocs(collection(db, "staticLocations"));
+let cachedStaticLocations = [];
+
+// Keep the static locations cache updated in real-time
+function startStaticLocationSync() {
+    onSnapshot(collection(db, "staticLocations"), (snapshot) => {
+        cachedStaticLocations = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    });
+}
+
+// Optimized Closest Location Finder
+function getClosestLocationName(merchantLat, merchantLng) {
+    if (cachedStaticLocations.length === 0) return "Loading...";
+
     let closest = null;
     let minDist = Infinity;
 
-    staticSnap.forEach(doc => {
-        const loc = doc.data();
-        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng); // rough distance
+    cachedStaticLocations.forEach(loc => {
+        // Using the same getDistance formula from your merchant script
+        const dist = getDistance(merchantLat, merchantLng, loc.lat, loc.lng);
         if (dist < minDist) {
             minDist = dist;
             closest = loc.name;
@@ -35,9 +49,25 @@ let merchantMarkers = {};
 let staticMarkers = {};
 let tempMarker = null;
 
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; 
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; 
+}
+
+
 // --- Get User Location Before Map Sync ---
 function initMap() {
     const overlay = document.getElementById('loadingOverlay');
+    
+    startStaticLocationSync(); 
     
     map = L.map('map', { zoomControl: false }).setView([7.1903, 4.5607], 16);
     
@@ -94,53 +124,44 @@ function initMap() {
 
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
 function syncMerchants() {
-    const q = query(
-        collection(db, "users"),
-        where("role", "==", "merchant")
-    );
+    const q = query(collection(db, "users"), where("role", "==", "merchant"));
     
-    onSnapshot(q, async (snapshot) => {
-      console.log("Snapshot size:", snapshot.size);
-        // Remove markers for merchants no longer in the snapshot
-        const activeIds = new Set(snapshot.docs.map(d => d.id));
+    onSnapshot(q, (snapshot) => {
+        const activeIds = new Set();
+        
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id;
+            activeIds.add(id);
+        
+            if (data.location?.lat && data.location?.lng) {
+                // This now happens in real-time as the merchant moves
+                updateMerchantMarker(id, data);
+                renderMerchantCard(id, data);
+            }
+        });
+
+        // Cleanup markers for logged-out merchants
         Object.keys(merchantMarkers).forEach(id => {
             if (!activeIds.has(id)) {
                 map.removeLayer(merchantMarkers[id]);
                 delete merchantMarkers[id];
             }
         });
-        
-        const tray = document.getElementById('merchantFooter');
-        tray.innerHTML = '';
-
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const id = doc.id;
-        
-            // Only check if lat/lng exist, ignoring the session-based "locationUpdatedAt"
-            if (data.location?.lat && data.location?.lng) {
-                updateMerchantMarker(id, data);
-                renderMerchantCard(id, data);
-            } else if (merchantMarkers[id]) {
-                // Remove marker if they somehow lose their location data
-                map.removeLayer(merchantMarkers[id]);
-                delete merchantMarkers[id];
-            }
-        });
-
     });
 }
 
-async function updateMerchantMarker(id, data) {
-    const pos = { lat: data.location.lat, lng: data.location.lng };
-    const closestName = await getClosestLocationName(pos);
+function updateMerchantMarker(id, data) {
+    const { lat, lng } = data.location;
+    const closestName = getClosestLocationName(lat, lng);
 
     if (merchantMarkers[id]) {
-        merchantMarkers[id].setLatLng([pos.lat, pos.lng]);
-        merchantMarkers[id].bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
+        merchantMarkers[id].setLatLng([lat, lng]);
+        // Update the popup content dynamically in case they moved closer to a new spot
+        merchantMarkers[id].setPopupContent(`<b>${data.username}</b><br>📍 Near: ${closestName}`);
     } else {
-        const marker = L.marker([pos.lat, pos.lng]).addTo(map)
-            .bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
+        const marker = L.marker([lat, lng]).addTo(map)
+            .bindPopup(`<b>${data.username}</b><br>📍 Near: ${closestName}`);
         merchantMarkers[id] = marker;
     }
 }
