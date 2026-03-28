@@ -139,10 +139,12 @@ async function toggleSession(sessionId, targetState, isAutoOff = false) {
             const lastOff = activeSession.lastTurnedOff || 0;
             const thirtyMinutes = 30 * 60 * 1000;
 
+            // Logic to reset slots to 0 if 30 mins passed or session was full
             if ((now - lastOff > thirtyMinutes) || activeSession.slotsFilled >= activeSession.maxSlots) {
                 newSlotCount = 0;
             }
 
+            // Deactivate any other currently active sessions first
             const deactivateTasks = sessions.map(s => {
                 if (s.id !== sessionId && s.isActive) {
                     return updateDoc(doc(db, "merchants", currentUid, "sessions", s.id), { isActive: false });
@@ -154,6 +156,7 @@ async function toggleSession(sessionId, targetState, isAutoOff = false) {
             const merchantSnap = await getDoc(merchantRef);
             const mData = merchantSnap.data();
 
+            // 1. Update the Global Merchant Profile (Used for Home Page queries)
             await updateDoc(merchantRef, {
                 isActive: true,
                 currentSessionId: sessionId,
@@ -161,16 +164,19 @@ async function toggleSession(sessionId, targetState, isAutoOff = false) {
                 toLocation: activeSession.toLocation,
                 deliveryCharge: Number(activeSession.deliveryCharge),
                 maxSlots: Number(activeSession.maxSlots),
-                slotsFilled: newSlotCount,
+                slotsFilled: newSlotCount, // <--- CRITICAL: Syncs reset to Home Page
                 whatsappNumber: mData?.phoneNumber || ""
             });
 
+            // 2. Update the Specific Session Document
             await updateDoc(sessionRef, {
                 isActive: true,
-                slotsFilled: newSlotCount
+                slotsFilled: newSlotCount,
+                lastTurnedOff: 0 // Reset the off-timer
             });
 
         } else {
+            // Toggling OFF logic
             await updateDoc(merchantRef, { isActive: false });
             await updateDoc(sessionRef, {
                 isActive: false,
