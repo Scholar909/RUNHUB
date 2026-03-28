@@ -8,6 +8,7 @@ import {
 // --- State ---
 let merchantData = null;
 let activeSessionData = null;
+let previousMenu = [];
 let platformFee = 25;
 let packagingCost = 200;
 
@@ -48,32 +49,61 @@ async function loadMerchantAndMenu() {
             return;
         }
 
-      // --- Updated REAL-TIME LISTENER in order-modal.js ---
-      onSnapshot(doc(db, "merchants", merchantId, "sessions", targetSessionId), (sessionDoc) => {
-          if (!sessionDoc.exists()) {
-              alert("This delivery session has been deleted.");
-              window.location.href = "./home.html";
-              return;
-          }
-      
-          activeSessionData = sessionDoc.data();
-      
-          // NEW: Immediate check if the merchant toggled the session OFF
-          if (activeSessionData.isActive === false) {
-              alert("This delivery session is no longer active.");
-              window.location.href = "./home.html";
-              return;
-          }
-      
-          if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
-               alert("Sorry, all slots for this session are now full.");
-               window.location.href = "./home.html";
-               return;
-          }
-      
-          renderOrderUI(); 
-      });
+        // --- REAL-TIME LISTENER ---
+        onSnapshot(doc(db, "merchants", merchantId, "sessions", targetSessionId), (sessionDoc) => {
+            if (!sessionDoc.exists()) {
+                alert("This delivery session has been deleted.");
+                window.location.href = "./home.html";
+                return;
+            }
 
+            const newData = sessionDoc.data();
+
+            // --- MENU CHANGE DETECTION ---
+            if (previousMenu.length > 0) {
+                let changes = [];
+
+                // 1. Check for newly added items
+                newData.menu.forEach(newItem => {
+                    const oldItem = previousMenu.find(m => m.name === newItem.name);
+                    // If it wasn't there before OR was unavailable and now is available
+                    if ((!oldItem && newItem.available !== false) || (oldItem && oldItem.available === false && newItem.available !== false)) {
+                        changes.push(`➕ Added: ${newItem.name}`);
+                    }
+                });
+
+                // 2. Check for removed or toggled-off items
+                previousMenu.forEach(oldItem => {
+                    const newItem = newData.menu.find(m => m.name === oldItem.name);
+                    // If it's gone from the list OR was available and now is unavailable
+                    if ((!newItem && oldItem.available !== false) || (newItem && newItem.available === false && oldItem.available !== false)) {
+                        changes.push(`❌ Removed: ${oldItem.name}`);
+                    }
+                });
+
+                if (changes.length > 0) {
+                    alert(`The merchant just updated the menu:\n\n${changes.join('\n')}\n\nPlease review your selection before paying.`);
+                }
+            }
+
+            // Update state
+            activeSessionData = newData;
+            previousMenu = JSON.parse(JSON.stringify(newData.menu)); // Deep copy to prevent reference issues
+
+            if (activeSessionData.isActive === false) {
+                alert("This delivery session is no longer active.");
+                window.location.href = "./home.html";
+                return;
+            }
+
+            if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
+                 alert("Sorry, all slots for this session are now full.");
+                 window.location.href = "./home.html";
+                 return;
+            }
+
+            renderOrderUI(); 
+        });
 
     } catch (e) {
         console.error("Initialization error:", e);
