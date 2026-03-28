@@ -3,8 +3,9 @@ import { sendWhatsAppAlert } from "./send-alert.js";
 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
-    doc, getDoc, collection, addDoc, updateDoc, increment 
+    doc, getDoc, collection, addDoc, updateDoc, increment, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
 
 // --- State ---
 let merchantData = null;
@@ -63,29 +64,27 @@ async function loadMerchantAndMenu() {
             return;
         }
 
-        // 4. Fetch the actual Session Data (Menu, Slots, etc.)
-        const sessionDoc = await getDoc(doc(db, "merchants", merchantId, "sessions", targetSessionId));
-        
-        if (!sessionDoc.exists()) {
-            throw new Error("Session information missing.");
-        }
-        
-        activeSessionData = sessionDoc.data();
+        // 4. Listen to the Session Data in Real-Time
+        onSnapshot(doc(db, "merchants", merchantId, "sessions", targetSessionId), (sessionDoc) => {
+            if (!sessionDoc.exists()) {
+                alert("This delivery session is no longer available.");
+                window.location.href = "./home.html";
+                return;
+            }
 
-        // 5. Check if slots filled up while they were loading
-        if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
-             alert("Sorry, all slots for this session are now full.");
-             window.location.href = "./home.html";
-             return;
-        }
+            activeSessionData = sessionDoc.data();
 
-        renderOrderUI();
-    } catch (error) {
-        console.error(error);
-        alert("Unable to load menu: " + error.message);
-        window.location.href = "./home.html";
-    }
-}
+            // 5. Real-time Slot Check
+            if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
+                 alert("Sorry, all slots for this session are now full.");
+                 window.location.href = "./home.html";
+                 return;
+            }
+
+            // This will re-run every time the merchant toggles an item!
+            renderOrderUI(); 
+        });
+
 // --- 2. UI Rendering ---
 function renderOrderUI() {
     // Header Info
@@ -116,27 +115,30 @@ function renderOrderUI() {
         <span class="item-price">₦${packagingCost}</span>
     `;
     menuContainer.appendChild(packDiv);
-
+    
     // Add Merchant Menu Items
     activeSessionData.menu.forEach((item, index) => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'food-item';
-        itemDiv.innerHTML = `
-            <div class="item-details">
-                <label class="check-container">
-                    <input type="checkbox" class="menu-item-checkbox" data-index="${index}" onchange="updateTotal()">
-                    <span class="checkmark"></span>
-                    ${item.name}
-                </label>
-            </div>
-            <div class="quantity-control">
-                <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
-                <span class="qty-val" id="qty-${index}">1</span>
-                <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
-            </div>
-            <span class="item-price">₦${item.price}</span>
-        `;
-        menuContainer.appendChild(itemDiv);
+        // ONLY render if available is not explicitly false
+        if (item.available !== false) { 
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'food-item';
+            itemDiv.innerHTML = `
+                <div class="item-details">
+                    <label class="check-container">
+                        <input type="checkbox" class="menu-item-checkbox" data-index="${index}" onchange="updateTotal()">
+                        <span class="checkmark"></span>
+                        ${item.name}
+                    </label>
+                </div>
+                <div class="quantity-control">
+                    <button class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
+                    <span class="qty-val" id="qty-${index}">1</span>
+                    <button class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+                </div>
+                <span class="item-price">₦${item.price}</span>
+            `;
+            menuContainer.appendChild(itemDiv);
+        }
     });
 
     updateTotal();
@@ -182,34 +184,54 @@ window.updateTotal = () => {
 // --- 4. Final Order Submission ---
 window.submitOrder = async () => {
     const submitBtn = document.querySelector('.btn-filled');
-
-    // Disable immediately to prevent double-click
+    
+    // 1. Initial UI Lock
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.6';
-    submitBtn.style.cursor = 'not-allowed';
 
-    const selectedItems = [];
-    const itemCheckboxes = document.querySelectorAll('.menu-item-checkbox');
-    
-    itemCheckboxes.forEach(cb => {
-        if (cb.checked) {
-            const index = cb.dataset.index;
-            selectedItems.push({
-                name: activeSessionData.menu[index].name,
-                price: activeSessionData.menu[index].price,
-                qty: parseInt(document.getElementById(`qty-${index}`).innerText)
-            });
+    try {
+        const merchantId = localStorage.getItem("selectedMerchantId");
+        
+        // --- SECURITY CHECK: VERIFY AVAILABILITY BEFORE SAVING ---
+        // We use the 'activeSessionData' which is now kept fresh by the listener
+        const selectedItems = [];
+        const itemCheckboxes = document.querySelectorAll('.menu-item-checkbox');
+        let unavailableFound = false;
+
+        itemCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                const index = cb.dataset.index;
+                const itemName = activeSessionData.menu[index].name;
+                
+                // Check if the item in our local 'activeSessionData' is marked unavailable
+                // This data is synced real-time, but checking here prevents "ghost" orders
+                if (activeSessionData.menu[index].available === false) {
+                    unavailableFound = true;
+                    alert(`Sorry, "${itemName}" was just marked unavailable by the merchant.`);
+                }
+
+                selectedItems.push({
+                    name: itemName,
+                    price: activeSessionData.menu[index].price,
+                    qty: parseInt(document.getElementById(`qty-${index}`).innerText)
+                });
+            }
+        });
+
+        if (unavailableFound) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            return; // Stop the order from being created
         }
-    });
+        // --- END OF SECURITY CHECK ---
 
-    if (selectedItems.length === 0 && !document.getElementById('pack-checkbox').checked) {
-        alert("Please select at least one item to order.");
-        // Re-enable button if validation fails
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-        submitBtn.style.cursor = 'pointer';
-        return;
-    }
+        // Proceed with your existing code (fetching location, customer data, etc.)
+        if (selectedItems.length === 0 && !document.getElementById('pack-checkbox').checked) {
+            alert("Please select at least one item to order.");
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            return;
+        }
 
     try {
         const merchantId = localStorage.getItem("selectedMerchantId");
