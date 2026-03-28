@@ -34,10 +34,21 @@ function calculateETA(lat1, lon1, lat2, lon2) {
 
 
 function initTracking(uid) {
+    // 1. Start watching the CUSTOMER'S live location immediately
+    let liveCustomerLoc = null;
+    navigator.geolocation.watchPosition((pos) => {
+        liveCustomerLoc = { 
+            lat: pos.coords.latitude, 
+            lng: pos.coords.longitude 
+        };
+    }, (err) => console.error("Location error", err), {
+        enableHighAccuracy: true
+    });
+
     const q = query(
         collection(db, "orders"),
         where("customerId", "==", uid),
-        where("status", "in", ["approved", "picked_up"]) // Show both approved and transit
+        where("status", "in", ["approved", "picked_up"])
     );
     
     onSnapshot(q, (snapshot) => {
@@ -66,10 +77,12 @@ function initTracking(uid) {
                 const merchantLoc = mData.location; // Updated by merchant's location.js
 
                 let etaText = "Tracking...";
-                if (customerLoc && merchantLoc) {
+                const effectiveCustLoc = liveCustomerLoc || order.customerLocation;
+
+                if (effectiveCustLoc && merchantLoc) {
                     etaText = calculateETA(
                         merchantLoc.lat, merchantLoc.lng,
-                        customerLoc.lat, customerLoc.lng
+                        effectiveCustLoc.lat, effectiveCustLoc.lng
                     );
                 }
 
