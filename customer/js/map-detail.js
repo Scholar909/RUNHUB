@@ -10,6 +10,31 @@ let staticLocations = [];
 let customerLocation = null;
 let lastNotifiedLocation = null;
 let lastAlertTime = 0;
+let cachedStaticLocations = [];
+
+// 1. Keep static locations in memory (Syncs exactly like Admin)
+function startStaticLocationSync() {
+    onSnapshot(collection(db, "staticLocations"), (snapshot) => {
+        cachedStaticLocations = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    });
+}
+
+// 2. Exact same distance formula used by Merchant/Admin
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; 
+}
 
 async function initPage() {
     if (!orderId || !merchantId) {
@@ -18,7 +43,7 @@ async function initPage() {
     }
 
     setupMap();
-    await loadStaticLocations();
+    startStaticLocationSync();
     await syncOrderData();
     syncMerchantLiveLocation();
 }
@@ -108,54 +133,49 @@ function syncMerchantLiveLocation() {
     });
 }
 
-function updateClosestAndETA(mLoc, mode) {
-    // 1. Handle Closest Static Location (UI Context)
-    let closest = null;
+function updateClosestAndETA(mLoc) {
+    // --- 1. FIND CLOSEST STATIC LOCATION ---
+    let closestName = "In Transit";
     let minDist = Infinity;
-    staticLocations.forEach(loc => {
-        const dist = Math.hypot(mLoc.lat - loc.lat, mLoc.lng - loc.lng);
+
+    cachedStaticLocations.forEach(loc => {
+        const dist = getDistance(mLoc.lat, mLoc.lng, loc.lat, loc.lng);
         if (dist < minDist) {
             minDist = dist;
-            closest = loc.name;
+            closestName = loc.name;
         }
     });
-    document.getElementById('closestLoc').innerText = closest || "In Transit";
+    document.getElementById('closestLoc').innerText = closestName;
 
-    // 2. SYNCED ETA LOGIC (Matches track-order.js exactly)
-    const effectiveCustLoc = customerLocation; 
-
-    if (!effectiveCustLoc) {
+    // --- 2. CALCULATE ETA TO CUSTOMER ---
+    if (!customerLocation) {
         document.getElementById('timeLeft').innerText = "Syncing...";
         return;
     }
 
-    const distanceKm = getDistanceKm(
-        mLoc.lat,
-        mLoc.lng,
-        customerLocation.lat,
+    const distanceMeters = getDistance(
+        mLoc.lat, 
+        mLoc.lng, 
+        customerLocation.lat, 
         customerLocation.lng
     );
 
-    const distanceMeters = distanceKm * 1000;
-
-    // --- EXACT CALCULATION FROM TRACK-ORDER.JS ---
-    
-    // Threshold 1: Proximity check (30 meters)
+    // Threshold: Arriving now (under 30 meters)
     if (distanceMeters < 30) {
         document.getElementById('timeLeft').innerText = "Arriving now";
         return;
     }
 
-    // Threshold 2: Walking time (80 meters per minute)
-    // We use Math.ceil to ensure we don't show "0 mins"
+    // Walking speed: 80 meters per minute (matches your logic)
     const minutes = Math.ceil(distanceMeters / 80);
 
     if (minutes <= 1) {
-        document.getElementById('timeLeft').innerText = "Arriving now";
+        document.getElementById('timeLeft').innerText = "Arrived";
     } else {
         document.getElementById('timeLeft').innerText = `${minutes} mins`;
     }
 }
+
 
 
 
