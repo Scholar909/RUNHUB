@@ -191,45 +191,57 @@ window.saveSession = async () => {
     const fromInput = document.querySelector('input[placeholder="Pickup point"]');
     const toInput = document.querySelector('input[placeholder="Destination"]');
 
-    // Clamp the values
     const rawDelivery = Number(deliveryInput.value);
     const rawSlots = Number(slotsInput.value);
     
     const finalDeliveryCharge = Math.max(0, Math.min(rawDelivery || 0, MAX_DELIVERY_FEE));
     const finalMaxSlots = Math.max(1, Math.min(rawSlots || 1, MAX_SLOTS_LIMIT));
     
-    // Update the UI visually so the user sees the correction
     deliveryInput.value = finalDeliveryCharge;
     slotsInput.value = finalMaxSlots;
     
-        const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
+    const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
         name: row.querySelectorAll('input[type="text"]')[0].value,
         price: Number(row.querySelectorAll('input[type="number"]')[0].value),
-        available: row.querySelector('.item-availability').checked // New field
+        available: row.querySelector('.item-availability').checked 
     }));
-
 
     if (!nameInput.value || !fromInput.value || menuItems.length === 0) {
         alert("Please fill all fields and add items.");
         return;
     }
 
+    // --- PERSISTENCE LOGIC ---
+    // If editing, find the existing session to keep its live status and slots
+    const existingSession = editingSessionId ? sessions.find(s => s.id === editingSessionId) : null;
+
     const sessionData = {
         sessionName: nameInput.value,
         fromLocation: fromInput.value,
         toLocation: toInput.value,
-        deliveryCharge: finalDeliveryCharge, // Capped
-        maxSlots: finalMaxSlots,             // Capped
+        deliveryCharge: finalDeliveryCharge,
+        maxSlots: finalMaxSlots,
         menu: menuItems,
-        isActive: false,
-        slotsFilled: 0,
-        lastTurnedOff: 0,
-        timestamp: Date.now()
+        // Keep current status if editing, otherwise default to off for new sessions
+        isActive: existingSession ? existingSession.isActive : false,
+        slotsFilled: existingSession ? existingSession.slotsFilled : 0,
+        lastTurnedOff: existingSession ? existingSession.lastTurnedOff : 0,
+        timestamp: existingSession ? existingSession.timestamp : Date.now()
     };
 
     try {
         if (editingSessionId) {
             await updateDoc(doc(db, "merchants", currentUid, "sessions", editingSessionId), sessionData);
+            
+            // If the session being edited is currently LIVE, update the Global Merchant Doc too
+            if (existingSession && existingSession.isActive) {
+                await updateDoc(doc(db, "users", currentUid), {
+                    fromLocation: sessionData.fromLocation,
+                    toLocation: sessionData.toLocation,
+                    deliveryCharge: sessionData.deliveryCharge,
+                    maxSlots: sessionData.maxSlots
+                });
+            }
         } else {
             await addDoc(collection(db, "merchants", currentUid, "sessions"), sessionData);
         }
@@ -239,6 +251,7 @@ window.saveSession = async () => {
         alert("Error saving session"); 
     }
 };
+
 
 window.deleteSession = async (id) => {
     if (confirm("Delete this session?")) {
