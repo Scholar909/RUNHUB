@@ -13,15 +13,14 @@ import {
     where
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-function getClosestLocationName(merchantLatLng) {
-    if (cachedStaticLocations.length === 0) return "Calculating...";
-
+async function getClosestLocationName(merchantLatLng) {
+    const staticSnap = await getDocs(collection(db, "staticLocations"));
     let closest = null;
     let minDist = Infinity;
 
-    cachedStaticLocations.forEach(loc => {
-        // Standard distance formula
-        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng);
+    staticSnap.forEach(doc => {
+        const loc = doc.data();
+        const dist = Math.hypot(merchantLatLng.lat - loc.lat, merchantLatLng.lng - loc.lng); // rough distance
         if (dist < minDist) {
             minDist = dist;
             closest = loc.name;
@@ -31,13 +30,10 @@ function getClosestLocationName(merchantLatLng) {
     return closest || "N/A";
 }
 
-
 let map;
 let merchantMarkers = {};
 let staticMarkers = {};
 let tempMarker = null;
-let cachedStaticLocations = []; // This will store the buildings in memory
-
 
 // --- Get User Location Before Map Sync ---
 function initMap() {
@@ -120,35 +116,42 @@ function syncMerchants() {
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-        
-            // Only check if lat/lng exist, ignoring the session-based "locationUpdatedAt"
-            if (data.location?.lat && data.location?.lng) {
-                updateMerchantMarker(id, data);
-                renderMerchantCard(id, data);
-            } else if (merchantMarkers[id]) {
-                // Remove marker if they somehow lose their location data
-                map.removeLayer(merchantMarkers[id]);
-                delete merchantMarkers[id];
-            }
+
+          if (data.location?.lat && data.location?.lng) {
+              // NEW: Check location freshness
+              const lastUpdate = data.locationUpdatedAt?.toDate?.() || new Date(0);
+              const ageMs = Date.now() - lastUpdate.getTime();
+          
+              const MAX_AGE = 2 * 60 * 1000; // 2 minutes
+              if (ageMs < MAX_AGE) {
+                  updateMerchantMarker(id, data);
+                  renderMerchantCard(id, data);
+              } else if (merchantMarkers[id]) {
+                  // Remove stale marker
+                  map.removeLayer(merchantMarkers[id]);
+                  delete merchantMarkers[id];
+              }
+          } else if (merchantMarkers[id]) {
+              map.removeLayer(merchantMarkers[id]);
+              delete merchantMarkers[id];
+          }
         });
     });
 }
 
-function updateMerchantMarker(id, data) {
-    const pos = [data.location.lat, data.location.lng];
-    // This is now instant because it doesn't wait for the database
-    const closestName = getClosestLocationName(data.location);
+async function updateMerchantMarker(id, data) {
+    const pos = { lat: data.location.lat, lng: data.location.lng };
+    const closestName = await getClosestLocationName(pos);
 
     if (merchantMarkers[id]) {
-        merchantMarkers[id].setLatLng(pos);
-        merchantMarkers[id].setPopupContent(`<b>${data.username}</b><br>Near: ${closestName}`);
+        merchantMarkers[id].setLatLng([pos.lat, pos.lng]);
+        merchantMarkers[id].bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
     } else {
-        const marker = L.marker(pos).addTo(map)
-            .bindPopup(`<b>${data.username}</b><br>Near: ${closestName}`);
+        const marker = L.marker([pos.lat, pos.lng]).addTo(map)
+            .bindPopup(`<b>${data.username}</b><br>Closest to: ${closestName}`);
         merchantMarkers[id] = marker;
     }
 }
-
 
 // --- 3. Static Location Management (Buildings/Restaurants) ---
 async function syncStaticLocations() {
@@ -157,8 +160,6 @@ async function syncStaticLocations() {
     onSnapshot(q, (snapshot) => {
         const tray = document.getElementById('restaurantFooter');
         tray.innerHTML = '';
-        
-        cachedStaticLocations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         snapshot.docs.forEach(docSnap => {
 
