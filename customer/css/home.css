@@ -136,7 +136,7 @@ h1 {
     margin-bottom: 8px;
 }
 
-.hero-description {
+.hero-description, .empty-state {
     color: var(--text-dim);
     font-size: 0.85rem; /* Reduced size */
     max-width: 500px;
@@ -279,7 +279,7 @@ h1 {
 .btn-filled { background: var(--text-main); color: var(--bg-dark); }
 .w-100 { width: 100%; }
 .highlight { background: linear-gradient(180deg, #fff 0%, var(--text-dim) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.hero-description { color: var(--text-dim); font-size: 0.8rem; margin-top: 5px; margin-bottom: 25px; }
+.hero-description, .empty-state { color: var(--text-dim); font-size: 0.8rem; margin-top: 5px; margin-bottom: 25px; }
 .status-indicator { font-size: 0.6rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
 .dot { width: 5px; height: 5px; background: var(--success); border-radius: 50%; }
 .animate-flicker { animation: flicker 2s infinite ease-in-out; }
