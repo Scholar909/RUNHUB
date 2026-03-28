@@ -19,7 +19,7 @@ const ADMIN_FEE = 25;
 const TRIAL_DAYS = 14;
 const GRACE_HOURS = 24;
 const MAX_SLOTS_LIMIT = 20;
-const MAX_DELIVERY_FEE = 500;
+const MAX_DELIVERY_FEE = 1000;
 
 // --- DOM Elements ---
 const sessionListView = document.getElementById('sessionListView');
