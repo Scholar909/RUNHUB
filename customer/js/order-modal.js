@@ -48,24 +48,32 @@ async function loadMerchantAndMenu() {
             return;
         }
 
-        // --- REAL-TIME LISTENER ---
-        onSnapshot(doc(db, "merchants", merchantId, "sessions", targetSessionId), (sessionDoc) => {
-            if (!sessionDoc.exists()) {
-                alert("This delivery session is no longer available.");
-                window.location.href = "./home.html";
-                return;
-            }
+      // --- Updated REAL-TIME LISTENER in order-modal.js ---
+      onSnapshot(doc(db, "merchants", merchantId, "sessions", targetSessionId), (sessionDoc) => {
+          if (!sessionDoc.exists()) {
+              alert("This delivery session has been deleted.");
+              window.location.href = "./home.html";
+              return;
+          }
+      
+          activeSessionData = sessionDoc.data();
+      
+          // NEW: Immediate check if the merchant toggled the session OFF
+          if (activeSessionData.isActive === false) {
+              alert("This delivery session is no longer active.");
+              window.location.href = "./home.html";
+              return;
+          }
+      
+          if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
+               alert("Sorry, all slots for this session are now full.");
+               window.location.href = "./home.html";
+               return;
+          }
+      
+          renderOrderUI(); 
+      });
 
-            activeSessionData = sessionDoc.data();
-
-            if (activeSessionData.slotsFilled >= activeSessionData.maxSlots) {
-                 alert("Sorry, all slots for this session are now full.");
-                 window.location.href = "./home.html";
-                 return;
-            }
-
-            renderOrderUI(); // Re-renders whenever availability changes
-        });
 
     } catch (e) {
         console.error("Initialization error:", e);
@@ -173,28 +181,31 @@ window.submitOrder = async () => {
         const merchantId = localStorage.getItem("selectedMerchantId");
         const selectedItems = [];
         const itemCheckboxes = document.querySelectorAll('.menu-item-checkbox');
-        let unavailableFound = false;
+        let unavailableItems = [];
 
+        // Check each selected item against the most recent 'activeSessionData'
         itemCheckboxes.forEach(cb => {
             if (cb.checked) {
                 const index = cb.dataset.index;
                 const item = activeSessionData.menu[index];
                 
-                // Final Availability Check
+                // If merchant toggled this specific item off while customer was on the page
                 if (item.available === false) {
-                    unavailableFound = true;
-                    alert(`Sorry, "${item.name}" was just marked unavailable.`);
+                    unavailableItems.push(item.name);
+                } else {
+                    selectedItems.push({
+                        name: item.name,
+                        price: item.price,
+                        qty: parseInt(document.getElementById(`qty-${index}`).innerText)
+                    });
                 }
-
-                selectedItems.push({
-                    name: item.name,
-                    price: item.price,
-                    qty: parseInt(document.getElementById(`qty-${index}`).innerText)
-                });
             }
         });
 
-        if (unavailableFound) {
+        // If any selected items are now unavailable, block the order
+        if (unavailableItems.length > 0) {
+            alert(`The following items are no longer available: ${unavailableItems.join(", ")}. Your menu will now update.`);
+            renderOrderUI(); // Refresh the UI to remove the unavailable items
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
             return;
