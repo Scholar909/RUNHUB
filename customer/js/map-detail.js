@@ -109,13 +109,11 @@ function syncMerchantLiveLocation() {
 }
 
 function updateClosestAndETA(mLoc, mode) {
-    console.log("Merchant:", mLoc);
-    console.log("Customer:", customerLocation);
-
     // 1. Handle Closest Static Location (UI Only)
     let closest = null;
     let minDist = Infinity;
     staticLocations.forEach(loc => {
+        // Simple distance check for UI context
         const dist = Math.hypot(mLoc.lat - loc.lat, mLoc.lng - loc.lng);
         if (dist < minDist) {
             minDist = dist;
@@ -124,12 +122,13 @@ function updateClosestAndETA(mLoc, mode) {
     });
     document.getElementById('closestLoc').innerText = closest || "In Transit";
 
-    // 2. Fix ETA Logic
+    // 2. Sync ETA Logic with track-order.js
     if (!customerLocation) {
         document.getElementById('timeLeft').innerText = "Syncing...";
         return;
     }
 
+    // Use the Haversine distance to match track-order.js
     const distanceKm = getDistanceKm(
         mLoc.lat,
         mLoc.lng,
@@ -139,16 +138,16 @@ function updateClosestAndETA(mLoc, mode) {
 
     const distanceMeters = distanceKm * 1000;
 
-    // Consistency Check: Use the same 30m threshold as track-order.js
+    // EXACT SAME THRESHOLDS AS track-order.js
+    // 1. Proximity check (30 meters)
     if (distanceMeters < 30) {
-        document.getElementById('timeLeft').innerText = "Arrived";
+        document.getElementById('timeLeft').innerText = "Arriving now";
         return;
     }
 
-    // Calculate time based on mode
-    // Walking: ~80m/min | Bike/Car: ~400m/min (25km/h)
-    const speedInMetersPerMin = (mode === "trekking") ? 80 : 416; 
-    const minutes = Math.ceil(distanceMeters / speedInMetersPerMin);
+    // 2. Walking time calculation (80 meters per minute)
+    // Note: We ignore 'mode' here to maintain 1:1 parity with your tracking grid
+    const minutes = Math.ceil(distanceMeters / 80);
 
     if (minutes <= 1) {
         document.getElementById('timeLeft').innerText = "Arriving now";
