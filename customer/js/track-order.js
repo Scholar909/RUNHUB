@@ -108,3 +108,10 @@ function initTracking(uid) {
         });
     });
 }
+
+window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
+
+window.handleLogout = async () => {
+    await signOut(auth);
+    window.location.href = "./admin-login.html";
+};
