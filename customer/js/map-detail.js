@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase-config.js";
-import { doc, onSnapshot, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { doc, onSnapshot, getDoc, collection, getDocs, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const params = new URLSearchParams(window.location.search);
 const orderId = params.get('id');
@@ -136,7 +136,7 @@ function syncMerchantLiveLocation() {
 function updateClosestAndETA(mLoc) {
     // --- 1. FIND CLOSEST STATIC LOCATION ---
     let closestName = "In Transit";
-    let minDist = Infinity;
+    let minDist = 100;
 
     cachedStaticLocations.forEach(loc => {
         const dist = getDistance(mLoc.lat, mLoc.lng, loc.lat, loc.lng);
@@ -146,6 +146,12 @@ function updateClosestAndETA(mLoc) {
         }
     });
     document.getElementById('closestLoc').innerText = closestName;
+    
+    // Update UI only if different (Avoid flickering)
+    const closestEl = document.getElementById('closestLoc');
+    if (closestEl.innerText !== closestName) {
+        closestEl.innerText = closestName;
+    }
 
     // --- 2. CALCULATE ETA TO CUSTOMER ---
     if (!customerLocation) {
@@ -164,15 +170,9 @@ function updateClosestAndETA(mLoc) {
     if (distanceMeters < 30) {
         document.getElementById('timeLeft').innerText = "Arriving now";
         return;
-    }
-
-    // Walking speed: 80 meters per minute (matches your logic)
-    const minutes = Math.ceil(distanceMeters / 80);
-
-    if (minutes <= 1) {
-        document.getElementById('timeLeft').innerText = "Arrived";
     } else {
-        document.getElementById('timeLeft').innerText = `${minutes} mins`;
+        const minutes = Math.ceil(distanceMeters / 80);
+        document.getElementById('timeLeft').innerText = (minutes <= 1) ? "Arriving now" : `${minutes} mins`;
     }
 }
 
