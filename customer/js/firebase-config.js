@@ -26,26 +26,28 @@ onAuthStateChanged(auth, (user) => {
         if (securityListener) securityListener();
 
         securityListener = onSnapshot(userRef, (snapshot) => {
-            // Check if user is on a restricted page (login/signup)
-            const isAuthPage = window.location.pathname.includes("sign-login.html") || 
-                               window.location.pathname.includes("index.html");
-
+            // 1. Check if the document truly doesn't exist on the server
+            // We check !snapshot.exists() AND make sure it's not just a local "guess"
             if (!snapshot.exists()) {
-                // ONLY alert if they aren't already on the login page
-                if (!isAuthPage) {
+                // Only trigger if the state is "synchronized" with the server
+                if (!snapshot.metadata.hasPendingWrites && !snapshot.metadata.fromCache) {
                     handleSecurityExit("Your account no longer exists. Please contact admin.");
+                    return;
                 }
-                return;
+                return; // Ignore temporary "null" states during initial sync
             }
-
+        
             const userData = snapshot.data();
             
-            // Explicitly check for "Locked" status
-            if (userData.status === "Locked") {
+            // 2. Explicit status check
+            if (userData && userData.status === "Locked") {
                 handleSecurityExit("Your account has been BLOCKED. Please contact support.");
             }
         }, (error) => {
-            console.error("Security Monitor Error:", error);
+            // Ignore permission-denied errors often caused by the document being deleted
+            if (error.code === 'permission-denied') {
+                handleSecurityExit("Access denied. Your account may have been removed.");
+            }
         });
     } else {
         // If user logs out, clean up the listener
