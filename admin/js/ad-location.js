@@ -370,3 +370,20 @@ function filterCards(query) {
         }
     });
 }
+
+async function softRefreshMerchants() {
+    const q = query(collection(db, "users"), where("role", "==", "merchant"));
+    const snapshot = await getDocs(q); // force fresh read
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const id = doc.id;
+
+        if (data.location?.lat && data.location?.lng) {
+            updateMerchantMarker(id, data);
+        }
+    });
+}
+
+setInterval(softRefreshMerchants, 60000);
+map.on('dragend', softRefreshMerchants);
