@@ -25,6 +25,19 @@ function startStaticLocationSync() {
     });
 }
 
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; 
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; 
+}
+
 // Optimized Closest Location Finder
 function getClosestLocationName(merchantLat, merchantLng) {
     if (cachedStaticLocations.length === 0) return "Loading...";
@@ -48,19 +61,6 @@ let map;
 let merchantMarkers = {};
 let staticMarkers = {};
 let tempMarker = null;
-
-function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; 
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; 
-}
 
 
 // --- Get User Location Before Map Sync ---
@@ -134,7 +134,6 @@ function syncMerchants() {
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-            activeIds.add(id);
         
             const lastUpdate = data.locationUpdatedAt?.toDate?.();
             const now = new Date();
@@ -142,9 +141,10 @@ function syncMerchants() {
             const isFresh = lastUpdate && (now - lastUpdate) < (5 * 60 * 1000); // 5 mins
             
             if (data.location?.lat && data.location?.lng && isFresh) {
+              activeIds.add(id);
                 // This now happens in real-time as the merchant moves
-                updateMerchantMarker(id, data, isFresh);
-                renderMerchantCard(id, data);
+              updateMerchantMarker(id, data, isFresh);
+              renderMerchantCard(id, data);
             }
         });
 
@@ -158,14 +158,14 @@ function syncMerchants() {
     });
 }
 
-function updateMerchantMarker(id, data) {
+function updateMerchantMarker(id, data, isFresh) {
     const { lat, lng } = data.location;
     const closestName = getClosestLocationName(lat, lng);
     
     if (!lat || !lng) return;
     
     const icon = L.icon({
-        iconUrl: isFresh ? 'green-dot.png' : 'red-dot.png',
+        iconUrl: isFresh ? '/start/green-dot.png' : '/start/red-dot.png',
         iconSize: [25, 25]
     });
 
