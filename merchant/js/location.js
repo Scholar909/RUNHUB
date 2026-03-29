@@ -88,7 +88,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 let lastSavedLoc = null; // Track last coordinates written to DB
-const MOVE_THRESHOLD_METERS = 10; // Only update if moved 10m
+const MOVE_THRESHOLD_METERS = 5; // Only update if moved 10m
 
 function startLocationMonitoring() {
     if (!isMonitoringActive) {
