@@ -128,15 +128,22 @@ function syncMerchants() {
     
     onSnapshot(q, (snapshot) => {
         const activeIds = new Set();
+        const tray = document.getElementById('merchantFooter');
+        tray.innerHTML = ''; // 🔥 CLEAR BEFORE RE-ADDING
         
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
             activeIds.add(id);
         
-            if (data.location?.lat && data.location?.lng) {
+            const lastUpdate = data.locationUpdatedAt?.toDate?.();
+            const now = new Date();
+            
+            const isFresh = lastUpdate && (now - lastUpdate) < (5 * 60 * 1000); // 5 mins
+            
+            if (data.location?.lat && data.location?.lng && isFresh) {
                 // This now happens in real-time as the merchant moves
-                updateMerchantMarker(id, data);
+                updateMerchantMarker(id, data, isFresh);
                 renderMerchantCard(id, data);
             }
         });
@@ -154,13 +161,22 @@ function syncMerchants() {
 function updateMerchantMarker(id, data) {
     const { lat, lng } = data.location;
     const closestName = getClosestLocationName(lat, lng);
+    
+    if (!lat || !lng) return;
+    
+    const icon = L.icon({
+        iconUrl: isFresh ? 'green-dot.png' : 'red-dot.png',
+        iconSize: [25, 25]
+    });
 
     if (merchantMarkers[id]) {
         merchantMarkers[id].setLatLng([lat, lng]);
+        
+        merchantMarkers[id].setIcon(icon);
         // Update the popup content dynamically in case they moved closer to a new spot
         merchantMarkers[id].setPopupContent(`<b>${data.username}</b><br>📍 Near: ${closestName}`);
     } else {
-        const marker = L.marker([lat, lng]).addTo(map)
+        const marker = L.marker([lat, lng], {icon}).addTo(map)
             .bindPopup(`<b>${data.username}</b><br>📍 Near: ${closestName}`);
         merchantMarkers[id] = marker;
     }
