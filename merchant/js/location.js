@@ -88,7 +88,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 let lastSavedLoc = null; // Track last coordinates written to DB
-const MOVE_THRESHOLD_METERS = 5; // Only update if moved 10m
+const MOVE_THRESHOLD_METERS = 10; // Only update if moved 10m
 
 function startLocationMonitoring() {
     if (!isMonitoringActive) {
@@ -120,10 +120,10 @@ function startLocationMonitoring() {
                 // 1. We have no previous record OR
                 // 2. Merchant moved more than 10 meters OR
                 // 3. It's been more than 5 minutes since last update (heartbeat)
-                const FIVE_MINS = 5 * 60 * 1000;
-                const timeSinceLastUpdate = lastSavedLoc ? (now - lastSavedLoc.time) : Infinity;
+                    const THREE_MINS = 3 * 60 * 1000;
+                    const timeSinceLastUpdate = lastSavedLoc ? (now - lastSavedLoc.time) : Infinity;
 
-                if (!lastSavedLoc || distanceMoved >= MOVE_THRESHOLD_METERS || timeSinceLastUpdate > FIVE_MINS) {
+                    if (!lastSavedLoc || (timeSinceLastUpdate >= THREE_MINS && distanceMoved >= MOVE_THRESHOLD_METERS)) {
                     
                     lastSavedLoc = { lat, lng, time: now }; // Update local cache
 
@@ -133,7 +133,7 @@ function startLocationMonitoring() {
                         lastSeen: serverTimestamp() 
                     }).catch(err => console.error("Firestore update failed:", err));
                     
-                    console.log(`Location updated: Moved ${Math.round(distanceMoved)}m`);
+                    console.log(`Location saved after ${Math.round(timeSinceLastUpdate / 1000)}s, moved ${Math.round(distanceMoved)}m`);
                 }
                 // --- THROTTLE LOGIC END ---
             },
@@ -209,6 +209,8 @@ onAuthStateChanged(auth, user => {
         }
         return;
     }
+    
+    startLocationMonitoring();
 
     if (!enforcementListener) {
         const userRef = doc(db, "users", user.uid);
