@@ -49,25 +49,64 @@ async function initPage() {
 }
 
 async function syncOrderData() {
-    onSnapshot(doc(db, "orders", orderId), async (snapshot) => {
+    onSnapshot(doc(db, "orders", orderId), (snapshot) => {
         if (!snapshot.exists()) return;
         const data = snapshot.data();
-        
         document.getElementById('orderRoute').innerText = data.route || "Campus Delivery";
         document.getElementById('itemsSummary').innerText = data.items.map(i => `${i.qty}x ${i.name}`).join(", ");
 
-        // ✅ Use stored location if available
+        // ✅ FIX: Use ONLY the saved location from the order
         if (data.customerLocation) {
             customerLocation = data.customerLocation;
-        } else {
-            // If no stored location, try to get live location
-            try {
-                customerLocation = await getLiveLocation();
-            } catch (err) {
-                console.warn("Customer location unavailable:", err);
-            }
+            updateCustomerMarker(customerLocation);
+        }
+        
+        if (data.customerId) {
+            getDoc(doc(db, "users", data.customerId)).then(userSnap => {
+                if (userSnap.exists()) {
+                    const uData = userSnap.data();
+                    const name = uData.username || "Customer";
+                    document.getElementById('custName').innerText = `@${name}`;
+                    document.getElementById('custInitials').innerText = name.substring(0, 2).toUpperCase();
+                }
+            });
         }
     });
+}
+
+let customerMarker;
+function updateCustomerMarker(loc) {
+    const pos = [loc.lat, loc.lng];
+    
+    // Custom HTML-based icon for the customer
+    const customerIcon = L.divIcon({
+        className: 'custom-customer-pin',
+        html: `<div class="pin-pulse"></div><div class="pin-dot"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    if (customerMarker) {
+        customerMarker.setLatLng(pos);
+    } else {
+        customerMarker = L.marker(pos, { icon: customerIcon }).addTo(map)
+            .bindPopup("<b>Delivery Point</b><br>You are here")
+            .openPopup();
+            
+        // Center map between Merchant and Customer initially
+        map.panTo(pos);
+    }
+    
+    let closestToCustomer = "Campus";
+    let minDist = Infinity;
+    cachedStaticLocations.forEach(sLoc => {
+        const dist = getDistance(loc.lat, loc.lng, sLoc.lat, sLoc.lng);
+        if (dist < minDist) {
+            minDist = dist;
+            closestToCustomer = sLoc.name;
+        }
+    });
+    document.getElementById('custClosestLoc').innerText = `Delivery Point: ${closestToCustomer}`;
 }
 
 function getLiveLocation() {
@@ -215,35 +254,13 @@ function showLiveTracker(text) {
     banner.innerText = text;
 }
 
+window.zoomToMarker = (target) => {
+    if (target === 'customer' && customerLocation) {
+        map.flyTo([customerLocation.lat, customerLocation.lng], 18);
+    } else if (target === 'merchant' && merchantMarker) {
+        map.flyTo(merchantMarker.getLatLng(), 18);
+    }
+};
+
+
 initPage();
-
-// Replace the setInterval at the bottom of map-detail.js with this:
-// Replace the watchPosition at the bottom of the customer tracking page
-if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(async (pos) => {
-        const coords = { 
-            lat: pos.coords.latitude, 
-            lng: pos.coords.longitude 
-        };
-        
-        // Update local variable for UI math
-        customerLocation = coords;
-
-        // ✅ PUSH TO FIREBASE: Save to the specific order document
-        // This allows the merchant's app to see exactly where the customer is
-        if (orderId) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    customerLocation: coords,
-                    lastCustomerUpdate: serverTimestamp()
-                });
-            } catch (err) {
-                console.error("Failed to sync customer location to Firebase:", err);
-            }
-        }
-    }, (err) => console.warn("Location update failed", err), {
-        enableHighAccuracy: true,
-        maximumAge: 0
-    });
-}
-

@@ -22,32 +22,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 function initTracking(uid) {
-    let liveCustomerLoc = null;
-
-    // 1. Update live customer position for all active orders
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(async (pos) => {
-            liveCustomerLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            
-            const qActive = query(
-                collection(db, "orders"), 
-                where("customerId", "==", uid), 
-                where("status", "in", ["approved", "picked_up"])
-            );
-            
-            const snap = await getDocs(qActive);
-            const batch = [];
-            snap.forEach(d => {
-                batch.push(updateDoc(d.ref, { 
-                    customerLocation: liveCustomerLoc, 
-                    lastCustomerUpdate: serverTimestamp() 
-                }));
-            });
-            await Promise.all(batch);
-        }, null, { enableHighAccuracy: true });
-    }
-
-    // 2. Listen for order updates
+    // 1. Listen for order updates (Only approved or picked_up)
     const q = query(
         collection(db, "orders"), 
         where("customerId", "==", uid), 
@@ -70,27 +45,25 @@ function initTracking(uid) {
             card.id = `order-card-${orderId}`;
             grid.appendChild(card);
 
-            // Listen to the Merchant's live location for this specific card
+            // 2. Listen to the Merchant's live location
             onSnapshot(doc(db, "users", orderData.merchantId), (mSnap) => {
                 const mData = mSnap.data();
-                if (!mData?.location) return;
+                if (!mData?.location || !orderData.customerLocation) return;
 
-                // Use current live location OR the last saved customer location from DB
-                const cLat = liveCustomerLoc?.lat || orderData.customerLocation?.lat;
-                const cLng = liveCustomerLoc?.lng || orderData.customerLocation?.lng;
+                // ✅ FIX: Use ONLY the saved location from the moment of order
+                const cLat = orderData.customerLocation.lat;
+                const cLng = orderData.customerLocation.lng;
 
-                let etaText = "Syncing...";
+                let etaText = "Calculating...";
                 
-                if (cLat && cLng) {
-                    const distM = getDistance(mData.location.lat, mData.location.lng, cLat, cLng);
-                    
-                    // ✅ SYNCED ETA LOGIC (Exactly 30m threshold and 80m/min speed)
-                    if (distM < 30) {
-                        etaText = "Arriving now";
-                    } else {
-                        const mins = Math.ceil(distM / 80);
-                        etaText = mins <= 1 ? "Arriving now" : `${mins} mins`;
-                    }
+                const distM = getDistance(mData.location.lat, mData.location.lng, cLat, cLng);
+                
+                // ✅ SYNCED ETA LOGIC (Matches Map-Detail exactly)
+                if (distM < 30) {
+                    etaText = "Arriving now";
+                } else {
+                    const mins = Math.ceil(distM / 80);
+                    etaText = mins <= 1 ? "Arriving now" : `${mins} mins`;
                 }
 
                 card.innerHTML = `
@@ -108,6 +81,7 @@ function initTracking(uid) {
         });
     });
 }
+
 
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
 
