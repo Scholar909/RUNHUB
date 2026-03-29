@@ -7,6 +7,13 @@ onAuthStateChanged(auth, (user) => {
     initTracking(user.uid);
 });
 
+window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
+
+window.handleLogout = async () => {
+    await signOut(auth);
+    window.location.href = "sign-login.html";
+};
+
 // ✅ HIGH-ACCURACY HAVERSINE (MATCHES MAP-DETAIL.JS EXACTLY)
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // Meters
@@ -81,11 +88,3 @@ function initTracking(uid) {
         });
     });
 }
-
-
-window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
-
-window.handleLogout = async () => {
-    await signOut(auth);
-    window.location.href = "./admin-login.html";
-};
