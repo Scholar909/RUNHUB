@@ -370,3 +370,17 @@ function filterCards(query) {
         }
     });
 }
+
+// This creates a "heartbeat" that triggers your existing sync every 25 seconds
+setInterval(() => {
+    console.log("Auto-refreshing merchant positions...");
+    
+    // 1. Clear the UI tray so it doesn't just append duplicates
+    const tray = document.getElementById('merchantFooter');
+    if (tray) tray.innerHTML = '';
+    
+    // 2. Re-trigger your existing sync function
+    syncMerchants();
+    
+}, 25000); // 25000ms = 25 seconds
+
