@@ -123,43 +123,33 @@ function initMap() {
 }
 
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
-let merchantListener = null; // Add this at the top with your other lets
-
 function syncMerchants() {
-    // If a listener already exists, stop it before starting a new one
-    if (merchantListener) {
-        merchantListener(); 
-    }
-
     const q = query(collection(db, "users"), where("role", "==", "merchant"));
     
-    // Assign the snapshot to the variable
-    merchantListener = onSnapshot(q, (snapshot) => {
-        const tray = document.getElementById('merchantFooter');
-        if (tray) tray.innerHTML = ''; // Clear tray whenever data actually changes
-        
+    onSnapshot(q, (snapshot) => {
         const activeIds = new Set();
+        
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
             activeIds.add(id);
+        
             if (data.location?.lat && data.location?.lng) {
+                // This now happens in real-time as the merchant moves
                 updateMerchantMarker(id, data);
                 renderMerchantCard(id, data);
             }
         });
 
+        // Cleanup markers for logged-out merchants
         Object.keys(merchantMarkers).forEach(id => {
             if (!activeIds.has(id)) {
                 map.removeLayer(merchantMarkers[id]);
                 delete merchantMarkers[id];
             }
         });
-    }, (error) => {
-        console.error("Snapshot error:", error);
     });
 }
-
 
 function updateMerchantMarker(id, data) {
     const { lat, lng } = data.location;
