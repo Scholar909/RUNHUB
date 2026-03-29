@@ -162,6 +162,7 @@ function renderOrderUI() {
     });
 
     updateTotal();
+    startPaymentTimer(180);
 }
 
 // Global functions for HTML onclicks
@@ -204,6 +205,7 @@ window.updateTotal = () => {
 
 window.submitOrder = async () => {
     const submitBtn = document.querySelector('.btn-filled');
+    if (submitBtn.disabled) return; 
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.6';
 
@@ -303,6 +305,38 @@ async function getCustomerLocation() {
         );
     });
 }
+
+let countdownInterval;
+
+function startPaymentTimer(duration) {
+    const submitBtn = document.querySelector('.btn-filled');
+    if (!submitBtn) return;
+
+    // Clear any existing interval to prevent overlapping
+    clearInterval(countdownInterval);
+
+    let timer = duration;
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+    submitBtn.style.cursor = 'not-allowed';
+
+    countdownInterval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+        
+        // Update button text to show remaining time
+        submitBtn.innerText = `Confirm in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (--timer < 0) {
+            clearInterval(countdownInterval);
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.innerText = "Pay and Confirm Order"; // Original text
+        }
+    }, 1000);
+}
+
 
 document.querySelector('.close-btn').onclick = () => window.location.href = "./home.html";
 document.querySelector('.btn-outline').onclick = () => window.location.href = "./home.html";
