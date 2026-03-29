@@ -123,33 +123,43 @@ function initMap() {
 }
 
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
+let merchantListener = null; // Add this at the top with your other lets
+
 function syncMerchants() {
+    // If a listener already exists, stop it before starting a new one
+    if (merchantListener) {
+        merchantListener(); 
+    }
+
     const q = query(collection(db, "users"), where("role", "==", "merchant"));
     
-    onSnapshot(q, (snapshot) => {
-        const activeIds = new Set();
+    // Assign the snapshot to the variable
+    merchantListener = onSnapshot(q, (snapshot) => {
+        const tray = document.getElementById('merchantFooter');
+        if (tray) tray.innerHTML = ''; // Clear tray whenever data actually changes
         
+        const activeIds = new Set();
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
             activeIds.add(id);
-        
             if (data.location?.lat && data.location?.lng) {
-                // This now happens in real-time as the merchant moves
                 updateMerchantMarker(id, data);
                 renderMerchantCard(id, data);
             }
         });
 
-        // Cleanup markers for logged-out merchants
         Object.keys(merchantMarkers).forEach(id => {
             if (!activeIds.has(id)) {
                 map.removeLayer(merchantMarkers[id]);
                 delete merchantMarkers[id];
             }
         });
+    }, (error) => {
+        console.error("Snapshot error:", error);
     });
 }
+
 
 function updateMerchantMarker(id, data) {
     const { lat, lng } = data.location;
@@ -370,17 +380,3 @@ function filterCards(query) {
         }
     });
 }
-
-// This creates a "heartbeat" that triggers your existing sync every 25 seconds
-setInterval(() => {
-    console.log("Auto-refreshing merchant positions...");
-    
-    // 1. Clear the UI tray so it doesn't just append duplicates
-    const tray = document.getElementById('merchantFooter');
-    if (tray) tray.innerHTML = '';
-    
-    // 2. Re-trigger your existing sync function
-    syncMerchants();
-    
-}, 25000); // 25000ms = 25 seconds
-
