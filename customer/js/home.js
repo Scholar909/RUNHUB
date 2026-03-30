@@ -75,7 +75,7 @@ function renderMerchantGrid() {
     });
 
     if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state">No merchants available for this route.</div>`;
+        grid.innerHTML = `<div class="empty-state">No merchants available.</div>`;
         return;
     }
 
