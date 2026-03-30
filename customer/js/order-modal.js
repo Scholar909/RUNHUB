@@ -1,9 +1,9 @@
 import { auth, db } from "./firebase-config.js";
-import { sendWhatsAppAlert } from "./send-alert.js"; 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     doc, getDoc, collection, addDoc, updateDoc, increment, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
 
 // --- State ---
 let merchantData = null;
@@ -162,7 +162,7 @@ function renderOrderUI() {
     });
 
     updateTotal();
-    startPaymentTimer(180);
+    startPaymentTimer(120);
 }
 
 // Global functions for HTML onclicks
@@ -282,7 +282,6 @@ window.submitOrder = async () => {
         const alertSnap = await getDoc(doc(db, "merchant_alerts", merchantId));
         if (alertSnap.exists() && alertSnap.data().enabled) {
             const msg = `*New Order - NOVAHUB*\nID: ${orderRef.id}\nCustomer: @${customerData.username || 'Guest'}\nTotal: ₦${totalAmount.toLocaleString()}\nRoute: ${orderObj.route}`;
-            await sendWhatsAppAlert(merchantId, msg, "merchant_alerts");
         }
 
         alert("Order Sent! Awaiting Merchant Approval.");
