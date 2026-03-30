@@ -123,32 +123,31 @@ function initMap() {
 }
 
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
+// --- 2. Live Merchant Sync (Simplified: No status dots) ---
 function syncMerchants() {
+    // Querying all users where role is merchant
     const q = query(collection(db, "users"), where("role", "==", "merchant"));
     
     onSnapshot(q, (snapshot) => {
         const activeIds = new Set();
         const tray = document.getElementById('merchantFooter');
-        tray.innerHTML = ''; // 🔥 CLEAR BEFORE RE-ADDING
+        
+        // Clear the tray to prevent duplicates
+        tray.innerHTML = ''; 
         
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-        
-            const lastUpdate = data.locationUpdatedAt?.toDate?.();
-            const now = new Date();
-            
-            const isFresh = lastUpdate && (now - lastUpdate) < (5 * 60 * 1000); // 5 mins
-            
-            if (data.location?.lat && data.location?.lng && isFresh) {
-              activeIds.add(id);
-                // This now happens in real-time as the merchant moves
-              updateMerchantMarker(id, data, isFresh);
-              renderMerchantCard(id, data);
+
+            // Only show if they actually have location data
+            if (data.location && data.location.lat && data.location.lng) {
+                activeIds.add(id);
+                updateMerchantMarker(id, data);
+                renderMerchantCard(id, data);
             }
         });
 
-        // Cleanup markers for logged-out merchants
+        // Cleanup: Remove markers for merchants who no longer exist or lost location
         Object.keys(merchantMarkers).forEach(id => {
             if (!activeIds.has(id)) {
                 map.removeLayer(merchantMarkers[id]);
@@ -158,29 +157,50 @@ function syncMerchants() {
     });
 }
 
-function updateMerchantMarker(id, data, isFresh) {
+function updateMerchantMarker(id, data) {
     const { lat, lng } = data.location;
     const closestName = getClosestLocationName(lat, lng);
     
-    if (!lat || !lng) return;
-    
-    const icon = L.icon({
-        iconUrl: isFresh ? '/start/green-dot.png' : '/start/red-dot.png',
-        iconSize: [25, 25]
-    });
+    // Format the timestamp
+    let lastSeenText = "Just now";
+    if (data.lastSeen) {
+        const date = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
+        lastSeenText = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const popupContent = `
+        <b>${data.username || 'Merchant'}</b><br>
+        📍 Near: ${closestName}<br>
+        🕒 Last seen: ${lastSeenText}
+    `;
 
     if (merchantMarkers[id]) {
         merchantMarkers[id].setLatLng([lat, lng]);
-        
-        merchantMarkers[id].setIcon(icon);
-        // Update the popup content dynamically in case they moved closer to a new spot
-        merchantMarkers[id].setPopupContent(`<b>${data.username}</b><br>📍 Near: ${closestName}`);
+        merchantMarkers[id].setPopupContent(popupContent);
     } else {
-        const marker = L.marker([lat, lng], {icon}).addTo(map)
-            .bindPopup(`<b>${data.username}</b><br>📍 Near: ${closestName}`);
+        const marker = L.marker([lat, lng]).addTo(map)
+            .bindPopup(popupContent);
         merchantMarkers[id] = marker;
     }
 }
+
+
+function renderMerchantCard(id, data) {
+    const tray = document.getElementById('merchantFooter');
+    if (!tray) return;
+
+    const card = document.createElement('div');
+    card.className = 'merchant-card';
+    card.innerHTML = `
+        <img src="${data.profilePhoto || 'img/default.png'}" style="width:30px; height:30px; border-radius:50%;">
+        <span>${data.username || 'Merchant'}</span>
+    `;
+    
+    // Zoom to merchant on click
+    card.onclick = () => map.flyTo([data.location.lat, data.location.lng], 18);
+    tray.appendChild(card);
+}
+
 
 // --- 3. Static Location Management (Buildings/Restaurants) ---
 async function syncStaticLocations() {
@@ -277,20 +297,6 @@ document.getElementById('confirmBtn').onclick = () => {
         cancelLocationPlacement();
     }
 };
-
-// --- 5. UI Helpers ---
-function renderMerchantCard(id, data) {
-    const tray = document.getElementById('merchantFooter');
-    const card = document.createElement('div');
-    card.className = 'merchant-card';
-    card.innerHTML = `
-        <img src="${data.profilePhoto || 'img/default.png'}">
-        <span>${data.username}</span>
-    `;
-    // Rule: Click tray card to zoom into merchant pin
-    card.onclick = () => map.flyTo([data.location.lat, data.location.lng], 18);
-    tray.appendChild(card);
-}
 
 async function editOrDeleteLocation(id, data) {
     const action = prompt(
