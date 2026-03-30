@@ -125,29 +125,30 @@ function initMap() {
 // --- 2. Live Merchant Sync (Rule: Real-time pins for logged-in merchants) ---
 // --- 2. Live Merchant Sync (Simplified: No status dots) ---
 function syncMerchants() {
-    // Querying all users where role is merchant
     const q = query(collection(db, "users"), where("role", "==", "merchant"));
     
     onSnapshot(q, (snapshot) => {
         const activeIds = new Set();
         const tray = document.getElementById('merchantFooter');
-        
-        // Clear the tray to prevent duplicates
         tray.innerHTML = ''; 
         
         snapshot.docs.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
 
-            // Only show if they actually have location data
-            if (data.location && data.location.lat && data.location.lng) {
+            // --- OFFLINE CHECK ---
+            const lastSeenDate = data.lastSeen?.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen || 0);
+            const isOffline = (new Date() - lastSeenDate) > (60 * 60 * 1000);
+
+            // Only show if they have location AND aren't offline for > 60 mins
+            if (data.location?.lat && data.location?.lng && !isOffline) {
                 activeIds.add(id);
                 updateMerchantMarker(id, data);
                 renderMerchantCard(id, data);
             }
         });
 
-        // Cleanup: Remove markers for merchants who no longer exist or lost location
+        // Cleanup: Remove markers for merchants who went offline
         Object.keys(merchantMarkers).forEach(id => {
             if (!activeIds.has(id)) {
                 map.removeLayer(merchantMarkers[id]);
@@ -161,28 +162,40 @@ function updateMerchantMarker(id, data) {
     const { lat, lng } = data.location;
     const closestName = getClosestLocationName(lat, lng);
     
-    // Format the timestamp
+    // --- TIME CALCULATION ---
     let lastSeenText = "Just now";
+    let isStale = false;
+
     if (data.lastSeen) {
-        const date = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
-        lastSeenText = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const lastSeenDate = data.lastSeen.toDate ? data.lastSeen.toDate() : new Date(data.lastSeen);
+        const now = new Date();
+        const diffInMinutes = Math.floor((now - lastSeenDate) / 60000);
+
+        if (diffInMinutes >= 60) {
+            lastSeenText = "Offline";
+            isStale = true;
+        } else if (diffInMinutes > 0) {
+            lastSeenText = `${diffInMinutes}m ago`;
+        }
     }
 
     const popupContent = `
         <b>${data.username || 'Merchant'}</b><br>
         📍 Near: ${closestName}<br>
-        🕒 Last seen: ${lastSeenText}
+        🕒 Status: <span style="color: ${isStale ? '#ff3b30' : '#34c759'}">${lastSeenText}</span>
     `;
 
     if (merchantMarkers[id]) {
         merchantMarkers[id].setLatLng([lat, lng]);
         merchantMarkers[id].setPopupContent(popupContent);
+        // Optional: Reduce opacity of the marker if offline
+        merchantMarkers[id].setOpacity(isStale ? 0.5 : 1.0);
     } else {
-        const marker = L.marker([lat, lng]).addTo(map)
-            .bindPopup(popupContent);
+        const marker = L.marker([lat, lng]).addTo(map).bindPopup(popupContent);
         merchantMarkers[id] = marker;
     }
 }
+
 
 
 function renderMerchantCard(id, data) {
