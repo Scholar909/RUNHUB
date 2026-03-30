@@ -1,5 +1,4 @@
 import { auth, db } from "./firebase-config.js";
-import { sendWhatsAppAlert } from "./send-alerts.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     collection, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp , orderBy, increment, runTransaction
@@ -130,13 +129,6 @@ window.approveOrder = async (orderId) => {
             });
         });
 
-        // 2. Notification (Outside transaction, only runs once on success)
-        const message = `*Order Approval Alert — NOVAHUB*
-Order ID: ${orderId}
-Status: Approved & In Transit
-Time: ${new Date().toLocaleTimeString()}`;
-
-        await sendWhatsAppAlert(customerId, message);
         alert(`Order Approved! Customer Notified.`);
         
     } catch (error) {
@@ -187,14 +179,7 @@ window.confirmRefund = async () => {
             processedAt: serverTimestamp(),
             declinedAt: serverTimestamp()
         });
-        
-        const message = `*Order Rejected — NOVAHUB*
-        Order ID: ${orderToDecline.id}
-        Total: ₦${orderToDecline.total.toLocaleString()}
-        Status: Kindly confirm if you have been refunded. If not, it should arrive within 30 mins.`;
-        
-        await sendWhatsAppAlert(orderToDecline.customerId, message);
-        
+
         closeModal();
         alert("Order declined and Customer notified.");
     } catch (error) {

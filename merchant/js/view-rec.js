@@ -1,5 +1,4 @@
 import { auth, db } from "./firebase-config.js";
-import { sendWhatsAppAlert } from "./send-alerts.js";
 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
@@ -176,17 +175,6 @@ window.markOrderDelivered = async () => {
             status: "delivered",
             deliveredAt: serverTimestamp()
         });
-
-        // 2. Prepare Message
-        const message = `*Order Delivered — NOVAHUB*
-Order ID: ${currentOrderId.slice(-5).toUpperCase()}
-Total: ₦${orderData.total.toLocaleString()}
-
-Thank you for using NOVAHUB! Your delivery is complete.`;
-
-        // 3. Send Alert
-        console.log("Attempting to alert customer UID:", customerId);
-        await sendWhatsAppAlert(customerId, message);
 
         alert("Order completed and customer notified!");
         window.location.href = "./history.html"; 
