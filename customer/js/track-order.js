@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase-config.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 onAuthStateChanged(auth, (user) => {
@@ -7,11 +7,20 @@ onAuthStateChanged(auth, (user) => {
     initTracking(user.uid);
 });
 
-window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
-
 window.handleLogout = async () => {
-    await signOut(auth);
-    window.location.href = "sign-login.html";
+    try {
+        await signOut(auth);
+        // The onAuthStateChanged listener will handle the redirection, 
+        // but keeping this here for safety:
+        window.location.href = "sign-login.html";
+    } catch (error) {
+        console.error("Logout failed:", error);
+        alert("Error logging out. Please try again.");
+    }
+};
+
+window.toggleDrawer = () => {
+    document.getElementById('navDrawer').classList.toggle('active');
 };
 
 // ✅ HIGH-ACCURACY HAVERSINE (MATCHES MAP-DETAIL.JS EXACTLY)
