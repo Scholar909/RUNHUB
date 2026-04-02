@@ -25,7 +25,9 @@ async function loadOrderDetails() {
         // 2. UI Header & Status
         document.getElementById('recId').innerText = `#RH-${currentOrderId.slice(-5).toUpperCase()}`;
         document.getElementById('merchantHandle').innerText = `@${merchant.username || 'merchant'}`;
-        document.getElementById('merchantFullName').innerText = merchant.fullName || 'RUNHUB Merchant';
+        document.getElementById('merchantFullName').innerText = merchant.fullName || 'NOVAHUB Merchant';
+        document.getElementById('deliverySpot').innerText = `Deliver to: ${finalDeliverySpot}`;
+        const finalDeliverySpot = order.deliveryAddress || 'Location 
         
         const badge = document.getElementById('statusBadge');
         const status = order.status;

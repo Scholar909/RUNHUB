@@ -13,6 +13,8 @@ onAuthStateChanged(auth, (user) => {
     if (!user) {
         window.location.href = "sign-login.html";
     } else {
+        localStorage.removeItem("deliveryLocation");
+        localStorage.removeItem("selectedMerchantId");
         listenToActiveMerchants();
     }
 });
@@ -156,17 +158,56 @@ window.handleLogout = async () => {
     }
 };
 
+// --- Global variables for the modal ---
+let pendingMerchantId = null;
+
 /**
- * Open Order Modal (Functionality placeholder for the modal popup)
- * [cite: 3, 4]
+ * Triggered when "Order Now" is clicked.
+ * Instead of redirecting immediately, it opens the prompt.
  */
 window.openOrderModal = (merchantId) => {
-    // Save the selected merchant ID to local storage
-    localStorage.setItem("selectedMerchantId", merchantId);
-    // Redirect to the standalone order page
-    window.location.href = "order-modal.html";
+    pendingMerchantId = merchantId;
+    document.getElementById('locationModal').style.display = 'flex';
 };
 
+window.closeLocationModal = () => {
+    document.getElementById('locationModal').style.display = 'none';
+};
+
+/**
+ * Handles the selection of location
+ */
+window.selectLocation = async (type) => {
+    let finalAddress = "";
+
+    if (type === 'room') {
+        // Fetch saved room data from current user's profile
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+            finalAddress = userDoc.data().hostelLocation;
+        } else {
+            alert("Could not find saved room data.");
+            return;
+        }
+    } else {
+        // Custom address logic
+        const input = document.getElementById('customAddress').value.trim();
+        if (input.length < 2) {
+            alert("Please provide a more specific address for the merchant to find you.");
+            return;
+        }
+        finalAddress = input;
+    }
+
+    // Save selection and proceed
+    localStorage.setItem("selectedMerchantId", pendingMerchantId);
+    localStorage.setItem("deliveryLocation", finalAddress); // Store this for the order page
+    
+    window.location.href = "./order-modal.html";
+};
 
 function generateStars(rating) {
     let stars = "";

@@ -8,26 +8,94 @@ import {
 // --- State ---
 let merchantData = null;
 let activeSessionData = null;
+let pendingMerchantId = null;
 let previousMenu = [];
 let platformFee = 25;
 let packagingCost = 200;
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
+    // 1. Check for Merchant ID in URL first
     const params = new URLSearchParams(window.location.search);
     const mId = params.get('m');
     if (mId) localStorage.setItem("selectedMerchantId", mId);
 
+    // 2. Auth Check
     if (!user) {
         sessionStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
-    } else {
-        if (localStorage.getItem("selectedMerchantId")) {
-            loadMerchantAndMenu();
+        return; // Stop execution
+    }
+
+    // 3. Location Check (The "Direct Link" Safety Net)
+    const deliveryLoc = localStorage.getItem("deliveryLocation");
+    const merchantId = localStorage.getItem("selectedMerchantId");
+
+    if (!deliveryLoc) {
+        // Instead of redirecting to home, show the modal YOU just added to the HTML
+        if (merchantId) {
+            pendingMerchantId = merchantId; // Ensure the logic knows which merchant
+            document.getElementById('locationModal').style.display = 'flex';
         } else {
+            // If there's no merchant ID at all, they MUST go home
             window.location.href = "./home.html";
         }
+        return; 
+    }
+
+    // 4. If everything is fine, load the menu
+    if (merchantId) {
+        loadMerchantAndMenu();
+    } else {
+        window.location.href = "./home.html";
     }
 });
+
+window.openOrderModal = (merchantId) => {
+    pendingMerchantId = merchantId;
+    document.getElementById('locationModal').style.display = 'flex';
+};
+
+window.closeLocationModal = () => {
+    document.getElementById('locationModal').style.display = 'none';
+};
+
+/**
+ * Handles the selection of location
+ */
+window.selectLocation = async (type) => {
+    let finalAddress = "";
+
+    if (type === 'room') {
+        // Fetch saved room data from current user's profile
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+            finalAddress = userDoc.data().hostelLocation;
+        } else {
+            alert("Could not find saved room data.");
+            return;
+        }
+    } else {
+        // Custom address logic
+        const input = document.getElementById('customAddress').value.trim();
+        if (input.length < 2) {
+            alert("Please provide a more specific address for the merchant to find you.");
+            return;
+        }
+        finalAddress = input;
+    }
+
+    // Save selection and proceed
+    localStorage.setItem("selectedMerchantId", pendingMerchantId);
+    localStorage.setItem("deliveryLocation", finalAddress); // Store this for the order page
+    
+    document.getElementById('locationModal').style.display = 'none';
+    loadMerchantAndMenu(); 
+};
+
+
 
 async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
@@ -254,7 +322,8 @@ window.submitOrder = async () => {
         const customerData = customerSnap.exists() ? customerSnap.data() : {};
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
-        const customerLoc = await getCustomerLocation();
+        const customerLoc = await getCustomerLocation().catch(() => "GPS Unavailable");
+        const selectedDeliveryAddress = localStorage.getItem("deliveryLocation") || "No address provided";
 
         const orderObj = {
             customerId: auth.currentUser.uid,
@@ -267,10 +336,12 @@ window.submitOrder = async () => {
             status: "pending",
             timestamp: Date.now(),
             route: `${merchantData.fromLocation} to ${merchantData.toLocation}`,
-            customerLocation: customerLoc
+            customerLocation: customerLoc,
+            deliveryAddress: selectedDeliveryAddress 
         };
 
         const orderRef = await addDoc(collection(db, "orders"), orderObj);
+        localStorage.removeItem("deliveryLocation");
         
         // Update Slots
         const merchantRef = doc(db, "users", merchantId);
