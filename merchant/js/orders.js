@@ -81,10 +81,16 @@ async function renderOrders() {
                     <h3>${customer.fullName || 'Unknown Customer'}</h3>
                     <p>@${customer.username || 'user'}</p>
                     
-                    <div class="delivery-spot">
-                        <span class="spot-label">DELIVER TO:</span>
-                        <p class="spot-address">${displayAddress}</p>
-                    </div>
+                  <div class="delivery-spot" style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
+                      <div style="font-size: 0.8rem;">
+                          <span style="color: var(--accent); font-weight: bold;">FROM:</span> 
+                          <span>${order.fromLocation || 'Merchant Location'}</span>
+                      </div>
+                      <div style="font-size: 0.8rem;">
+                          <span style="color: #28a745; font-weight: bold;">TO:</span> 
+                          <span>${displayAddress}</span>
+                      </div>
+                  </div>
                 </div>
 
                 <div class="order-items">
