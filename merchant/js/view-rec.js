@@ -73,12 +73,23 @@ async function loadOrderDetails(user) {
         // Fetch Customer Info
         const custDoc = await getDoc(doc(db, "users", order.customerId));
         const customer = custDoc.exists() ? custDoc.data() : {};
+        
+        const finalDeliverySpot = order.deliveryAddress || customer.hostelLocation || 'Location not set';
+        const fromSpot = order.fromLocation || 'Merchant Hub';
 
         // UI Header & Status
         document.getElementById('recId').innerText = `#RH-${currentOrderId.slice(-5).toUpperCase()}`;
         document.getElementById('custUser').innerText = `@${customer.username || 'user'}`;
-        const finalDeliverySpot = order.deliveryAddress || customer.hostelLocation || 'Location not set';
-        document.getElementById('custName').innerText = `Customer: ${customer.fullName} (${finalDeliverySpot})`;
+        
+        document.getElementById('custName').innerHTML = `
+            <div style="margin-top: 10px;">
+                <p><b>Customer:</b> ${customer.fullName}</p>
+                <p style="font-size: 0.9em; color: var(--text-dim);">
+                    <span style="color: var(--accent)">●</span> Pick-up: ${fromSpot}<br>
+                    <span style="color: #28a745">●</span> Delivery: ${finalDeliverySpot}
+                </p>
+            </div>
+        `;
         
         const badge = document.getElementById('statusBadge');
         badge.innerText = order.status.toUpperCase();
