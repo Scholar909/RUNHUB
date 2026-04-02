@@ -79,7 +79,7 @@ window.selectLocation = async (type) => {
 
     localStorage.setItem("selectedMerchantId", mId);
     localStorage.setItem("deliveryLocation", finalAddress);
-    
+
     document.getElementById('locationModal').style.display = 'none';
     document.querySelector('.modal-container').style.display = 'flex';
     loadMerchantAndMenu(); 
@@ -169,7 +169,7 @@ async function loadMerchantAndMenu() {
 
 function renderOrderUI() {
     document.querySelector('.merchant-meta h2').innerHTML = `Order from <span class="accent">@${merchantData.username}</span>`;
-    
+
     const bank = merchantData.bankDetails || {};
     document.querySelector('.bank-card h4').innerText = bank.bankName || "N/A";
     document.querySelector('.acc-num').innerText = bank.accountNumber || "N/A";
@@ -192,7 +192,7 @@ function renderOrderUI() {
         <span class="item-price">₦${packagingCost}</span>
     `;
     menuContainer.appendChild(packDiv);
-    
+
     // Filtered Menu Items
     activeSessionData.menu.forEach((item, index) => {
         if (item.available !== false) { 
@@ -276,7 +276,7 @@ window.submitOrder = async () => {
             if (cb.checked) {
                 const index = cb.dataset.index;
                 const item = activeSessionData.menu[index];
-                
+
                 // If merchant toggled this specific item off while customer was on the page
                 if (item.available === false) {
                     unavailableItems.push(item.name);
@@ -310,7 +310,7 @@ window.submitOrder = async () => {
         const customerData = customerSnap.exists() ? customerSnap.data() : {};
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
-        const customerLoc = await getCustomerLocation().catch(() => "GPS Unavailable");
+        const customerLoc = await getCustomerLocation().catch(() => null);
         const selectedDeliveryAddress = localStorage.getItem("deliveryLocation") || "No address provided";
 
         const orderObj = {
@@ -331,7 +331,7 @@ window.submitOrder = async () => {
 
         const orderRef = await addDoc(collection(db, "orders"), orderObj);
         localStorage.removeItem("deliveryLocation");
-        
+
         // Update Slots
         const merchantRef = doc(db, "users", merchantId);
         const sessionRef = doc(db, "merchants", merchantId, "sessions", merchantData.currentSessionId);
@@ -382,7 +382,7 @@ function startPaymentTimer(duration) {
     countdownInterval = setInterval(() => {
         const minutes = Math.floor(timer / 60);
         const seconds = timer % 60;
-        
+
         // Update button text to show remaining time
         submitBtn.innerText = `Confirm in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 
