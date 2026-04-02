@@ -67,6 +67,8 @@ async function renderOrders() {
         const customerSnap = await getDoc(doc(db, "users", order.customerId));
         const customer = customerSnap.exists() ? customerSnap.data() : {};
         const timeAgo = formatTime(order.timestamp);
+        
+        const displayAddress = order.deliveryAddress || customer.hostelLocation || 'No location provided';
 
         return `
             <div class="trust-card order-card">
@@ -77,7 +79,12 @@ async function renderOrders() {
                 
                 <div class="customer-info">
                     <h3>${customer.fullName || 'Unknown Customer'}</h3>
-                    <p>@${customer.username || 'user'} • ${customer.hostelLocation || 'Location not set'}</p>
+                    <p>@${customer.username || 'user'}</p>
+                    
+                    <div class="delivery-spot">
+                        <span class="spot-label">DELIVER TO:</span>
+                        <p class="spot-address">${displayAddress}</p>
+                    </div>
                 </div>
 
                 <div class="order-items">
