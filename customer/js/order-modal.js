@@ -323,6 +323,7 @@ window.submitOrder = async () => {
             deliveryCharge: activeSessionData.deliveryCharge,
             status: "pending",
             timestamp: Date.now(),
+            fromLocation: merchantData.fromLocation || "Merchant Hub", 
             route: `${merchantData.fromLocation} to ${merchantData.toLocation}`,
             customerLocation: customerLoc,
             deliveryAddress: selectedDeliveryAddress 

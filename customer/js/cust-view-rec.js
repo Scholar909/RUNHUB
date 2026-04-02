@@ -27,8 +27,12 @@ async function loadOrderDetails() {
         document.getElementById('merchantHandle').innerText = `@${merchant.username || 'merchant'}`;
         document.getElementById('merchantFullName').innerText = merchant.fullName || 'NOVAHUB Merchant';
         const finalDeliverySpot = order.deliveryAddress || 'Location not set';
+        const fromSpot = order.fromLocation || 'Merchant Hub';
 // Assuming you have an element to show the address, for example:
-document.getElementById('deliverySpot').innerText = `Deliver to: ${finalDeliverySpot}`;
+        document.getElementById('deliverySpot').innerHTML = `
+          <div style="margin-bottom: 4px;"><b>From:</b> ${fromSpot}</div>
+          <div><b>To:</b> ${finalDeliverySpot}</div>
+          `;
         
         const badge = document.getElementById('statusBadge');
         const status = order.status;
