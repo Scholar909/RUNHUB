@@ -39,7 +39,7 @@ function listenToActiveMerchants() {
             if (mData.currentSessionId) {
                 const sessionRef = doc(db, "merchants", mId, "sessions", mData.currentSessionId);
                 const sessionSnap = await getDoc(sessionRef);
-                
+
                 if (sessionSnap.exists()) {
                     const sData = sessionSnap.data();
                     // Override the user-level slots with the actual Session-level slots
@@ -55,10 +55,10 @@ function listenToActiveMerchants() {
         });
 
         const resolvedMerchants = await Promise.all(merchantPromises);
-        
+
         // Filter out full slots and update the global state
         merchants = resolvedMerchants.filter(m => m.slotsFilled < m.maxSlots);
-        
+
         renderMerchantGrid();
     });
 }
@@ -205,8 +205,8 @@ window.selectLocation = async (type) => {
     // Save selection and proceed
     localStorage.setItem("selectedMerchantId", pendingMerchantId);
     localStorage.setItem("deliveryLocation", finalAddress); // Store this for the order page
-    
-    window.location.href = "./order-modal.html";
+
+    window.location.href = `./order-modal.html?m=${pendingMerchantId}`;
 };
 
 function generateStars(rating) {

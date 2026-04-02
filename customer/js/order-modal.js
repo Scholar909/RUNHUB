@@ -8,47 +8,36 @@ import {
 // --- State ---
 let merchantData = null;
 let activeSessionData = null;
-let pendingMerchantId = null;
 let previousMenu = [];
 let platformFee = 25;
 let packagingCost = 200;
+let pendingMerchantId = null; 
 
 onAuthStateChanged(auth, async (user) => {
-    // 1. Check for Merchant ID in URL first
-    const params = new URLSearchParams(window.location.search);
-    const mId = params.get('m');
-    if (mId) localStorage.setItem("selectedMerchantId", mId);
-
-    // 2. Auth Check
     if (!user) {
-        sessionStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
-        return; // Stop execution
-    }
-
-    // 3. Location Check (The "Direct Link" Safety Net)
-    const deliveryLoc = localStorage.getItem("deliveryLocation");
-    const merchantId = localStorage.getItem("selectedMerchantId");
-
-    if (!deliveryLoc) {
-        // Instead of redirecting to home, show the modal YOU just added to the HTML
-        if (merchantId) {
-            pendingMerchantId = merchantId; // Ensure the logic knows which merchant
-            document.getElementById('locationModal').style.display = 'flex';
-        } else {
-            // If there's no merchant ID at all, they MUST go home
-            window.location.href = "./home.html";
-        }
         return; 
     }
 
-    // 4. If everything is fine, load the menu
-    if (merchantId) {
+    // Hide the main order container initially so it's not a blank screen
+    document.querySelector('.modal-container').style.display = 'none';
+
+    const params = new URLSearchParams(window.location.search);
+    pendingMerchantId = params.get('m') || localStorage.getItem("selectedMerchantId");
+    const deliveryLoc = localStorage.getItem("deliveryLocation");
+
+    if (pendingMerchantId && !deliveryLoc) {
+        // Show the location prompt
+        document.getElementById('locationModal').style.display = 'flex';
+    } else if (pendingMerchantId && deliveryLoc) {
+        // We have both, show the UI and load data
+        document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
     } else {
         window.location.href = "./home.html";
     }
 });
+
 
 window.openOrderModal = (merchantId) => {
     pendingMerchantId = merchantId;
@@ -64,38 +53,37 @@ window.closeLocationModal = () => {
  */
 window.selectLocation = async (type) => {
     let finalAddress = "";
+    // Re-verify merchant ID from storage if the local variable is lost
+    const mId = pendingMerchantId || localStorage.getItem("selectedMerchantId");
 
     if (type === 'room') {
-        // Fetch saved room data from current user's profile
         const user = auth.currentUser;
         if (!user) return;
 
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
             finalAddress = userDoc.data().hostelLocation;
-        } else {
-            alert("Could not find saved room data.");
-            return;
+            if (!finalAddress) {
+                alert("No hostel location found in your profile.");
+                return;
+            }
         }
     } else {
-        // Custom address logic
         const input = document.getElementById('customAddress').value.trim();
         if (input.length < 2) {
-            alert("Please provide a more specific address for the merchant to find you.");
+            alert("Please enter a valid address.");
             return;
         }
         finalAddress = input;
     }
 
-    // Save selection and proceed
-    localStorage.setItem("selectedMerchantId", pendingMerchantId);
-    localStorage.setItem("deliveryLocation", finalAddress); // Store this for the order page
+    localStorage.setItem("selectedMerchantId", mId);
+    localStorage.setItem("deliveryLocation", finalAddress);
     
     document.getElementById('locationModal').style.display = 'none';
+    document.querySelector('.modal-container').style.display = 'flex';
     loadMerchantAndMenu(); 
 };
-
-
 
 async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
