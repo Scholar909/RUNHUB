@@ -188,3 +188,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 .menu-item-input {
     margin-bottom: 10px;
 }
+
+.add-session-trigger .btn-text {
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    color: var(--text-main);
+    background: rgba(255,255,255,0.05);
+}
+
+.add-session-trigger .btn-text:hover {
+    background: var(--accent);
+}
