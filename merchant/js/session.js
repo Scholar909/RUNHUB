@@ -361,55 +361,72 @@ window.showForm = (mode, id = null) => {
     }
 };
 
-window.copySessionLink = (id) => {
+window.copySessionLink = async (id) => {
     const session = sessions.find(s => s.id === id);
     if (!session) return;
 
-    // We only want the content, not the metadata of the original merchant
-    const exportData = {
-        n: session.sessionName,
-        f: session.fromLocation,
-        t: session.toLocation,
-        d: session.deliveryCharge,
-        m: session.maxSlots,
-        menu: session.menu.map(item => ({ n: item.name, p: item.price }))
+    // Prepare the data to be shared
+    const shareableData = {
+        sessionName: session.sessionName,
+        fromLocation: session.fromLocation,
+        toLocation: session.toLocation,
+        deliveryCharge: session.deliveryCharge,
+        maxSlots: session.maxSlots,
+        menu: session.menu.map(item => ({ name: item.name, price: item.price })),
+        createdAt: serverTimestamp() // Optional: for cleanup later
     };
 
-    const link = btoa(JSON.stringify(exportData)); // Encode to Base64
-    navigator.clipboard.writeText(link).then(() => {
-        alert("Session link copied! You can now share this with other merchants.");
-    });
+    try {
+        // Save to a public shared collection
+        const docRef = await addDoc(collection(db, "shared_sessions"), shareableData);
+        
+        // The docRef.id is your short 20-25 character link!
+        await navigator.clipboard.writeText(docRef.id);
+        alert("Short Session Code copied! Other merchants can paste this to clone your menu.");
+    } catch (e) {
+        console.error("Copy failed", e);
+        alert("Failed to generate code. Check connection.");
+    }
 };
 
-window.importSession = () => {
-    const link = document.getElementById('importLinkInput').value.trim();
-    if (!link) return;
+window.importSession = async () => {
+    const importInput = document.getElementById('importLinkInput');
+    const shareId = importInput.value.trim();
+    if (!shareId) return;
 
     try {
-        const decodedData = JSON.parse(atob(link));
+        // Fetch the shared data using the short ID
+        const sharedDoc = await getDoc(doc(db, "shared_sessions", shareId));
         
-        // Open the form in 'add' mode
+        if (!sharedDoc.exists()) {
+            alert("Invalid or expired session code.");
+            return;
+        }
+
+        const data = sharedDoc.data();
+        
+        // Open form and fill fields
         window.showForm('add');
         
-        // Fill the fields with decoded data
-        document.querySelector('input[placeholder="e.g. Dinner Run"]').value = decodedData.n || "";
-        document.querySelector('input[placeholder="Pickup point"]').value = decodedData.f || "";
-        document.querySelector('input[placeholder="Destination"]').value = decodedData.t || "";
-        document.getElementById('deliveryChargeInput').value = decodedData.d || 300;
-        document.getElementById('maxSlotsInput').value = decodedData.m || 5;
+        document.querySelector('input[placeholder="e.g. Dinner Run"]').value = data.sessionName || "";
+        document.querySelector('input[placeholder="Pickup point"]').value = data.fromLocation || "";
+        document.querySelector('input[placeholder="Destination"]').value = data.toLocation || "";
+        document.getElementById('deliveryChargeInput').value = data.deliveryCharge || 300;
+        document.getElementById('maxSlotsInput').value = data.maxSlots || 5;
 
-        // Clear and fill menu
+        // Reset and fill menu
         menuContainer.innerHTML = '';
-        decodedData.menu.forEach(item => {
-            window.addMenuItem(item.n, item.p, true);
+        data.menu.forEach(item => {
+            window.addMenuItem(item.name, item.price, true);
         });
 
-        // Hide the import options
+        // Clean up UI
+        importInput.value = ''; 
         document.getElementById('addOptions').style.display = 'none';
 
     } catch (e) {
-        alert("Invalid Session Link. Please make sure you copied the full code.");
-        console.error(e);
+        console.error("Import failed", e);
+        alert("Error importing session. Make sure the code is correct.");
     }
 };
 
@@ -421,6 +438,14 @@ window.toggleAddOptions = () => {
 window.hideForm = () => {
     sessionListView.style.display = 'block';
     sessionFormView.style.display = 'none';
+
+    // --- Add these lines to reset the "Link" UI ---
+    const addOptions = document.getElementById('addOptions');
+    const importInput = document.getElementById('importLinkInput');
+
+    if (addOptions) addOptions.style.display = 'none'; // Hide the box
+    if (importInput) importInput.value = '';           // Clear the link
 };
+
 
 window.toggleSession = toggleSession;
