@@ -284,6 +284,7 @@ function renderSessions() {
                 <i class="fi-list-bullet"></i>
                 <div class="options-dropdown">
                     <button onclick="showForm('edit', '${s.id}')">Edit</button>
+                    <button onclick="copySessionLink('${s.id}')">Copy</button>
                     <button class="text-error" onclick="deleteSession('${s.id}')">Delete</button>
                 </div>
             </div>
@@ -358,6 +359,63 @@ window.showForm = (mode, id = null) => {
         document.querySelectorAll('#sessionFormView input').forEach(inp => inp.value = "");
         window.addMenuItem();
     }
+};
+
+window.copySessionLink = (id) => {
+    const session = sessions.find(s => s.id === id);
+    if (!session) return;
+
+    // We only want the content, not the metadata of the original merchant
+    const exportData = {
+        n: session.sessionName,
+        f: session.fromLocation,
+        t: session.toLocation,
+        d: session.deliveryCharge,
+        m: session.maxSlots,
+        menu: session.menu.map(item => ({ n: item.name, p: item.price }))
+    };
+
+    const link = btoa(JSON.stringify(exportData)); // Encode to Base64
+    navigator.clipboard.writeText(link).then(() => {
+        alert("Session link copied! You can now share this with other merchants.");
+    });
+};
+
+window.importSession = () => {
+    const link = document.getElementById('importLinkInput').value.trim();
+    if (!link) return;
+
+    try {
+        const decodedData = JSON.parse(atob(link));
+        
+        // Open the form in 'add' mode
+        window.showForm('add');
+        
+        // Fill the fields with decoded data
+        document.querySelector('input[placeholder="e.g. Dinner Run"]').value = decodedData.n || "";
+        document.querySelector('input[placeholder="Pickup point"]').value = decodedData.f || "";
+        document.querySelector('input[placeholder="Destination"]').value = decodedData.t || "";
+        document.getElementById('deliveryChargeInput').value = decodedData.d || 300;
+        document.getElementById('maxSlotsInput').value = decodedData.m || 5;
+
+        // Clear and fill menu
+        menuContainer.innerHTML = '';
+        decodedData.menu.forEach(item => {
+            window.addMenuItem(item.n, item.p, true);
+        });
+
+        // Hide the import options
+        document.getElementById('addOptions').style.display = 'none';
+
+    } catch (e) {
+        alert("Invalid Session Link. Please make sure you copied the full code.");
+        console.error(e);
+    }
+};
+
+window.toggleAddOptions = () => {
+    const opts = document.getElementById('addOptions');
+    opts.style.display = opts.style.display === 'none' ? 'block' : 'none';
 };
 
 window.hideForm = () => {
