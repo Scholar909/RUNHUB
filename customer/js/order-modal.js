@@ -116,7 +116,6 @@ async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
     const urlMerchantId = params.get('m');
     const urlSessionId = params.get('s');
-    const merchantId = localStorage.getItem("selectedMerchantId");
     
     const merchantId = urlMerchantId || localStorage.getItem("selectedMerchantId");
     
