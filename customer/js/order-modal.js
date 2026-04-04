@@ -15,6 +15,8 @@ let pendingMerchantId = null;
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
+        // Save the full current URL (with ?m=...&s=...) so we can come back here
+        localStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
         return; 
     }
