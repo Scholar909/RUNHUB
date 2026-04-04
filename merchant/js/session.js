@@ -290,7 +290,8 @@ function renderSessions() {
                 <i class="fi-list-bullet"></i>
                 <div class="options-dropdown">
                     <button onclick="showForm('edit', '${s.id}')">Edit</button>
-                    <button onclick="copySessionLink('${s.id}')">Copy</button>
+                    <button onclick="copyForWhatsApp('${s.id}')">Copy for WhatsApp</button>
+                    <button onclick="copySessionLink('${s.id}')">Copy for Friend</button>
                     <button class="text-error" onclick="deleteSession('${s.id}')">Delete</button>
                 </div>
             </div>
@@ -367,11 +368,43 @@ window.showForm = (mode, id = null) => {
     }
 };
 
+// --- Updated Formatting Helper for WhatsApp ---
+function formatWhatsAppText(session) {
+    const menuText = session.menu
+        .filter(item => item.available !== false)
+        .map(item => `• ${item.name}: ₦${item.price}`)
+        .join('\n');
+
+    // Note: We use a placeholder or the actual merchant UID for the link
+    return `*AVAILABLE DELIVERIES*\n` +
+           `Route: ${session.fromLocation} → ${session.toLocation}\n\n` +
+           `*MENU:*\n${menuText}\n\n` +
+           `Delivery fee: ₦${session.deliveryCharge}\n` +
+           `Limit: ${session.slotsFilled || 0}/${session.maxSlots} slots\n` +
+           `Order here: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${currentUid}&s=${session.id}`;
+}
+
+// --- Updated Copy Actions ---
+
+// 1. Copy for WhatsApp
+window.copyForWhatsApp = async (id) => {
+    const session = sessions.find(s => s.id === id);
+    if (!session) return;
+
+    const text = formatWhatsAppText(session);
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("WhatsApp message copied! You can now paste it in any chat.");
+    } catch (err) {
+        console.error('WhatsApp copy failed', err);
+    }
+};
+
+// 2. Copy for Friend (Existing Short Code logic)
 window.copySessionLink = async (id) => {
     const session = sessions.find(s => s.id === id);
     if (!session) return;
 
-    // Prepare the data to be shared
     const shareableData = {
         sessionName: session.sessionName,
         fromLocation: session.fromLocation,
@@ -379,19 +412,15 @@ window.copySessionLink = async (id) => {
         deliveryCharge: session.deliveryCharge,
         maxSlots: session.maxSlots,
         menu: session.menu.map(item => ({ name: item.name, price: item.price })),
-        createdAt: serverTimestamp() // Optional: for cleanup later
+        createdAt: serverTimestamp()
     };
 
     try {
-        // Save to a public shared collection
         const docRef = await addDoc(collection(db, "shared_sessions"), shareableData);
-        
-        // The docRef.id is your short 20-25 character link!
         await navigator.clipboard.writeText(docRef.id);
-        alert("Short Session Code copied! Other merchants can paste this to clone your menu.");
+        alert("Friend Code copied! Your friend can paste this in 'Import Session' to clone your menu.");
     } catch (e) {
-        console.error("Copy failed", e);
-        alert("Failed to generate code. Check connection.");
+        alert("Failed to generate code.");
     }
 };
 
