@@ -20,6 +20,18 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "./sign-login.html";
         return; 
     }
+    
+// NEW & IMPROVED: Verify they exist AND are specifically a "customer"
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const userData = userDoc.data();
+
+    if (!userDoc.exists() || userData.role !== 'customer') {
+        alert("Access Denied. Only customer accounts can place orders.");
+        // Clear session so they aren't stuck in a loop if they are the wrong role
+        localStorage.removeItem("selectedMerchantId"); 
+        window.location.href = "./sign-login.html";
+        return;
+    }
 
     // Hide the main order container initially so it's not a blank screen
     document.querySelector('.modal-container').style.display = 'none';
