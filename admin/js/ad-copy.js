@@ -94,44 +94,6 @@ function renderSessions(merchants) {
 }
 
 
-// --- Renderers ---
-
-function renderSessions(merchants) {
-    const container = document.getElementById('sessionsTab');
-    if (merchants.length === 0) {
-        container.innerHTML = `<p class="hero-description">No active delivery sessions right now.</p>`;
-        return;
-    }
-
-    container.innerHTML = merchants.map(m => {
-        const storageKey = `session_${m.id}`;
-        const count = copyCounts[storageKey] || 0;
-        
-        // CORRECTED LINK: Added /customer/ to the path
-        const waText = `*AVAILABLE DELIVERIES*\n` +
-                       `Merchant: ${m.username}\n` +
-                       `From: ${m.fromLocation}\n` +
-                       `To: ${m.toLocation}\n` +
-                       `Delivery fee: ₦${m.deliveryCharge}\n` +
-                       `Limit: ${m.slotsFilled}/${m.maxSlots} slots\n` +
-                       `Link: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${m.id}&s=${m.currentSessionId}`;
-
-        return `
-            <div class="copy-card">
-                <div class="copy-title">@${m.username} Session</div>
-                <div class="copy-line">${m.fromLocation} → ${m.toLocation}</div>
-                <button class="copy-btn"
-                data-text="${encodeURIComponent(waText)}"
-                data-key="${storageKey}"
-                onclick="copyToClipboard(this)">
-                Copy for WhatsApp (${count})
-                </button>
-            </div>
-        `;
-    }).join('');
-}
-
-
 function renderRatings(ratings) {
     const container = document.getElementById('ratingsTab');
     
