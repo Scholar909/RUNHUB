@@ -56,6 +56,16 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// Inside your login function after successful auth:
+const destination = localStorage.getItem("redirectAfterLogin");
+if (destination) {
+    localStorage.removeItem("redirectAfterLogin");
+    window.location.href = destination;
+} else {
+    window.location.href = "home.html";
+}
+
+
 window.openOrderModal = (merchantId) => {
     pendingMerchantId = merchantId;
     document.getElementById('locationModal').style.display = 'flex';
@@ -104,13 +114,18 @@ window.selectLocation = async (type) => {
 
 async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
+    const urlMerchantId = params.get('m');
     const urlSessionId = params.get('s');
     const merchantId = localStorage.getItem("selectedMerchantId");
+    
+    const merchantId = urlMerchantId || localStorage.getItem("selectedMerchantId");
     
     if (!merchantId) {
         window.location.href = "./home.html";
         return;
     }
+    
+    localStorage.setItem("selectedMerchantId", merchantId);
 
     try {
         const merchantDoc = await getDoc(doc(db, "users", merchantId));
