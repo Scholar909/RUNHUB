@@ -232,6 +232,9 @@ window.saveSession = async () => {
         isActive: existingSession ? existingSession.isActive : false,
         slotsFilled: existingSession ? existingSession.slotsFilled : 0,
         lastTurnedOff: existingSession ? existingSession.lastTurnedOff : 0,
+        menu: menuItems,
+        version: Date.now(), // Use timestamp as a unique version ID
+        copyCount: 0,
         timestamp: existingSession ? existingSession.timestamp : Date.now()
     };
 
