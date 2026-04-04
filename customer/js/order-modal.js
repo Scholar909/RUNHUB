@@ -14,30 +14,47 @@ let packagingCost = 200;
 let pendingMerchantId = null; 
 
 onAuthStateChanged(auth, async (user) => {
+    const modalContainer = document.querySelector('.modal-container');
+    const locationModal = document.getElementById('locationModal');
+
     if (!user) {
         window.location.href = "./sign-login.html";
         return; 
     }
 
-    // Hide the main order container initially so it's not a blank screen
-    document.querySelector('.modal-container').style.display = 'none';
-
+    // 1. Get IDs from URL first (Highest Priority)
     const params = new URLSearchParams(window.location.search);
-    pendingMerchantId = params.get('m') || localStorage.getItem("selectedMerchantId");
+    const mUrl = params.get('m');
+    const sUrl = params.get('s');
+
+    // 2. Sync URL IDs to localStorage so they persist during location selection
+    if (mUrl) {
+        localStorage.setItem("selectedMerchantId", mUrl);
+        pendingMerchantId = mUrl;
+    } else {
+        pendingMerchantId = localStorage.getItem("selectedMerchantId");
+    }
+
     const deliveryLoc = localStorage.getItem("deliveryLocation");
 
-    if (pendingMerchantId && !deliveryLoc) {
-        // Show the location prompt
-        document.getElementById('locationModal').style.display = 'flex';
-    } else if (pendingMerchantId && deliveryLoc) {
-        // We have both, show the UI and load data
-        document.querySelector('.modal-container').style.display = 'flex';
-        loadMerchantAndMenu();
-    } else {
+    // 3. Routing Logic
+    if (!pendingMerchantId) {
+        console.error("No Merchant ID found in URL or Storage");
         window.location.href = "./home.html";
+        return;
+    }
+
+    if (!deliveryLoc) {
+        // Need location? Show location modal, keep main UI hidden
+        modalContainer.style.display = 'none';
+        locationModal.style.display = 'flex';
+    } else {
+        // Everything ready? Show main UI and load
+        locationModal.style.display = 'none';
+        modalContainer.style.display = 'flex';
+        loadMerchantAndMenu();
     }
 });
-
 
 window.openOrderModal = (merchantId) => {
     pendingMerchantId = merchantId;
@@ -89,15 +106,30 @@ async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
     const urlSessionId = params.get('s');
     const merchantId = localStorage.getItem("selectedMerchantId");
+    
+    if (!merchantId) {
+        window.location.href = "./home.html";
+        return;
+    }
 
     try {
         const merchantDoc = await getDoc(doc(db, "users", merchantId));
-        if (!merchantDoc.exists()) throw new Error("Merchant not found");
+        if (!merchantDoc.exists()) {
+            alert("Merchant no longer exists.");
+            window.location.href = "./home.html";
+            return;
+        }
         merchantData = merchantDoc.data();
 
         const targetSessionId = urlSessionId || merchantData.currentSessionId;
         const isSessionStillLive = merchantData.isActive === true && 
                                    (urlSessionId ? urlSessionId === merchantData.currentSessionId : true);
+                                   
+        if (!targetSessionId) {
+            alert("No active session found for this merchant.");
+            window.location.href = "./home.html";
+            return;
+        }
 
         if (!isSessionStillLive || !targetSessionId) {
             alert("This delivery session is no longer active.");
