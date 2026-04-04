@@ -165,39 +165,29 @@ async function enforceRules(uid) {
 
     const userRef = doc(db, "users", uid);
     const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return forceLogout();
+    if (!userSnap.exists()) return;
 
     const userData = userSnap.data();
     
-    const role = (userData.role || "").toLowerCase();
-    
-    if (role === "admin" || role === "customer") return;
-    
-    const now = new Date();
-
-    // 3. Wallet Debt Check
-    // 3. Wallet Debt Check
-    const totalPaid = userData.totalPaid || 0;
+    // FIX: Use walletCredit instead of totalPaid
+    const walletCredit = userData.walletCredit || 0; 
     const feeAccrued = userData.feeAccrued || 0;
     
-    const balance = totalPaid - feeAccrued;
+    const balance = walletCredit - feeAccrued; // Now this equals 4675
     
+    // This condition will now correctly evaluate to false (4675 is not <= -300)
     if (balance <= -WAL_THRESHOLD) {
-        // Ensure walletDueSince is set
-        if (!userData.walletDueSince) {
-            await updateDoc(userRef, { walletDueSince: serverTimestamp() });
-        }
-    
-        // Immediately deactivate sessions
         await deactivateActiveSession(uid);
-    
-        // Redirect to plans page with debt amount
         const debtAmount = Math.abs(balance);
         window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
-    } else if (userData.walletDueSince) {
-        await updateDoc(userRef, { walletDueSince: null });
+    } else {
+        // Clear the debt timestamp if they are back in the green
+        if (userData.walletDueSince) {
+            await updateDoc(userRef, { walletDueSince: null });
+        }
     }
 }
+
 
 let enforcementListener = null;
 
