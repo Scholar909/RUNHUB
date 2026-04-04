@@ -14,44 +14,39 @@ let packagingCost = 200;
 let pendingMerchantId = null; 
 
 onAuthStateChanged(auth, async (user) => {
-    const modalContainer = document.querySelector('.modal-container');
-    const locationModal = document.getElementById('locationModal');
-
     if (!user) {
+        // Save the current URL so we can come back here after login
+        localStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
         return; 
     }
 
-    // 1. Get IDs from URL first (Highest Priority)
     const params = new URLSearchParams(window.location.search);
     const mUrl = params.get('m');
     const sUrl = params.get('s');
 
-    // 2. Sync URL IDs to localStorage so they persist during location selection
-    if (mUrl) {
-        localStorage.setItem("selectedMerchantId", mUrl);
-        pendingMerchantId = mUrl;
-    } else {
-        pendingMerchantId = localStorage.getItem("selectedMerchantId");
-    }
+    // FORCE save to storage immediately
+    if (mUrl) localStorage.setItem("selectedMerchantId", mUrl);
+    if (sUrl) localStorage.setItem("currentSessionId", sUrl);
 
+    const mId = mUrl || localStorage.getItem("selectedMerchantId");
     const deliveryLoc = localStorage.getItem("deliveryLocation");
 
-    // 3. Routing Logic
-    if (!pendingMerchantId) {
-        console.error("No Merchant ID found in URL or Storage");
+    if (!mId) {
+        alert("Invalid Link.");
         window.location.href = "./home.html";
         return;
     }
 
     if (!deliveryLoc) {
-        // Need location? Show location modal, keep main UI hidden
-        modalContainer.style.display = 'none';
-        locationModal.style.display = 'flex';
+        document.querySelector('.modal-container').style.display = 'none';
+        document.getElementById('locationModal').style.display = 'flex';
+        // IMPORTANT: We still need to load merchant data in the background 
+        // to check if the session is even active!
+        loadMerchantAndMenu(); 
     } else {
-        // Everything ready? Show main UI and load
-        locationModal.style.display = 'none';
-        modalContainer.style.display = 'flex';
+        document.getElementById('locationModal').style.display = 'none';
+        document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
     }
 });
@@ -136,19 +131,11 @@ async function loadMerchantAndMenu() {
         merchantData = merchantDoc.data();
 
         const targetSessionId = urlSessionId || merchantData.currentSessionId;
-        const isSessionStillLive = merchantData.isActive === true && 
-                                   (urlSessionId ? urlSessionId === merchantData.currentSessionId : true);
-                                   
-        if (!targetSessionId) {
-            alert("No active session found for this merchant.");
-            window.location.href = "./home.html";
-            return;
-        }
-
-        if (!isSessionStillLive || !targetSessionId) {
-            alert("This delivery session is no longer active.");
-            window.location.href = "./home.html";
-            return;
+        const isSessionStillLive = merchantData.isActive === true && targetSessionId === merchantData.currentSessionId;     
+        if (!merchantData.isActive || !isSessionStillLive) {
+          alert("This merchant is currently offline or the session has ended.");
+          window.location.href = "./home.html";
+          return;
         }
 
         // --- REAL-TIME LISTENER ---
