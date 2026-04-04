@@ -15,50 +15,28 @@ let pendingMerchantId = null;
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
-        // Save the current URL so we can come back here after login
-        localStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "./sign-login.html";
         return; 
     }
 
+    // Hide the main order container initially so it's not a blank screen
+    document.querySelector('.modal-container').style.display = 'none';
+
     const params = new URLSearchParams(window.location.search);
-    const mUrl = params.get('m');
-    const sUrl = params.get('s');
-
-    // FORCE save to storage immediately
-    if (mUrl) localStorage.setItem("selectedMerchantId", mUrl);
-    if (sUrl) localStorage.setItem("currentSessionId", sUrl);
-
-    const mId = mUrl || localStorage.getItem("selectedMerchantId");
+    pendingMerchantId = params.get('m') || localStorage.getItem("selectedMerchantId");
     const deliveryLoc = localStorage.getItem("deliveryLocation");
 
-    if (!mId) {
-        alert("Invalid Link.");
-        window.location.href = "./home.html";
-        return;
-    }
-
-    if (!deliveryLoc) {
-        document.querySelector('.modal-container').style.display = 'none';
+    if (pendingMerchantId && !deliveryLoc) {
+        // Show the location prompt
         document.getElementById('locationModal').style.display = 'flex';
-        // IMPORTANT: We still need to load merchant data in the background 
-        // to check if the session is even active!
-        loadMerchantAndMenu(); 
-    } else {
-        document.getElementById('locationModal').style.display = 'none';
+    } else if (pendingMerchantId && deliveryLoc) {
+        // We have both, show the UI and load data
         document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
+    } else {
+        window.location.href = "./home.html";
     }
 });
-
-// Inside your login function after successful auth:
-const destination = localStorage.getItem("redirectAfterLogin");
-if (destination) {
-    localStorage.removeItem("redirectAfterLogin");
-    window.location.href = destination;
-} else {
-    window.location.href = "home.html";
-}
 
 
 window.openOrderModal = (merchantId) => {
@@ -109,33 +87,22 @@ window.selectLocation = async (type) => {
 
 async function loadMerchantAndMenu() {
     const params = new URLSearchParams(window.location.search);
-    const urlMerchantId = params.get('m');
     const urlSessionId = params.get('s');
-    
-    const merchantId = urlMerchantId || localStorage.getItem("selectedMerchantId");
-    
-    if (!merchantId) {
-        window.location.href = "./home.html";
-        return;
-    }
-    
-    localStorage.setItem("selectedMerchantId", merchantId);
+    const merchantId = localStorage.getItem("selectedMerchantId");
 
     try {
         const merchantDoc = await getDoc(doc(db, "users", merchantId));
-        if (!merchantDoc.exists()) {
-            alert("Merchant no longer exists.");
-            window.location.href = "./home.html";
-            return;
-        }
+        if (!merchantDoc.exists()) throw new Error("Merchant not found");
         merchantData = merchantDoc.data();
 
         const targetSessionId = urlSessionId || merchantData.currentSessionId;
-        const isSessionStillLive = merchantData.isActive === true && targetSessionId === merchantData.currentSessionId;     
-        if (!merchantData.isActive || !isSessionStillLive) {
-          alert("This merchant is currently offline or the session has ended.");
-          window.location.href = "./home.html";
-          return;
+        const isSessionStillLive = merchantData.isActive === true && 
+                                   (urlSessionId ? urlSessionId === merchantData.currentSessionId : true);
+
+        if (!isSessionStillLive || !targetSessionId) {
+            alert("This delivery session is no longer active.");
+            window.location.href = "./home.html";
+            return;
         }
 
         // --- REAL-TIME LISTENER ---
