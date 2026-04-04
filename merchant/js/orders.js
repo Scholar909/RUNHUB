@@ -124,31 +124,54 @@ async function renderOrders() {
 window.approveOrder = async (orderId) => {
     try {
         const orderRef = doc(db, "orders", orderId);
-        let customerId = "";
+        const merchantRef = doc(db, "users", currentMerchantId);
 
-        // 1. Database Update
         await runTransaction(db, async (t) => {
             const orderSnap = await t.get(orderRef);
+            const merchantSnap = await t.get(merchantRef);
+            
+            if (!orderSnap.exists()) throw "Order missing";
+            if (!merchantSnap.exists()) throw "Merchant missing";
+
             const orderData = orderSnap.data();
+            const merchantData = merchantSnap.data();
             
-            if (orderData.status !== "pending") throw new Error("Already processed");
+            if (orderData.status !== "pending") throw "Already processed";
             
-            customerId = orderData.customerId; // Capture ID for the alert later
-            const merchantFee = Math.ceil((orderData.deliveryCharge || 0) * 0.1);
-            
-            t.update(orderRef, { status: "approved", approvedAt: serverTimestamp() });
-            t.update(doc(db, "users", currentMerchantId), { 
-                feeAccrued: increment(CUSTOMER_FEE + merchantFee) 
+            // Calculate total fee for this delivery
+            const merchantCommission = Math.ceil((orderData.deliveryCharge || 0) * 0.1);
+            const totalFeeToPlatform = CUSTOMER_FEE + merchantCommission;
+
+            // Update Order Status
+            t.update(orderRef, { 
+                status: "approved", 
+                approvedAt: serverTimestamp() 
             });
+
+            // WALLET LOGIC: 
+            // If merchant has enough credit, deduct from wallet.
+            // Otherwise, add to feeAccrued (debt).
+            const currentCredit = Number(merchantData.walletCredit || 0);
+
+            if (currentCredit >= totalFeeToPlatform) {
+                t.update(merchantRef, { 
+                    walletCredit: increment(-totalFeeToPlatform) 
+                });
+            } else {
+                t.update(merchantRef, { 
+                    feeAccrued: increment(totalFeeToPlatform) 
+                });
+            }
         });
 
-        alert(`Order Approved! Customer Notified.`);
+        alert(`Order Approved!`);
         
     } catch (error) {
         console.error("Approval error:", error);
-        alert("Failed to approve order.");
+        alert(typeof error === 'string' ? error : "Failed to approve order.");
     }
 };
+
 
 
 window.prepareDecline = async (orderId) => {
@@ -242,25 +265,23 @@ async function forceLogout() {
 async function enforceRules(uid) {
     const userRef = doc(db, "users", uid);
     const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return forceLogout();
+    if (!userSnap.exists()) return;
 
     const data = userSnap.data();
+    const wallet = Number(data.walletCredit || 0);
+    const fees = Number(data.feeAccrued || 0);
+    
+    // The True Balance
+    const netBalance = wallet - fees;
 
-    // Skip admins/customers if needed
-    const role = (data.role || "").toLowerCase();
-    if (role === "admin" || role === "customer") return;
-
-    // Wallet debt enforcement
-    const balance = (data.walletCredit || 0) - (data.feeAccrued || 0);
-    if (balance <= -WAL_THRESHOLD) {
-        if (!data.walletDueSince) await updateDoc(userRef, { walletDueSince: serverTimestamp() });
+    // Only block if the TOTAL deficit is more than 300
+    if (netBalance <= -WAL_THRESHOLD) {
         await deactivateActiveSession(uid);
-        const debtAmount = Math.abs(balance);
-        window.location.href = `./plans.html?action=pay&amount=${debtAmount}`;
-    } else if (data.walletDueSince) {
-        await updateDoc(userRef, { walletDueSince: null });
+        const amountToPay = Math.abs(netBalance);
+        window.location.href = `./plans.html?action=pay&amount=${amountToPay}`;
     }
 }
+
 
 function startLocationMonitoring() {
     if (!isMonitoringActive) return;
