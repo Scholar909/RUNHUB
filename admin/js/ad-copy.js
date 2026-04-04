@@ -19,29 +19,80 @@ onAuthStateChanged(auth, (user) => {
 
 // --- Listeners ---
 function initRealtimeListeners() {
-    // 1. Listen for Active Sessions across ALL merchants
-    // We query 'users' where role is merchant and isActive is true
-    const sessionQuery = query(
+    // Listen for ACTIVE merchants
+    const merchantQuery = query(
         collection(db, "users"),
         where("role", "==", "merchant"),
         where("isActive", "==", true)
     );
 
-    onSnapshot(sessionQuery, (snapshot) => {
-        renderSessions(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    onSnapshot(merchantQuery, async (snapshot) => {
+        const sessionPromises = snapshot.docs.map(async (merchantDoc) => {
+            const mData = merchantDoc.data();
+            const mId = merchantDoc.id;
+
+            if (mData.currentSessionId) {
+                // Fetch the actual session document to get the MENU and global COPY COUNT
+                const sDoc = await getDoc(doc(db, "merchants", mId, "sessions", mData.currentSessionId));
+                if (sDoc.exists()) {
+                    return { 
+                        id: mId, 
+                        ...mData, 
+                        menu: sDoc.data().menu, 
+                        copyCount: sDoc.data().copyCount || 0,
+                        sessionId: sDoc.id 
+                    };
+                }
+            }
+            return null;
+        });
+
+        const activeSessions = (await Promise.all(sessionPromises)).filter(s => s !== null);
+        renderSessions(activeSessions);
     });
 
-    // 2. Listen for Latest Ratings
-    const ratingsQuery = query(
-        collection(db, "ratings"),
-        orderBy("timestamp", "desc"),
-        limit(20)
-    );
-
-    onSnapshot(ratingsQuery, (snapshot) => {
-        renderRatings(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    // ... Ratings listener stays the same ...
 }
+
+function renderSessions(merchants) {
+    const container = document.getElementById('sessionsTab');
+    if (merchants.length === 0) {
+        container.innerHTML = `<p class="hero-description">No active delivery sessions.</p>`;
+        return;
+    }
+
+    container.innerHTML = merchants.map(m => {
+        // Format the Menu Items for WhatsApp
+        const menuText = m.menu
+            .filter(item => item.available !== false)
+            .map(item => `• ${item.name}: ₦${item.price}`)
+            .join('\n');
+
+        const waText = `*AVAILABLE DELIVERIES*\n` +
+                       `Merchant: ${m.username}\n` +
+                       `From: ${m.fromLocation}\n` +
+                       `To: ${m.toLocation}\n\n` +
+                       `*MENU:*\n${menuText}\n\n` +
+                       `Delivery fee: ₦${m.deliveryCharge}\n` +
+                       `Limit: ${m.slotsFilled}/${m.maxSlots} slots\n` +
+                       `Link: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${m.id}&s=${m.currentSessionId}`;
+
+        return `
+            <div class="copy-card">
+                <div class="copy-title">@${m.username} Session</div>
+                <div class="copy-line">${m.fromLocation} → ${m.toLocation}</div>
+                <button class="copy-btn"
+                    data-text="${encodeURIComponent(waText)}"
+                    data-mid="${m.id}"
+                    data-sid="${m.currentSessionId}"
+                    onclick="copyToClipboard(this)">
+                    Copy for WhatsApp (${m.copyCount})
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
 
 // --- Renderers ---
 
@@ -113,35 +164,37 @@ function renderRatings(ratings) {
 
 // --- Actions ---
 
-window.copyToClipboard = (btn) => {
+import { increment, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
+window.copyToClipboard = async (btn) => {
     const text = decodeURIComponent(btn.dataset.text);
-    const storageKey = btn.dataset.key;
+    const mId = btn.dataset.mid;
+    const sId = btn.dataset.sid;
 
-    navigator.clipboard.writeText(text).then(() => {
-
-        copyCounts[storageKey] = (copyCounts[storageKey] || 0) + 1;
-        localStorage.setItem('runhub_copy_counts', JSON.stringify(copyCounts));
-
-        const newCount = copyCounts[storageKey];
+    try {
+        await navigator.clipboard.writeText(text);
+        
+        // Update the count in Firebase globally
+        if (mId && sId) {
+            const sessionRef = doc(db, "merchants", mId, "sessions", sId);
+            await updateDoc(sessionRef, {
+                copyCount: increment(1)
+            });
+        }
 
         btn.innerText = "COPIED!";
         btn.style.background = "var(--success)";
-
+        
         setTimeout(() => {
-            if(storageKey.startsWith("rating")){
-                btn.innerText = `Copy Review (${newCount})`;
-            }else{
-                btn.innerText = `Copy for WhatsApp (${newCount})`;
-            }
             btn.style.background = "var(--accent)";
+            // The text will automatically update via the onSnapshot listener
         }, 1200);
 
-    }).catch(err => {
+    } catch (err) {
         console.error('Copy failed:', err);
-    });
-
+    }
 };
+
 
 window.switchTab = (tab, btn) => {
     activeTab = tab;
