@@ -67,6 +67,8 @@ window.selectLocation = async (type) => {
             finalAddress = userDoc.data().hostelLocation;
             if (!finalAddress) {
                 alert("No hostel location found in your profile.");
+                localStorage.setItem("redirectAfterLogin", window.location.href);
+                window.location.href = "./sign-login.html";
                 return;
             }
         }
