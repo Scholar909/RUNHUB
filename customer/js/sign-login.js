@@ -287,7 +287,13 @@ signupForm.addEventListener('submit', async (e) => {
         ]);
 
         alert("Account created successfully!");
-        window.location.href = "./home.html"; 
+        const savedRedirect = localStorage.getItem("redirectAfterLogin");
+        if (savedRedirect) {
+            localStorage.removeItem("redirectAfterLogin");
+            window.location.href = savedRedirect;
+        } else {
+            window.location.href = "./home.html";
+        } 
 
     } catch (error) {
         alert("Signup failed: " + error.message);
@@ -339,9 +345,9 @@ loginForm.addEventListener('submit', async (e) => {
                 throw new Error("Your account has been BLOCKED.");
             }
             if (userData.role === "customer") {
-              const savedRedirect = sessionStorage.getItem("redirectAfterLogin");
+              const savedRedirect = localStorage.getItem("redirectAfterLogin");
               if (savedRedirect) {
-                  sessionStorage.removeItem("redirectAfterLogin"); // Clear memory
+                  localStorage.removeItem("redirectAfterLogin"); // Clear memory
                   window.location.href = savedRedirect; // Go back to the WhatsApp order link
               } else {
                   window.location.href = "./home.html"; // Standard site entry
