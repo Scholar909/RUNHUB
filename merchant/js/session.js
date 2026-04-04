@@ -177,7 +177,10 @@ async function toggleSession(sessionId, targetState, isAutoOff = false) {
 
         } else {
             // Toggling OFF logic
-            await updateDoc(merchantRef, { isActive: false });
+            await updateDoc(merchantRef, { 
+              isActive: false,
+              currentSessionId: null // Clear this so Admin/Home Page knows nothing is live
+            });
             await updateDoc(sessionRef, {
                 isActive: false,
                 slotsFilled: activeSession.slotsFilled || 0,
