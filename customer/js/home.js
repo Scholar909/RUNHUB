@@ -11,13 +11,20 @@ let longClickTimer;
 // --- 1. Auth & Initialization ---
 onAuthStateChanged(auth, (user) => {
     if (!user) {
+        // Save the current URL so we can come back after login
+        localStorage.setItem("redirectAfterLogin", window.location.href);
         window.location.href = "sign-login.html";
     } else {
-        localStorage.removeItem("deliveryLocation");
-        localStorage.removeItem("selectedMerchantId");
+        const params = new URLSearchParams(window.location.search);
+        // ONLY remove if we aren't currently trying to access a specific merchant link
+        if (!params.get('m')) {
+            localStorage.removeItem("deliveryLocation");
+            localStorage.removeItem("selectedMerchantId");
+        }
         listenToActiveMerchants();
     }
 });
+
 
 // --- 2. Real-time Merchant Listener ---
 /**
