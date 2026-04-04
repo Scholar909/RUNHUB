@@ -234,7 +234,7 @@ function renderOrderUI() {
     });
 
     updateTotal();
-    startPaymentTimer(120);
+    startPaymentTimer(90);
 }
 
 // Global functions for HTML onclicks
