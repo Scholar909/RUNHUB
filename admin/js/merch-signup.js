@@ -268,7 +268,6 @@ window.approveMerchant = async(id) => {
         idFront: files.idFront || "",
         idBack: files.idBack || "",
         faceScan: files.faceScan || "",
-        verificationVideo: files.verificationVideo || "",
         signedAgreement: data.signedAgreementUrl, // This comes from your view-verify.html upload
         bindingAgreementBlank: blankAgreementData // Now safely handles the array or string
       },

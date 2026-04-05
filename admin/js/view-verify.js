@@ -44,7 +44,7 @@ const idFront = document.getElementById("idFront");
 const idBack = document.getElementById("idBack");
 const faceScan = document.getElementById("faceScan");
 const profileBottom = document.getElementById("profileBottom");
-const verifyVideo = document.getElementById("verifyVideo");
+
 
 const blockBtn = document.getElementById("blockBtn");
 const deleteBtn = document.getElementById("deleteBtn");
@@ -86,7 +86,7 @@ idFront.src = data.files.idFront;
 idBack.src = data.files.idBack;  
 faceScan.src = data.files.faceScan;  
 profileBottom.src = data.files.selfie;  
-verifyVideo.src = data.files.verificationVideo;  
+  
 
 /* PERSONAL DETAILS */  
 personalDetails.innerHTML = `  
