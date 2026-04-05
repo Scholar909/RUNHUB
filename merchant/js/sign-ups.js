@@ -359,8 +359,8 @@ canvas.toBlob(blob=>resolve(blob),"image/jpeg");
 }
 
 
-let blobs={idFront:null,idBack:null,selfie:null,face:null,video:null};
-let urls={idFront:null,idBack:null,selfie:null,face:null,video:null};
+let blobs={idFront:null,idBack:null,selfie:null,face:null};
+let urls={idFront:null,idBack:null,selfie:null,face:null};
 
 
 function setupCapture(videoId,captureBtn,removeBtn,previewId,key){
@@ -408,91 +408,6 @@ setupCapture("selfiePreview","captureSelfie","removeSelfie","selfieImg","selfie"
 setupFlip("flipIdFront","idFrontPreview");
 setupFlip("flipIdBack","idBackPreview");
 setupFlip("flipSelfie","selfiePreview");
-setupFlip("flipVideo","videoPreview");
-
-
-/* ---------------- VIDEO RECORDING ---------------- */
-
-const videoPreview=document.getElementById("videoPreview");
-const videoPlayback=document.getElementById("videoPlayback");
-const timerEl=document.getElementById("videoTimer");
-const startVideoBtn=document.getElementById("startVideoRecording");
-
-let mediaRecorder;
-let recordedChunks=[];
-let videoStream;
-let recording=false;
-let videoInterval;
-
-async function startVideoCamera(){
-
-if(videoStream) return;
-
-videoStream=await startCamera(videoPreview);
-startVideoBtn.disabled=false;
-
-}
-
-startVideoBtn.onclick = () => {
-
-  if(!recording){
-
-    // Start recording
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(videoStream, { mimeType: "video/webm; codecs=vp8,opus" });
-
-    mediaRecorder.ondataavailable = e => {
-      if(e.data.size > 0) recordedChunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = async () => {
-      clearInterval(videoInterval);
-
-      blobs.video = new Blob(recordedChunks, { type: "video/webm" });
-      videoPlayback.src = URL.createObjectURL(blobs.video);
-
-      urls.video = await uploadVideo(blobs.video);
-
-      alert("Video recorded");
-
-      // Turn button green
-      startVideoBtn.style.backgroundColor = "green";
-    };
-
-    mediaRecorder.start();
-    recording = true;
-
-    // Turn button red
-    startVideoBtn.style.backgroundColor = "red";
-
-    let sec = 0;
-    videoInterval = setInterval(() => {
-      sec++;
-      timerEl.innerText = `${sec}/30s`;
-
-      if(sec >= 30){
-        clearInterval(videoInterval);
-        mediaRecorder.stop();
-        recording = false;
-      }
-    }, 1000); // <-- correct interval to 1 second
-
-  } else {
-    // Stop recording manually
-    mediaRecorder.stop();
-    recording = false;
-  }
-
-};
-
-document.getElementById("removeVideo").onclick=()=>{
-
-blobs.video=null;
-urls.video=null;
-videoPlayback.src="";
-timerEl.innerText="";
-
-};
 
 
 /* ---------------- CLOUDINARY ---------------- */
@@ -521,20 +436,6 @@ async function uploadImage(blob) {
     }
 }
 
-async function uploadVideo(blob){
-
-const fd=new FormData();
-
-fd.append("file",blob);
-fd.append("upload_preset",UPLOAD_PRESET);
-
-const res=await fetch(CLOUDINARY_VIDEO,{method:"POST",body:fd});
-const data=await res.json();
-
-return data.secure_url;
-
-}
-
 
 /* ---------------- FACE SCAN ---------------- */
 
@@ -557,7 +458,7 @@ urls.face=await uploadImage(blob);
 
 alert("Face captured");
 
-},7000);
+},5000);
 
 document.getElementById("removeFace").onclick=()=>{
 
@@ -599,7 +500,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
       return;
   }
 
-  if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face || !urls.video){
+  if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face){
     alert("Please capture all required files.");
     submitBtn.disabled = false; // Add this
     submitBtn.innerText = "Submit Application";
@@ -688,7 +589,6 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
       idBack: urls.idBack,
       selfie: urls.selfie,
       faceScan: urls.face,
-      verificationVideo: urls.video,
       // Store the array of URLs so you can display page 1, then page 2, etc.
       bindingAgreementSheets: pageUrls 
     },
