@@ -45,8 +45,12 @@
   }
 
   button:hover:not(:disabled) { background: #0056b3; transform: translateY(-2px); }
-  
   button:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* --- NEW: Hidden by default --- */
+  #tableContainer, #downloadBtn {
+    display: none;
+  }
 
   .table-wrapper {
     margin-top: 25px;
@@ -56,11 +60,7 @@
   }
 
   table { width: 100%; border-collapse: collapse; }
-
-  .group-header {
-    background: #007bff; color: #fff; font-weight: 600; text-align: left; padding: 10px 15px;
-  }
-
+  .group-header { background: #007bff; color: #fff; font-weight: 600; text-align: left; padding: 10px 15px; }
   th { background: #e9ecef; color: #333; font-size: 14px; text-align: left; padding: 8px 15px; }
   td { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; font-size: 14px; }
 
@@ -76,13 +76,13 @@
     <input type="text" id="matric" placeholder="Matric Number">
     <button id="submitBtn" onclick="pickGroup()">Select Group</button>
 
-    <div class="table-wrapper">
+    <div id="tableContainer" class="table-wrapper">
       <table id="groupTable">
           <tbody id="groupList"></tbody>
       </table>
     </div>
 
-    <button style="margin-top:20px;" onclick="downloadExcel()">Download Excel</button>
+    <button id="downloadBtn" style="margin-top:20px;" onclick="downloadExcel()">Download Excel</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -107,6 +107,7 @@
   window.onload = function() {
       if (localStorage.getItem('groupPicked')) {
           disableForm();
+          showData(); // Reveal if already joined
       }
   };
 
@@ -118,6 +119,12 @@
       document.getElementById('statusMsg').innerText = "Registration complete.";
   }
 
+  // NEW: Function to reveal the hidden elements
+  function showData() {
+      document.getElementById('tableContainer').style.display = 'block';
+      document.getElementById('downloadBtn').style.display = 'block';
+  }
+
   async function pickGroup() {
       const name = document.getElementById('fullName').value.trim();
       const matric = document.getElementById('matric').value.trim();
@@ -125,14 +132,12 @@
 
       const snapshot = await db.collection('groups').get();
       
-      // Check for duplicate Matric Number
       let isDuplicate = false;
       const groups = {};
       for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
       
       snapshot.forEach(doc => {
           const data = doc.data();
-          // Duplicate check (case insensitive)
           if (data.matric && data.matric.toLowerCase() === matric.toLowerCase()) {
               isDuplicate = true;
           }
@@ -140,7 +145,8 @@
       });
 
       if (isDuplicate) {
-          alert("This Matric Number has already been assigned to a group!");
+          alert("This Matric Number has already been assigned!");
+          showData(); // Reveal table so they can see their entry
           return;
       }
 
@@ -166,6 +172,7 @@
       localStorage.setItem('groupPicked', 'true');
       alert(`Success! You have been assigned to Group ${selectedGroup}`);
       disableForm();
+      showData(); // Reveal the table now that they've joined
   }
 
   db.collection('groups').orderBy('timestamp').onSnapshot(snapshot => {
