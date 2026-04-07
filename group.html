@@ -41,21 +41,13 @@
   }
 
   button {
-    background: #007bff;
-    color: #fff;
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
+    background: #007bff; color: #fff; border: none; font-weight: 500; cursor: pointer;
   }
 
   button:hover:not(:disabled) { background: #0056b3; transform: translateY(-2px); }
   
-  button:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-  }
+  button:disabled { background: #ccc; cursor: not-allowed; }
 
-  /* Vertical Table styling */
   .table-wrapper {
     margin-top: 25px;
     border-radius: 12px;
@@ -63,40 +55,30 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+  table { width: 100%; border-collapse: collapse; }
 
   .group-header {
-    background: #007bff;
-    color: #fff;
-    font-weight: 600;
-    text-align: left;
-    padding: 10px 15px;
+    background: #007bff; color: #fff; font-weight: 600; text-align: left; padding: 10px 15px;
   }
 
   th { background: #e9ecef; color: #333; font-size: 14px; text-align: left; padding: 8px 15px; }
   td { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; font-size: 14px; }
 
-  @media (max-width: 480px) {
-    h1 { font-size: 22px; }
-  }
+  @media (max-width: 480px) { h1 { font-size: 22px; } }
 </style>
 </head>
 <body>
 
 <div class="container">
     <h1>Virtual Group Picker</h1>
-    <p id="statusMsg">Enter your details to get assigned to a group:</p>
+    <p id="statusMsg">Enter your details to get assigned to a group (1-10):</p>
     <input type="text" id="fullName" placeholder="Full Name">
     <input type="text" id="matric" placeholder="Matric Number">
     <button id="submitBtn" onclick="pickGroup()">Select Group</button>
 
     <div class="table-wrapper">
       <table id="groupTable">
-          <tbody id="groupList">
-              </tbody>
+          <tbody id="groupList"></tbody>
       </table>
     </div>
 
@@ -120,9 +102,8 @@
   const db = firebase.firestore();
 
   const MAX_PER_GROUP = 6;
-  const TOTAL_GROUPS = 5;
+  const TOTAL_GROUPS = 10; 
 
-  // Check if user already picked a group on this device
   window.onload = function() {
       if (localStorage.getItem('groupPicked')) {
           disableForm();
@@ -134,7 +115,7 @@
       document.getElementById('matric').disabled = true;
       document.getElementById('submitBtn').disabled = true;
       document.getElementById('submitBtn').innerText = "Already Assigned";
-      document.getElementById('statusMsg').innerText = "You have already joined a group.";
+      document.getElementById('statusMsg').innerText = "Registration complete.";
   }
 
   async function pickGroup() {
@@ -143,22 +124,37 @@
       if (!name || !matric) { alert('Please enter both fields!'); return; }
 
       const snapshot = await db.collection('groups').get();
-      const groups = {1: [], 2: [], 3: [], 4: [], 5: []};
+      
+      // Check for duplicate Matric Number
+      let isDuplicate = false;
+      const groups = {};
+      for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
+      
       snapshot.forEach(doc => {
           const data = doc.data();
-          groups[data.group].push(data);
+          // Duplicate check (case insensitive)
+          if (data.matric && data.matric.toLowerCase() === matric.toLowerCase()) {
+              isDuplicate = true;
+          }
+          if(groups[data.group]) groups[data.group].push(data);
       });
+
+      if (isDuplicate) {
+          alert("This Matric Number has already been assigned to a group!");
+          return;
+      }
 
       let availableGroups = [];
       for (let i = 1; i <= TOTAL_GROUPS; i++) {
           if (groups[i].length < MAX_PER_GROUP) availableGroups.push(i);
       }
-      if (availableGroups.length === 0) {
-          alert("All groups are full!");
-          return;
-      }
 
-      const selectedGroup = availableGroups[Math.floor(Math.random() * availableGroups.length)];
+      let selectedGroup;
+      if (availableGroups.length === 0) {
+          selectedGroup = Math.floor(Math.random() * TOTAL_GROUPS) + 1;
+      } else {
+          selectedGroup = availableGroups[Math.floor(Math.random() * availableGroups.length)];
+      }
 
       await db.collection('groups').add({
           fullName: name,
@@ -167,18 +163,18 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      // Save to local storage to block future attempts
       localStorage.setItem('groupPicked', 'true');
-      alert(`Success! You are in Group ${selectedGroup}`);
+      alert(`Success! You have been assigned to Group ${selectedGroup}`);
       disableForm();
   }
 
-  // Real-time listener for the vertical layout
   db.collection('groups').orderBy('timestamp').onSnapshot(snapshot => {
-      const groups = {1: [], 2: [], 3: [], 4: [], 5: []};
+      const groups = {};
+      for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
+      
       snapshot.forEach(doc => {
           const data = doc.data();
-          groups[data.group].push(data);
+          if(groups[data.group]) groups[data.group].push(data);
       });
 
       let html = '';
@@ -187,7 +183,7 @@
           html += `<tr><th>Name</th><th>Matric No.</th></tr>`;
           
           if (groups[i].length === 0) {
-              html += `<tr><td colspan="2" style="color:#999; text-align:center;">No students yet</td></tr>`;
+              html += `<tr><td colspan="2" style="color:#999; text-align:center;">Empty</td></tr>`;
           } else {
               groups[i].forEach(student => {
                   html += `<tr><td>${student.fullName}</td><td>${student.matric}</td></tr>`;
@@ -212,7 +208,7 @@
       const ws = XLSX.utils.json_to_sheet(dataForExcel);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Groups");
-      XLSX.writeFile(wb, "Student_Groups_List.xlsx");
+      XLSX.writeFile(wb, "Final_Student_Groups.xlsx");
   }
 </script>
 
