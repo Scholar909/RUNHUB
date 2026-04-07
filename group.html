@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virtual Group Picker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  /* Reset */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: #fff;
+    border-radius: 20px;
+    padding: 30px 20px;
+    max-width: 700px;
+    width: 100%;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  }
+
+  h1 { text-align: center; font-weight: 600; margin-bottom: 20px; color: #333; }
+  p { text-align: center; margin-bottom: 15px; color: #555; }
+
+  input, button {
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+
+  button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  button:hover:not(:disabled) { background: #0056b3; transform: translateY(-2px); }
+  
+  button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  /* Vertical Table styling */
+  .table-wrapper {
+    margin-top: 25px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .group-header {
+    background: #007bff;
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 15px;
+  }
+
+  th { background: #e9ecef; color: #333; font-size: 14px; text-align: left; padding: 8px 15px; }
+  td { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; font-size: 14px; }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Virtual Group Picker</h1>
+    <p id="statusMsg">Enter your details to get assigned to a group:</p>
+    <input type="text" id="fullName" placeholder="Full Name">
+    <input type="text" id="matric" placeholder="Matric Number">
+    <button id="submitBtn" onclick="pickGroup()">Select Group</button>
+
+    <div class="table-wrapper">
+      <table id="groupTable">
+          <tbody id="groupList">
+              </tbody>
+      </table>
+    </div>
+
+    <button style="margin-top:20px;" onclick="downloadExcel()">Download Excel</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+      apiKey: "AIzaSyC7onB0OptTyu-J6J1PwU6zX799tQIjh4k",
+      authDomain: "affiliate-app-dab95.firebaseapp.com",
+      projectId: "affiliate-app-dab95",
+      storageBucket: "affiliate-app-dab95.appspot.com",
+      messagingSenderId: "510180440268",
+      appId: "1:510180440268:web:99be47162857f635d8ea69"
+  };
+  
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const MAX_PER_GROUP = 6;
+  const TOTAL_GROUPS = 5;
+
+  // Check if user already picked a group on this device
+  window.onload = function() {
+      if (localStorage.getItem('groupPicked')) {
+          disableForm();
+      }
+  };
+
+  function disableForm() {
+      document.getElementById('fullName').disabled = true;
+      document.getElementById('matric').disabled = true;
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').innerText = "Already Assigned";
+      document.getElementById('statusMsg').innerText = "You have already joined a group.";
+  }
+
+  async function pickGroup() {
+      const name = document.getElementById('fullName').value.trim();
+      const matric = document.getElementById('matric').value.trim();
+      if (!name || !matric) { alert('Please enter both fields!'); return; }
+
+      const snapshot = await db.collection('groups').get();
+      const groups = {1: [], 2: [], 3: [], 4: [], 5: []};
+      snapshot.forEach(doc => {
+          const data = doc.data();
+          groups[data.group].push(data);
+      });
+
+      let availableGroups = [];
+      for (let i = 1; i <= TOTAL_GROUPS; i++) {
+          if (groups[i].length < MAX_PER_GROUP) availableGroups.push(i);
+      }
+      if (availableGroups.length === 0) {
+          alert("All groups are full!");
+          return;
+      }
+
+      const selectedGroup = availableGroups[Math.floor(Math.random() * availableGroups.length)];
+
+      await db.collection('groups').add({
+          fullName: name,
+          matric: matric,
+          group: selectedGroup,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Save to local storage to block future attempts
+      localStorage.setItem('groupPicked', 'true');
+      alert(`Success! You are in Group ${selectedGroup}`);
+      disableForm();
+  }
+
+  // Real-time listener for the vertical layout
+  db.collection('groups').orderBy('timestamp').onSnapshot(snapshot => {
+      const groups = {1: [], 2: [], 3: [], 4: [], 5: []};
+      snapshot.forEach(doc => {
+          const data = doc.data();
+          groups[data.group].push(data);
+      });
+
+      let html = '';
+      for (let i = 1; i <= TOTAL_GROUPS; i++) {
+          html += `<tr><td colspan="2" class="group-header">GROUP ${i}</td></tr>`;
+          html += `<tr><th>Name</th><th>Matric No.</th></tr>`;
+          
+          if (groups[i].length === 0) {
+              html += `<tr><td colspan="2" style="color:#999; text-align:center;">No students yet</td></tr>`;
+          } else {
+              groups[i].forEach(student => {
+                  html += `<tr><td>${student.fullName}</td><td>${student.matric}</td></tr>`;
+              });
+          }
+      }
+      document.getElementById('groupList').innerHTML = html;
+  });
+
+  async function downloadExcel() {
+      const snapshot = await db.collection('groups').orderBy('group').get();
+      const dataForExcel = [];
+      snapshot.forEach(doc => {
+          const d = doc.data();
+          dataForExcel.push({
+              "Group": d.group,
+              "Full Name": d.fullName,
+              "Matric Number": d.matric
+          });
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataForExcel);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Groups");
+      XLSX.writeFile(wb, "Student_Groups_List.xlsx");
+  }
+</script>
+
+</body>
+</html>
