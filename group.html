@@ -45,12 +45,10 @@
   }
 
   button:hover:not(:disabled) { background: #0056b3; transform: translateY(-2px); }
-  button:disabled { background: #ccc; cursor: not-allowed; }
+  button:disabled { background: #ccc; cursor: not-allowed; transform: none !important; }
 
-  /* --- NEW: Hidden by default --- */
-  #tableContainer, #downloadBtn {
-    display: none;
-  }
+  /* Hidden UI Elements */
+  #tableContainer, #downloadBtn { display: none; }
 
   .table-wrapper {
     margin-top: 25px;
@@ -105,76 +103,109 @@
   const TOTAL_GROUPS = 10; 
 
   window.onload = function() {
+      // ONE-TIME RESET: Clears storage once for all users to ensure fresh start
+      if (!localStorage.getItem('system_v2_stable')) {
+          localStorage.clear();
+          localStorage.setItem('system_v2_stable', 'true');
+          location.reload();
+          return;
+      }
+
       if (localStorage.getItem('groupPicked')) {
           disableForm();
-          showData(); // Reveal if already joined
+          showData();
       }
   };
 
   function disableForm() {
       document.getElementById('fullName').disabled = true;
       document.getElementById('matric').disabled = true;
-      document.getElementById('submitBtn').disabled = true;
-      document.getElementById('submitBtn').innerText = "Already Assigned";
-      document.getElementById('statusMsg').innerText = "Registration complete.";
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = "Already Assigned";
+      document.getElementById('statusMsg').innerText = "You are already in a group.";
   }
 
-  // NEW: Function to reveal the hidden elements
   function showData() {
       document.getElementById('tableContainer').style.display = 'block';
       document.getElementById('downloadBtn').style.display = 'block';
   }
 
   async function pickGroup() {
+      const btn = document.getElementById('submitBtn');
       const name = document.getElementById('fullName').value.trim();
       const matric = document.getElementById('matric').value.trim();
-      if (!name || !matric) { alert('Please enter both fields!'); return; }
 
-      const snapshot = await db.collection('groups').get();
-      
-      let isDuplicate = false;
-      const groups = {};
-      for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
-      
-      snapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.matric && data.matric.toLowerCase() === matric.toLowerCase()) {
-              isDuplicate = true;
-          }
-          if(groups[data.group]) groups[data.group].push(data);
-      });
-
-      if (isDuplicate) {
-          alert("This Matric Number has already been assigned!");
-          showData(); // Reveal table so they can see their entry
+      if (!name || !matric) {
+          alert('Please enter both name and matric number!');
           return;
       }
 
-      let availableGroups = [];
-      for (let i = 1; i <= TOTAL_GROUPS; i++) {
-          if (groups[i].length < MAX_PER_GROUP) availableGroups.push(i);
+      // CRITICAL: Immediately lock the button to prevent double-tapping
+      btn.disabled = true;
+      btn.innerText = "Processing... Please wait";
+
+      try {
+          // Fetch current state
+          const snapshot = await db.collection('groups').get();
+          
+          let isDuplicate = false;
+          const groups = {};
+          for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
+          
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              if (data.matric && data.matric.toLowerCase() === matric.toLowerCase()) {
+                  isDuplicate = true;
+              }
+              if(groups[data.group]) groups[data.group].push(data);
+          });
+
+          if (isDuplicate) {
+              alert("Error: This Matric Number is already registered!");
+              btn.disabled = false; // Let them fix the typo
+              btn.innerText = "Select Group";
+              showData();
+              return;
+          }
+
+          // Group Assignment Logic
+          let availableGroups = [];
+          for (let i = 1; i <= TOTAL_GROUPS; i++) {
+              if (groups[i].length < MAX_PER_GROUP) availableGroups.push(i);
+          }
+
+          let selectedGroup;
+          if (availableGroups.length === 0) {
+              // The 61st student logic
+              selectedGroup = Math.floor(Math.random() * TOTAL_GROUPS) + 1;
+          } else {
+              selectedGroup = availableGroups[Math.floor(Math.random() * availableGroups.length)];
+          }
+
+          // Save to Database
+          await db.collection('groups').add({
+              fullName: name,
+              matric: matric,
+              group: selectedGroup,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          // Permanent lock for this device
+          localStorage.setItem('groupPicked', 'true');
+          alert(`Confirmed! You are assigned to Group ${selectedGroup}`);
+          disableForm();
+          showData();
+
+      } catch (error) {
+          console.error("Firebase Error:", error);
+          alert("Connection error. Please check your internet and try again.");
+          btn.disabled = false;
+          btn.innerText = "Select Group";
       }
-
-      let selectedGroup;
-      if (availableGroups.length === 0) {
-          selectedGroup = Math.floor(Math.random() * TOTAL_GROUPS) + 1;
-      } else {
-          selectedGroup = availableGroups[Math.floor(Math.random() * availableGroups.length)];
-      }
-
-      await db.collection('groups').add({
-          fullName: name,
-          matric: matric,
-          group: selectedGroup,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      localStorage.setItem('groupPicked', 'true');
-      alert(`Success! You have been assigned to Group ${selectedGroup}`);
-      disableForm();
-      showData(); // Reveal the table now that they've joined
   }
 
+  // Live Table Sync
   db.collection('groups').orderBy('timestamp').onSnapshot(snapshot => {
       const groups = {};
       for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
@@ -190,7 +221,7 @@
           html += `<tr><th>Name</th><th>Matric No.</th></tr>`;
           
           if (groups[i].length === 0) {
-              html += `<tr><td colspan="2" style="color:#999; text-align:center;">Empty</td></tr>`;
+              html += `<tr><td colspan="2" style="color:#999; text-align:center;">No students assigned</td></tr>`;
           } else {
               groups[i].forEach(student => {
                   html += `<tr><td>${student.fullName}</td><td>${student.matric}</td></tr>`;
@@ -202,20 +233,15 @@
 
   async function downloadExcel() {
       const snapshot = await db.collection('groups').orderBy('group').get();
-      const dataForExcel = [];
-      snapshot.forEach(doc => {
+      const dataForExcel = snapshot.docs.map(doc => {
           const d = doc.data();
-          dataForExcel.push({
-              "Group": d.group,
-              "Full Name": d.fullName,
-              "Matric Number": d.matric
-          });
+          return { "Group": d.group, "Full Name": d.fullName, "Matric Number": d.matric };
       });
 
       const ws = XLSX.utils.json_to_sheet(dataForExcel);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Groups");
-      XLSX.writeFile(wb, "Final_Student_Groups.xlsx");
+      XLSX.writeFile(wb, "Class_Groups_Final.xlsx");
   }
 </script>
 
