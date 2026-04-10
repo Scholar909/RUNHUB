@@ -599,7 +599,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   
   // MOVE THE ALERT HERE - Before external API calls
-  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.`);
+  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.\n\nYou will be able to log in after verification from admin.`);
   
   try {
       // These are secondary; don't let them block the success message
