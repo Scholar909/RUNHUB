@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Intents | NOVA HUB</title>
+<title>Intents | NOVAHUB</title>
 
 <link rel="manifest" href="/start/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -164,16 +164,16 @@
         <div class="form-box">
 
             <h3>Create Intent</h3>
+            
+            <select id="visibilityInput">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+            </select>
 
             <input type="text" placeholder="From (e.g. Wuse, Wuse 2)">
             <input type="text" placeholder="To (e.g. Gwarinpa)">
 
-            <select>
-                <option>Duration</option>
-                <option>15 mins</option>
-                <option>30 mins</option>
-                <option>1 hour</option>
-            </select>
+            <input type="number" id="durationInput" placeholder="Enter minutes (e.g. 20)">
 
             <div class="actions">
                 <button class="btn ghost" onclick="closeForm()">Cancel</button>
@@ -197,6 +197,6 @@
     <!--<script src="/start/pwa-handler.js"></script> -->
         <!--<script src="js/firebase-config.js?=v15" type="module"></script> -->
     <!--<script src="js/location.js?=v26" type="module"></script> -->
-    <script src="js/intent.js?=v6" type="module"></script>
+    <script src="js/intent.js?=v7" type="module"></script>
 </body>
 </html>
