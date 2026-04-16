@@ -74,10 +74,21 @@ function initUI() {
     };
 
     // FIX: show Add button properly
-    const addContainer = $("#addContainer");
-    if (addContainer) {
-        addContainer.style.display = userRole === "merchant" ? "block" : "none";
-    }
+const addContainer = $("#addContainer");
+
+function updateCreateVisibility(tabIndex) {
+    if (!addContainer) return;
+
+    // Only show in Requests tab (index 1) AND only for merchant
+    addContainer.style.display =
+        (userRole === "merchant" && tabIndex === 1) ? "block" : "none";
+}
+
+// call once
+updateCreateVisibility(0);
+
+// expose globally
+window.updateCreateVisibility = updateCreateVisibility;
 }
 
 /* =========================
@@ -103,6 +114,11 @@ function initData() {
         alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderAlerts();
     });
+    
+    setInterval(() => {
+        renderLiveBoard();
+        renderMy();
+    }, 1000);
 }
 
 /* =========================
@@ -112,6 +128,8 @@ function switchTab(index) {
 
     $$(".tab").forEach(t => t.classList.remove("active"));
     $$(".tab")[index].classList.add("active");
+    
+    updateCreateVisibility(index);
 
     if (index === 0) renderAlerts();
     if (index === 1) renderRequests();
@@ -165,6 +183,16 @@ async function runMatchEngine() {
     }
 }
 
+function getTimeLeft(expiresAt) {
+    const diff = expiresAt - Date.now();
+    if (diff <= 0) return "Expired";
+
+    const mins = Math.floor(diff / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    return `${mins}m ${secs}s`;
+}
+
 /* =========================
    LIVE BOARD
 ========================= */
@@ -194,6 +222,8 @@ function renderLiveBoard() {
 
     // INTENTS
     intents.forEach(i => {
+      
+        if (i.visibility === "private" && i.userId !== uid) return;
 
         const mine = i.userId === uid;
 
@@ -202,7 +232,7 @@ function renderLiveBoard() {
             <div class="chat-card ${mine ? 'mine' : ''}">
                 <span class="type">INTENT:</span>
                 <div class="route">${i.from} → ${i.to}</div>
-                <div class="meta">${i.duration} mins</div>
+                <div class="meta">${getTimeLeft(i.expiresAt)}</div>
 
                 ${mine ? `
                 <div class="actions">
@@ -261,7 +291,7 @@ function renderMy() {
             <div class="panel-card">
                 <div class="info">
                     <div class="title">My Intent</div>
-                    <div class="sub">${i.from} → ${i.to}</div>
+                    <div class="sub">${i.from} → ${i.to} • ${getTimeLeft(i.expiresAt)}</div>
                 </div>
 
                 <div class="actions">
@@ -303,17 +333,21 @@ function renderAlerts() {
    CREATE INTENT
 ========================= */
 async function createIntent() {
-
+    const visibility = $("#visibilityInput").value;
     const from = $("#formModal input[placeholder*='From']").value;
     const to = $("#formModal input[placeholder*='To']").value;
-    const duration = $("#formModal select").value;
+    const duration = parseInt($("#durationInput").value);
 
-    if (!from || !to) return alert("Fill all fields");
+    if (!from || !to || !duration) return alert("Fill all fields");
 
+    const expiresAt = Date.now() + (duration * 60 * 1000);
+    
     await addDoc(collection(db, "intents"), {
         from,
         to,
         duration,
+        expiresAt,
+        visibility,
         userId: uid,
         status: "active",
         createdAt: serverTimestamp()
