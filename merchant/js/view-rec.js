@@ -60,7 +60,7 @@ async function loadOrderDetails(user) {
         const packaging = order.hasPack ? 200 : 0;
         
         // TRUE subtotal (items only)
-        const subtotal = order.total - delivery - packaging - platformFee;
+        const subtotal = order.total - delivery - platformFee;
         
         const firstTotal = order.total;
         
@@ -106,7 +106,6 @@ async function loadOrderDetails(user) {
 
         document.getElementById('subtotal').innerText = `₦${subtotal.toLocaleString()}`;
         document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
-        document.getElementById('packaging').innerText = `₦${packaging.toLocaleString()}`;
         document.getElementById('firstTotal').innerText = `₦${firstTotal.toLocaleString()}`;
         
         const isMerchant = user.uid === order.merchantId;
