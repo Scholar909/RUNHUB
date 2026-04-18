@@ -68,7 +68,7 @@ function renderSessions(merchants) {
             .map(item => `• ${item.name}: ₦${item.price}`)
             .join('\n');
 
-        const waText = `*AVAILABLE DELIVERIES*\n` +
+        const waText = `*NOVAHUB DELIVERY AVAILABLE*\n` +
                        `Merchant: ${m.username}\n` +
                        `From: ${m.fromLocation}\n` +
                        `To: ${m.toLocation}\n\n` +
