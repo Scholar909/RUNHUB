@@ -376,7 +376,7 @@ function formatWhatsAppText(session) {
         .join('\n');
 
     // Note: We use a placeholder or the actual merchant UID for the link
-    return `*AVAILABLE DELIVERIES*\n` +
+    return `*NOVAHUB DELIVERY AVAILABLE*\n` +
            `Route: ${session.fromLocation} → ${session.toLocation}\n\n` +
            `*MENU:*\n${menuText}\n\n` +
            `Delivery fee: ₦${session.deliveryCharge}\n` +
