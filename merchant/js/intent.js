@@ -202,13 +202,10 @@ function getTimeLeft(expiresAt) {
    LIVE BOARD
 ========================= */
 function renderLiveBoard() {
-
     const el = $(".live-board");
     if (!el) return;
-
     el.innerHTML = "";
 
-    // REQUESTS
     requests.forEach(r => {
         el.innerHTML += `
         <div class="chat-row left">
@@ -216,7 +213,6 @@ function renderLiveBoard() {
                 <span class="type">REQUEST:</span>
                 <div class="route">${r.from} → ${r.to}</div>
                 <div class="meta">${r.item || "N/A"}</div>
-
                 ${userRole === "merchant" ? `
                 <div class="actions">
                     <button class="btn primary" onclick="takeOrder('${r.id}')">Take Order</button>
@@ -225,31 +221,24 @@ function renderLiveBoard() {
         </div>`;
     });
 
-    // INTENTS
     intents.forEach(i => {
-      
-        if (i.visibility === "private" && i.userId !== uid) return;
-        
-        if (i.visibility === "private") return; 
+        // Hide if: Private OR Expired OR (Is private and not mine)
+        const isExpired = i.expiresAt < Date.now();
+        if (i.visibility === "private" || isExpired) return;
+        if (i.userId !== uid && i.visibility === "private") return;
 
         const mine = i.userId === uid;
-
         el.innerHTML += `
         <div class="chat-row ${mine ? 'right' : 'left'}">
             <div class="chat-card ${mine ? 'mine' : ''}">
                 <span class="type">INTENT:</span>
                 <div class="route">${i.from} → ${i.to}</div>
-                <div class="meta">${getTimeLeft(i.expiresAt)}</div>
-
-                ${mine ? `
-                <div class="actions">
-                    <button class="btn ghost" onclick="editIntent('${i.id}')">Edit</button>
-                    <button class="btn danger" onclick="deleteIntent('${i.id}')">Delete</button>
-                </div>` : ""}
+                <div class="meta">Leaving in: ${getTimeLeft(i.expiresAt)}</div>
             </div>
         </div>`;
     });
 }
+
 
 /* =========================
    REQUESTS
@@ -281,30 +270,31 @@ function renderRequests() {
    MY INTENTS
 ========================= */
 function renderMy() {
-
     const el = $(".tab-content");
     if (!el) return;
-
     el.innerHTML = "";
 
-    intents
+    // Sort by createdAt descending (most recent first)
+    const myIntents = intents
         .filter(i => i.userId === uid)
-        .forEach(i => {
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-            el.innerHTML += `
-            <div class="panel-card">
-                <div class="info">
-                    <div class="title">My Intent</div>
-                    <div class="sub">${i.from} → ${i.to} • ${getTimeLeft(i.expiresAt)}</div>
-                </div>
-
-                <div class="actions">
-                    <button class="btn ghost" onclick="editIntent('${i.id}')">Edit</button>
-                    <button class="btn danger" onclick="deleteIntent('${i.id}')">Delete</button>
-                </div>
-            </div>`;
-        });
+    myIntents.forEach(i => {
+        const isExpired = i.expiresAt < Date.now();
+        el.innerHTML += `
+        <div class="panel-card ${isExpired ? 'expired-card' : ''}">
+            <div class="info">
+                <div class="title">My Intent ${isExpired ? '(Expired)' : ''}</div>
+                <div class="sub">${i.from} → ${i.to} • ${getTimeLeft(i.expiresAt)}</div>
+            </div>
+            <div class="actions">
+                ${!isExpired ? `<button class="btn ghost" onclick="editIntent('${i.id}')">Edit</button>` : ''}
+                <button class="btn danger" onclick="deleteIntent('${i.id}')">Delete</button>
+            </div>
+        </div>`;
+    });
 }
+
 
 /* =========================
    ALERTS
@@ -347,24 +337,23 @@ async function createIntent() {
     const expiresAt = Date.now() + (duration * 60 * 1000);
 
     if (editingIntentId) {
-        // UPDATE existing
         await updateDoc(doc(db, "intents", editingIntentId), {
             from, to, duration, expiresAt, visibility
         });
-        editingIntentId = null; // Reset
+        editingIntentId = null;
     } else {
-        // CREATE new (with check)
-        const existing = intents.find(i => i.userId === uid);
-        if (existing) return alert("Delete existing intent first.");
+        // Only block if an intent exists AND it has not expired yet
+        const existing = intents.find(i => i.userId === uid && i.expiresAt > Date.now());
+        if (existing) return alert("You have an active intent running. Wait for it to expire or delete it.");
 
         await addDoc(collection(db, "intents"), {
             from, to, duration, expiresAt, visibility,
             userId: uid, status: "active", createdAt: serverTimestamp()
         });
     }
-
     closeForm();
 }
+
 
 /* =========================
    ACTIONS
