@@ -80,50 +80,34 @@ body {
     margin-bottom: 20px;
 }
 
-.drawer-links { 
-    list-style: none; 
-    flex-grow: 1; /* This pushes the footer down */
-    overflow-y: auto;
+.drawer-links {
+    list-style: none;
+    flex-grow: 1;
 }
 
-.drawer-links li { margin: 18px 0; }
-.drawer-links a { 
-    color: var(--text-dim); text-decoration: none; 
-    font-size: 0.95rem; transition: 0.3s; 
+.drawer-links li {
+    margin: 18px 0;
 }
-.drawer-links a:hover { color: var(--accent); }
 
-/* Logout Section */
+.drawer-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+}
+
 .drawer-footer {
-    padding-top: 20px;
     margin-top: auto;
     border-top: 1px solid var(--border);
-    flex-shrink: 0;
+    padding-top: 20px;
 }
 
 .logout-btn {
     width: 100%;
-    background: rgba(255, 59, 48, 0.1);
-    color: #ff3b30;
-    border: 1px solid rgba(255, 59, 48, 0.2);
     padding: 14px;
     border-radius: 12px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: 0.3s;
+    border: none;
+    background: rgba(255,59,48,0.1);
+    color: var(--danger);
 }
-
-.logout-btn:active {
-    transform: scale(0.97);
-    background: rgba(255, 59, 48, 0.2);
-}
-
-
 
 /* LIVE BOARD BUTTON FIX */
 .live-actions {
@@ -209,12 +193,15 @@ body {
     border-radius: 16px;
     backdrop-filter: blur(20px);
 }
-
-.chat-card.mine {
-    border: 1px solid var(--accent);
+.type {
+    font-size: 0.6rem;
+    color: var(--text-dim);
 }
 
-.type { font-size: 0.6rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+/* Slight emphasis for INTENT cards */
+.chat-card.mine {
+    border: 1px solid var(--success);
+}
 
 .route {
     font-weight: 700;
@@ -347,17 +334,35 @@ body {
     color: var(--text-dim);
 }
 
+/* REPLACE the .form-modal in intent.css */
 .form-modal {
     position: fixed;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
-    background: rgba(10,11,16,0.98);
-    padding: 20px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* Darker backdrop */
+    backdrop-filter: blur(8px);
     display: none;
+    justify-content: center;
+    align-items: center; /* Center horizontally and vertically */
     z-index: 3000;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+}
+
+/* Add or update .form-box for a "fine" look */
+.form-box {
+    width: 90%;
+    max-width: 400px;
+    background: #12141c;
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.expired-card{
+  opacity: 0.6;
+  border-style: dashed;
 }
 
 .form-box input,
