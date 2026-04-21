@@ -20,6 +20,8 @@ import {
 ========================= */
 let uid = null;
 let userRole = null;
+let editingIntentId = null;
+
 
 let requests = [];
 let intents = [];
@@ -70,8 +72,11 @@ function initUI() {
     };
 
     window.closeForm = () => {
+        editingIntentId = null; // Important: Clear edit state on cancel
         $("#formModal").style.display = "none";
+        // Optional: Clear form inputs here
     };
+
 
     // FIX: show Add button properly
 const addContainer = $("#addContainer");
@@ -79,9 +84,9 @@ const addContainer = $("#addContainer");
 function updateCreateVisibility(tabIndex) {
     if (!addContainer) return;
 
-    // Only show in Requests tab (index 1) AND only for merchant
+    // Only show in "My Intents" tab (index 2) AND only for merchant
     addContainer.style.display =
-        (userRole === "merchant" && tabIndex === 1) ? "block" : "none";
+        (userRole === "merchant" && tabIndex === 2) ? "block" : "none";
 }
 
 // call once
@@ -224,6 +229,8 @@ function renderLiveBoard() {
     intents.forEach(i => {
       
         if (i.visibility === "private" && i.userId !== uid) return;
+        
+        if (i.visibility === "private") return; 
 
         const mine = i.userId === uid;
 
@@ -248,23 +255,20 @@ function renderLiveBoard() {
    REQUESTS
 ========================= */
 function renderRequests() {
-
     const el = $(".tab-content");
     if (!el) return;
-
     el.innerHTML = "";
 
+    // Show ONLY customer requests, NOT intents
     requests
         .filter(r => r.status === "pending")
         .forEach(r => {
-
             el.innerHTML += `
             <div class="panel-card">
                 <div class="info">
                     <div class="title">Customer Request</div>
                     <div class="sub">${r.from} → ${r.to}</div>
                 </div>
-
                 <div class="actions">
                     <button class="btn success" onclick="approveRequest('${r.id}')">Approve</button>
                     <button class="btn danger" onclick="declineRequest('${r.id}')">Decline</button>
@@ -332,6 +336,7 @@ function renderAlerts() {
 /* =========================
    CREATE INTENT
 ========================= */
+// Updated createIntent to handle SAVE vs CREATE
 async function createIntent() {
     const visibility = $("#visibilityInput").value;
     const from = $("#formModal input[placeholder*='From']").value;
@@ -339,19 +344,24 @@ async function createIntent() {
     const duration = parseInt($("#durationInput").value);
 
     if (!from || !to || !duration) return alert("Fill all fields");
-
     const expiresAt = Date.now() + (duration * 60 * 1000);
-    
-    await addDoc(collection(db, "intents"), {
-        from,
-        to,
-        duration,
-        expiresAt,
-        visibility,
-        userId: uid,
-        status: "active",
-        createdAt: serverTimestamp()
-    });
+
+    if (editingIntentId) {
+        // UPDATE existing
+        await updateDoc(doc(db, "intents", editingIntentId), {
+            from, to, duration, expiresAt, visibility
+        });
+        editingIntentId = null; // Reset
+    } else {
+        // CREATE new (with check)
+        const existing = intents.find(i => i.userId === uid);
+        if (existing) return alert("Delete existing intent first.");
+
+        await addDoc(collection(db, "intents"), {
+            from, to, duration, expiresAt, visibility,
+            userId: uid, status: "active", createdAt: serverTimestamp()
+        });
+    }
 
     closeForm();
 }
@@ -360,6 +370,17 @@ async function createIntent() {
    ACTIONS
 ========================= */
 window.editIntent = (id) => {
+    const intent = intents.find(i => i.id === id);
+    if (!intent) return;
+
+    editingIntentId = id; // Track that we are editing
+    
+    // Fill the form with existing data
+    $("#visibilityInput").value = intent.visibility;
+    $("#formModal input[placeholder*='From']").value = intent.from;
+    $("#formModal input[placeholder*='To']").value = intent.to;
+    $("#durationInput").value = intent.duration;
+
     openForm();
 };
 
