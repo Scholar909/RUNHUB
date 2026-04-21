@@ -21,6 +21,7 @@ import {
 let uid = null;
 let userRole = null;
 let editingIntentId = null;
+let activeTab = 0;
 
 
 let requests = [];
@@ -102,28 +103,33 @@ window.updateCreateVisibility = updateCreateVisibility;
 function initData() {
 
     onSnapshot(collection(db, "requests"), (snap) => {
-        requests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        runMatchEngine();
-        renderLiveBoard();
-        renderRequests();
-    });
+    requests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    runMatchEngine();
+    renderLiveBoard();
 
-    onSnapshot(collection(db, "intents"), (snap) => {
-        intents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        runMatchEngine();
-        renderLiveBoard();
-        renderMy();
-    });
+    if (activeTab === 1) renderRequests(); // ✅ ONLY when tab is active
+  });
 
-    onSnapshot(collection(db, "alerts"), (snap) => {
-        alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderAlerts();
-    });
-    
-    setInterval(() => {
-        renderLiveBoard();
-        renderMy();
-    }, 1000);
+  onSnapshot(collection(db, "intents"), (snap) => {
+    intents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    runMatchEngine();
+    renderLiveBoard();
+
+    if (activeTab === 2) renderMy(); // ✅ ONLY when tab is active
+  });
+
+  onSnapshot(collection(db, "alerts"), (snap) => {
+    alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (activeTab === 0) renderAlerts(); // ✅ ONLY when tab is active
+  });
+
+  setInterval(() => {
+    renderLiveBoard();
+    if (activeTab === 2) renderMy();
+  }, 1000);
+  
+  switchTab(activeTab);
 }
 
 /* =========================
@@ -131,9 +137,11 @@ function initData() {
 ========================= */
 function switchTab(index) {
 
+    activeTab = index; // ✅ track current tab
+
     $$(".tab").forEach(t => t.classList.remove("active"));
     $$(".tab")[index].classList.add("active");
-    
+
     updateCreateVisibility(index);
 
     if (index === 0) renderAlerts();
@@ -373,7 +381,7 @@ window.editIntent = (id) => {
     if (!intent) return;
 
     editingIntentId = id; // Track that we are editing
-    
+
     // Fill the form with existing data
     $("#visibilityInput").value = intent.visibility;
     $("#formModal input[placeholder*='From']").value = intent.from;
