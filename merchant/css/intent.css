@@ -80,34 +80,50 @@ body {
     margin-bottom: 20px;
 }
 
-.drawer-links {
-    list-style: none;
-    flex-grow: 1;
+.drawer-links { 
+    list-style: none; 
+    flex-grow: 1; /* This pushes the footer down */
+    overflow-y: auto;
 }
 
-.drawer-links li {
-    margin: 18px 0;
+.drawer-links li { margin: 18px 0; }
+.drawer-links a { 
+    color: var(--text-dim); text-decoration: none; 
+    font-size: 0.95rem; transition: 0.3s; 
 }
+.drawer-links a:hover { color: var(--accent); }
 
-.drawer-links a {
-    color: var(--text-dim);
-    text-decoration: none;
-}
-
+/* Logout Section */
 .drawer-footer {
+    padding-top: 20px;
     margin-top: auto;
     border-top: 1px solid var(--border);
-    padding-top: 20px;
+    flex-shrink: 0;
 }
 
 .logout-btn {
     width: 100%;
+    background: rgba(255, 59, 48, 0.1);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.2);
     padding: 14px;
     border-radius: 12px;
-    border: none;
-    background: rgba(255,59,48,0.1);
-    color: var(--danger);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.3s;
 }
+
+.logout-btn:active {
+    transform: scale(0.97);
+    background: rgba(255, 59, 48, 0.2);
+}
+
+
 
 /* LIVE BOARD BUTTON FIX */
 .live-actions {
@@ -193,15 +209,12 @@ body {
     border-radius: 16px;
     backdrop-filter: blur(20px);
 }
-.type {
-    font-size: 0.6rem;
-    color: var(--text-dim);
+
+.chat-card.mine {
+    border: 1px solid var(--accent);
 }
 
-/* Slight emphasis for INTENT cards */
-.chat-card.mine {
-    border: 1px solid var(--success);
-}
+.type { font-size: 0.6rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
 
 .route {
     font-weight: 700;
