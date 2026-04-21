@@ -274,10 +274,15 @@ function renderMy() {
     if (!el) return;
     el.innerHTML = "";
 
-    // Sort by createdAt descending (most recent first)
+    // Sort intents by time (newest first)
     const myIntents = intents
         .filter(i => i.userId === uid)
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    if (myIntents.length === 0) {
+        el.innerHTML = `<div class="empty-state" style="text-align:center; padding: 20px;">You haven't posted any intents.</div>`;
+        return;
+    }
 
     myIntents.forEach(i => {
         const isExpired = i.expiresAt < Date.now();
@@ -296,32 +301,37 @@ function renderMy() {
 }
 
 
+
 /* =========================
-   ALERTS
+   ALERTS (TAB 0)
 ========================= */
 function renderAlerts() {
-
     const el = $(".tab-content");
     if (!el) return;
-
     el.innerHTML = "";
 
-    alerts.forEach(a => {
+    const myAlerts = alerts.filter(a => a.users.includes(uid));
 
+    if (myAlerts.length === 0) {
+        el.innerHTML = `<div class="empty-state" style="text-align:center; padding: 20px;">No matches found yet.</div>`;
+        return;
+    }
+
+    myAlerts.forEach(a => {
         el.innerHTML += `
         <div class="panel-card">
             <div class="info">
                 <div class="title">Match Found</div>
                 <div class="sub">${a.from} → ${a.to}</div>
             </div>
-
             <div class="actions">
                 <button class="btn primary">View</button>
-                <button class="btn ghost">Delete</button>
+                <button class="btn ghost" onclick="deleteAlert('${a.id}')">Delete</button>
             </div>
         </div>`;
     });
 }
+
 
 /* =========================
    CREATE INTENT
