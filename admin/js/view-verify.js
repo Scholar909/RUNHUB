@@ -49,6 +49,10 @@ const profileBottom = document.getElementById("profileBottom");
 const blockBtn = document.getElementById("blockBtn");
 const deleteBtn = document.getElementById("deleteBtn");
 
+let isDrawing = false;
+let canvas, ctx;
+
+
 onAuthStateChanged(auth,(user)=>{
 
 if(!user){
@@ -117,172 +121,152 @@ bankDetails.innerHTML = `
 /* ---------------- BINDING AGREEMENT & APPROVAL LOCK LOGIC ---------------- */
 
 const downloadBtn = document.getElementById("downloadAgreement");
-const signedDocInput = document.getElementById("signedDocInput");
 const saveSignedDocBtn = document.getElementById("saveSignedDocBtn");
 const uploadStatus = document.getElementById("uploadStatus");
 
-// 1. Set the "View" logic for Multiple Pages
+// --- INITIALIZE CANVAS ---
+canvas = document.getElementById('adminSignCanvas');
+ctx = canvas.getContext('2d');
+const adminNameInput = document.getElementById('adminFullName');
+const adminDateInput = document.getElementById('adminSignDate');
+
+// Auto-set today's date
+adminDateInput.value = new Date().toLocaleDateString('en-GB');
+
+// Canvas Setup
+const setupCanvas = () => {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * 2; // High DPI
+    canvas.height = rect.height * 2;
+    ctx.scale(2, 2);
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+};
+setTimeout(setupCanvas, 500); // Small delay to ensure layout is rendered
+
+// Drawing Event Listeners
+const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX || e.touches[0].clientX) - rect.left,
+        y: (e.clientY || e.touches[0].clientY) - rect.top
+    };
+};
+
+const startDraw = (e) => { isDrawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+const draw = (e) => { if(!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+const stopDraw = () => { isDrawing = false; };
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', draw);
+window.addEventListener('mouseup', stopDraw);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+canvas.addEventListener('touchend', stopDraw);
+
+document.getElementById('clearBoard').onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+// 1. View Logic (Merchant's Copy)
 if (data.files && data.files.bindingAgreementSheets) {
-    const sheets = data.files.bindingAgreementSheets; // This is the array
-    
-    downloadBtn.textContent = "View/Print Blank Agreement";
+    const sheets = data.files.bindingAgreementSheets;
     downloadBtn.onclick = (e) => {
         e.preventDefault();
-        
         const printWindow = window.open('', '_blank');
-        
-        // Generate <img> tags for every page in the array
-        const imagesHtml = sheets.map(url => 
-            `<div class="page-break"><img src="${url}"></div>`
-        ).join('');
-
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Blank_Binding_Agreement_${data.fullName}_${data.matricNumber}</title>
-                    <style>
-                        body { margin: 0; padding: 0; background: #525659; }
-                        .page-break { 
-                            display: flex; 
-                            justify-content: center; 
-                            background: white;
-                            margin-bottom: 20px;
-                        }
-                        img { max-width: 100%; height: auto; display: block; }
-                        
-                        @media print {
-                            body { background: white; margin: 0; }
-                            .page-break { margin: 0; page-break-after: always; }
-                            img { width: 100vw; height: 100vh; object-fit: contain; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${imagesHtml}
-                    <script>
-                        // Wait for all images to load before focus
-                        window.onload = () => { window.focus(); };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
+        const imagesHtml = sheets.map(url => `<div style="text-align:center"><img src="${url}" style="max-width:100%"></div>`).join('');
+        printWindow.document.write(`<html><body>${imagesHtml}</body></html>`);
     };
-    downloadBtn.style.cursor = "pointer";
-} else {
-downloadBtn.textContent = "Agreement not generated";
-downloadBtn.style.opacity = "0.5";
 }
 
-// 2. PERSISTENCE CHECK: If a signed agreement already exists in the DB
+// 2. PERSISTENCE CHECK: If Admin already signed
 if (data.signedAgreementUrl) {
-    if (uploadStatus) {
-        uploadStatus.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <span>✓ Signed doc verified.</span>
-                <a href="#" id="viewSignedDoc" style="color:#34c759; text-decoration:underline;">View</a>
-                <a href="#" id="removeSignedDoc" style="color:#ff3b30; text-decoration:underline;">Remove</a>
-            </div>
-        `;
-        
-        // View Logic
-        document.getElementById("viewSignedDoc").onclick = (e) => {
-            e.preventDefault();
-        
-            const pdfUrl = data.signedAgreementUrl;
-        
-            window.open(pdfUrl + "#toolbar=1", "_blank");
-        };
-
-        // Remove Logic
-        document.getElementById("removeSignedDoc").onclick = async (e) => {
-            e.preventDefault();
-            if (!confirm("Are you sure you want to remove this document? You will need to upload a new one to approve this merchant.")) return;
-
-            try {
-                const appRef = doc(db, "merchant_applications", appId);
-                // Remove the field from Firestore
-                await updateDoc(appRef, {
-                    signedAgreementUrl: null,
-                    agreementUploadedAt: null
-                });
-                alert("Document removed successfully.");
-                location.reload(); // Reloads the page so the upload button reappears
-            } catch (err) {
-                console.error("Delete Error:", err);
-                alert("Failed to remove document.");
-            }
-        };
-    }
-
-    // Hide upload controls since document is present
-    if (signedDocInput) signedDocInput.style.display = "none";
-    if (saveSignedDocBtn) saveSignedDocBtn.style.display = "none";
+    uploadStatus.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span>✓ Final Agreement Verified (Both Parties Signed)</span>
+            <a href="${data.signedAgreementUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View/Download</a>
+            <a href="#" id="removeSignedDoc" style="color:#ff3b30; text-decoration:underline;">Reset Signature</a>
+        </div>
+    `;
     
+    // Hide Board and Save button since it's done
+    document.querySelector('.admin-sign-container').style.display = "none";
+    saveSignedDocBtn.style.display = "none";
     safeSetDisabled("approveBtn", false);
+
+    document.getElementById("removeSignedDoc").onclick = async (e) => {
+        e.preventDefault();
+        if (!confirm("Remove signature? This will reset the verification.")) return;
+        await updateDoc(ref, { signedAgreementUrl: null });
+        location.reload();
+    };
 } else {
-    // Ensure upload controls are visible if no URL exists
-    if (signedDocInput) signedDocInput.style.display = "block";
-    if (saveSignedDocBtn) saveSignedDocBtn.style.display = "block";
     safeSetDisabled("approveBtn", true);
 }
 
-
-// 3. Handle File Selection
-signedDocInput.onchange = (e) => {
-if (e.target.files.length > 0) {
-saveSignedDocBtn.disabled = false;
-saveSignedDocBtn.style.opacity = "1";
-saveSignedDocBtn.style.cursor = "pointer";
-uploadStatus.innerText = "File selected. Click 'Save' to finalize.";
-uploadStatus.style.color = "orange";
-}
-};
-
-// 4. Save Signed Agreement Logic
+// 3. THE NEW "SAVE" (STAMPING) LOGIC
 saveSignedDocBtn.onclick = async () => {
-const file = signedDocInput.files[0];
-if (!file) return;
+    const adminName = adminNameInput.value.trim();
+    if (!adminName) return alert("Please enter Admin Name.");
 
-saveSignedDocBtn.innerText = "Uploading to Cloudinary...";  
-saveSignedDocBtn.disabled = true;  
-
-try {  
-    // Upload file to Cloudinary  
-    const uploadedUrl = await uploadImage(file);   
-
-    // Update the specific merchant application document in Firestore  
-    const appRef = doc(db, "merchant_applications", appId);  
-    await updateDoc(appRef, {  
-        signedAgreementUrl: uploadedUrl,  
-        agreementUploadedAt: new Date().toISOString()  
-    });  
-
-    // Update UI Success State  
-    uploadStatus.innerHTML = `✓ Saved! <a href="#" onclick="location.reload();" style="color:#34c759; text-decoration:underline;">Click to View/Remove Doc</a>`;
-
-    uploadStatus.style.color = "#34c759";  
-    saveSignedDocBtn.innerText = "Upload Complete";
+    saveSignedDocBtn.innerText = "Stamping & Uploading...";
     saveSignedDocBtn.disabled = true;
-    saveSignedDocBtn.style.opacity = "0.5";
-      
-    // UNLOCK the Approve Button for the Admin  
-    const approveBtn = document.getElementById("approveBtn");  
-    if (approveBtn) {  
-        approveBtn.disabled = false;  
-        approveBtn.style.opacity = "1";  
-        approveBtn.style.cursor = "pointer";  
-    }  
 
-} catch (err) {  
-    console.error("Upload Error:", err);  
-    uploadStatus.innerText = "Upload failed. Please try again.";  
-    uploadStatus.style.color = "#ff3b30";  
-    saveSignedDocBtn.innerText = "Retry Upload";  
-    saveSignedDocBtn.disabled = false;  
+    try {
+        const sheets = data.files.bindingAgreementSheets;
+        const lastPageUrl = sheets[sheets.length - 1];
+
+        // Create Merge Canvas
+        const mergeCanvas = document.createElement('canvas');
+        const mCtx = mergeCanvas.getContext('2d');
+        const baseImg = await loadImage(lastPageUrl);
+        
+        mergeCanvas.width = 2480; // A4 Standard
+        mergeCanvas.height = 3508;
+        mCtx.drawImage(baseImg, 0, 0, 2480, 3508);
+
+        // Draw Admin Signature (Right Side)
+        const sigData = canvas.toDataURL("image/png");
+        const sigImg = await loadImage(sigData);
+        mCtx.drawImage(sigImg, 1450, 3050, 700, 250); // Adjusted coordinates
+
+        // Draw Text (Admin Name & Date)
+        mCtx.fillStyle = "black";
+        mCtx.font = "italic 35px Arial";
+        mCtx.fillText(`${adminName}  -  ${adminDateInput.value}`, 1500, 3350);
+
+        // Convert to Blob and Upload
+        const blob = await new Promise(res => mergeCanvas.toBlob(res, 'image/png'));
+        const uploadedUrl = await uploadImage(blob);
+
+        // Save to Firebase
+        await updateDoc(ref, {
+            signedAgreementUrl: uploadedUrl,
+            adminSignedByName: adminName,
+            agreementUploadedAt: new Date().toISOString()
+        });
+
+        alert("Final agreement created and saved!");
+        location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert("Error finalizing agreement.");
+        saveSignedDocBtn.innerText = "Retry Save";
+        saveSignedDocBtn.disabled = false;
+    }
+};
+
+// Helper: Load Image
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+    });
 }
 
-};
 
 // --- PHOTO MODAL LOGIC ---
 const createPhotoModal = () => {
