@@ -244,6 +244,15 @@ startVideoCamera();
 
 });
 
+const isLastSection = (index === sections.length - 1);
+    const finalSubmitBtn = document.getElementById("finalSubmitBtn");
+    
+    if (isLastSection) {
+        finalSubmitBtn.style.display = "block";
+    } else {
+        finalSubmitBtn.style.display = "none";
+    }
+
 currentSection=index;
 
 }
@@ -479,13 +488,18 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   e.preventDefault();
   
+  if (!document.getElementById("signatureConsent").checked) {
+        alert("Please consent to the agreement by checking the box before submitting.");
+        return;
+    }
+  
   const usernameInput = document.getElementById("username");
   const emailInput = document.getElementById("email");
   const matricInput = document.getElementById("matricNumber");
   
-  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const submitBtn = document.getElementById("finalSubmitBtn");
   submitBtn.disabled = true;
-  submitBtn.innerText = "Submitting Application...";
+  submitBtn.innerText = "Processing Application...";
   
   const rawUsername = usernameInput.value.trim();
   const rawEmail = emailInput.value.trim().toLowerCase(); // Lowercase email here
@@ -599,7 +613,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   
   // MOVE THE ALERT HERE - Before external API calls
-  alert(`Application submitted successfully!\n\nYour catch phrase is:\n"${catchPhrase}"\n\nPlease save this for phone verification.\n\nYou will be able to log in after verification from admin.`);
+  alert(`Submission Successful! 🚀\n\nYour application has been sent and is awaiting approval. We will review your documents within 48 hours.\n\nYour Catch Phrase: "${catchPhrase}"\n(Save this! You will need it for verification).\n\nOnce approved, you will receive an email to set your password and log in to your dashboard.`);
   
   try {
       // These are secondary; don't let them block the success message
@@ -875,49 +889,72 @@ async function generateBindingAgreement(data, faceScanUrl) {
         }
 
         // Signature logic: check if there's enough room
+        // Signature logic inside generateBindingAgreement
         const sigHeight = 400;
+        const sigYPos = 3100; // Position for the signature line
+
         if (currentSectionIndex >= sections.length) {
             if (y + sigHeight > canvasHeight - margin) {
-                // Not enough room for signature, push to a brand new page
+                // Too low? Create a new page
                 const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
                 pages.push(blob);
                 
-                // Create final signature-only page
                 const sigCanvas = document.createElement("canvas");
                 sigCanvas.width = canvasWidth; sigCanvas.height = canvasHeight;
                 const sigCtx = sigCanvas.getContext("2d");
                 sigCtx.fillStyle = "#fff"; sigCtx.fillRect(0,0, canvasWidth, canvasHeight);
-                if(watermark) { sigCtx.globalAlpha = 0.20; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
-                renderSignature(sigCtx, canvasWidth, margin, 500);
+                if(watermark) { sigCtx.globalAlpha = 0.15; sigCtx.drawImage(watermark, (canvasWidth-1600)/2, (canvasHeight-1600)/2, 1600, 1600); sigCtx.globalAlpha=1; }
+                
+                renderSignature(sigCtx, canvasWidth, margin, 1000, data); // Render higher up on new page
                 const sigBlob = await new Promise(res => sigCanvas.toBlob(res, 'image/png'));
                 pages.push(sigBlob);
-                return pages; 
             } else {
-                renderSignature(ctx, canvasWidth, margin, 3100);
+                renderSignature(ctx, canvasWidth, margin, sigYPos, data);
+                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                pages.push(blob);
             }
+            return pages; 
         }
-
-        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-        pages.push(blob);
     }
-
-    return pages;
 }
 
 // Helper to render signature lines
-function renderSignature(ctx, canvasWidth, margin, sigY) {
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 4;
+// Corrected Signature Renderer
+function renderSignature(ctx, canvasWidth, margin, sigY, data) {
+    ctx.strokeStyle = "#000"; 
+    ctx.lineWidth = 4;
+    
+    // Draw Lines
     ctx.beginPath();
-    ctx.moveTo(margin, sigY); ctx.lineTo(margin + 800, sigY);
-    ctx.moveTo(canvasWidth - margin - 800, sigY); ctx.lineTo(canvasWidth - margin, sigY);
+    ctx.moveTo(margin, sigY); ctx.lineTo(margin + 800, sigY); // Merchant line
+    ctx.moveTo(canvasWidth - margin - 800, sigY); ctx.lineTo(canvasWidth - margin, sigY); // Admin line
     ctx.stroke();
+
+    // Draw Cursive Digital Signature
+    ctx.fillStyle = "#1a1aff"; // Professional blue ink
+    // Use a cursive fallback
+    ctx.font = "italic 65px 'Brush Script MT', cursive, Times New Roman";
+    ctx.textAlign = "left";
+    
+    const date = new Date().toLocaleDateString();
+    // Merchant Signature
+    ctx.fillText(`${data.fullName}`, margin + 20, sigY - 40);
+    ctx.font = "italic 40px 'Brush Script MT', cursive";
+    ctx.fillText(`${data.matricNumber}`, margin + 20, sigY - 5);
+    
+    // Date to the right of the signature line
+    ctx.font = "40px Helvetica";
     ctx.fillStyle = "#000";
-    ctx.font = "italic 38px Helvetica";
+    ctx.fillText(date, margin + 600, sigY - 20);
+
+    // Labels
+    ctx.font = "bold 38px Helvetica";
     ctx.textAlign = "left";
     ctx.fillText("Merchant Digital Signature & Date", margin, sigY + 60);
     ctx.textAlign = "right";
     ctx.fillText("Authorized NOVAHUB Representative", canvasWidth - margin, sigY + 60);
 }
+
 
 // Fixed WrapText to handle \n properly
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -943,6 +980,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 }
 
 async function sendAdminMerchantAlert(data) {
+  const now = new Date();
     const ADMIN_PHONE = "2349168873680";
     const CALLMEBOT_API_KEY = "7465463"; 
 // --- FORMAT PHONE NUMBER TO 234 FORMAT ---
@@ -953,28 +991,8 @@ async function sendAdminMerchantAlert(data) {
         formattedPhone = '234' + formattedPhone;
     }
 
-    try {
-        const now = new Date();
-        const currentHour = now.getHours();
-
-        const options = { weekday: 'long' };
-        const todayName = new Intl.DateTimeFormat('en-US', options).format(now);
-
-        const tomorrow = new Date(now);
-        tomorrow.setDate(now.getDate() + 1);
-        const tomorrowName = new Intl.DateTimeFormat('en-US', options).format(tomorrow);
-
-        const nextTomorrow = new Date(now);
-        nextTomorrow.setDate(now.getDate() + 2);
-        const nextTomorrowName = new Intl.DateTimeFormat('en-US', options).format(nextTomorrow);
-
-        let dayOptions = (currentHour < 20) 
-            ? `1. Today (${todayName}), 2. Tomorrow (${tomorrowName}), 3. ${nextTomorrowName}`
-            : `1. Tomorrow (${tomorrowName}), 2. ${nextTomorrowName}`;
-
-        // ✅ ONE-LINE MESSAGE (no \n at all)
-        const replyMessage = 
-`Hello ${data.fullName}, your sign up request for NOVAHUB has been received 🚀, we need to decide on a date and time for your physical verification and signing of the binding agreement, please let us know which day works best for you, ${dayOptions}, once you have decided, we will pick a specific time.`;
+// ✅ ONE-LINE MESSAGE (no \n at all)
+        const replyMessage = `Hello ${data.fullName}, your NOVAHUB Merchant application has been received! 🚀 Our team is currently verifying your documents. This process usually takes 24-48 hours. Once approved, you'll receive a link to set your password and access your account. Thank you for your patience!`;
 
         // ✅ Encode once (safe now)
         const encodedMessage = encodeURIComponent(replyMessage);
@@ -1000,8 +1018,4 @@ ${adminReplyUrl}`;
         await fetch(url, { mode: 'no-cors' });
 
         console.log("✅ Perfect: One clean link + clean readable message.");
-
-    } catch (err) {
-        console.error("❌ Error:", err);
-    }
 }
