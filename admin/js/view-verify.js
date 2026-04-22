@@ -182,76 +182,100 @@ if (data.files && data.files.bindingAgreementSheets) {
 if (data.signedAgreementUrl) {
     uploadStatus.innerHTML = `
         <div style="display: flex; align-items: center; gap: 15px;">
-            <span>✓ Final Agreement Verified (Both Parties Signed)</span>
-            <a href="${data.signedAgreementUrl}" target="_blank" style="color:#34c759; text-decoration:underline;">View/Download</a>
-            <a href="#" id="removeSignedDoc" style="color:#ff3b30; text-decoration:underline;">Reset Signature</a>
+            <span style="color:#34c759; font-weight:bold;">✓ Final Binding Agreement Verified</span>
+            <a href="#" id="viewFinalDoc" style="color:#007aff; text-decoration:underline;">View Agreement</a>
         </div>
     `;
     
-    // Hide Board and Save button since it's done
+    // View Logic: Opens the final stamped agreement in a new window (same style as blank)
+    document.getElementById("viewFinalDoc").onclick = (e) => {
+        e.preventDefault();
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <body style="margin:0; background:#525659; display:flex; justify-content:center;">
+                    <img src="${data.signedAgreementUrl}" style="max-width:100%; height:auto; background:white;">
+                </body>
+            </html>
+        `);
+    };
+
+    // Hide Board and Save button since signing is final
     document.querySelector('.admin-sign-container').style.display = "none";
     saveSignedDocBtn.style.display = "none";
     safeSetDisabled("approveBtn", false);
-
-    document.getElementById("removeSignedDoc").onclick = async (e) => {
-        e.preventDefault();
-        if (!confirm("Remove signature? This will reset the verification.")) return;
-        await updateDoc(ref, { signedAgreementUrl: null });
-        location.reload();
-    };
 } else {
     safeSetDisabled("approveBtn", true);
 }
 
-// 3. THE NEW "SAVE" (STAMPING) LOGIC
+
+// 3. THE FINAL "STAMPING" LOGIC
 saveSignedDocBtn.onclick = async () => {
     const adminName = adminNameInput.value.trim();
-    if (!adminName) return alert("Please enter Admin Name.");
+    if (!adminName) return alert("Please enter Admin Full Name.");
+    
+    if(!confirm("Are you sure? This signature is permanent and cannot be reset after saving.")) return;
 
-    saveSignedDocBtn.innerText = "Stamping & Uploading...";
+    saveSignedDocBtn.innerText = "Stamping & Finalizing...";
     saveSignedDocBtn.disabled = true;
 
     try {
         const sheets = data.files.bindingAgreementSheets;
         const lastPageUrl = sheets[sheets.length - 1];
 
-        // Create Merge Canvas
+        // Create Merge Canvas (A4 Dimensions)
         const mergeCanvas = document.createElement('canvas');
         const mCtx = mergeCanvas.getContext('2d');
         const baseImg = await loadImage(lastPageUrl);
         
-        mergeCanvas.width = 2480; // A4 Standard
+        mergeCanvas.width = 2480; 
         mergeCanvas.height = 3508;
         mCtx.drawImage(baseImg, 0, 0, 2480, 3508);
 
-        // Draw Admin Signature (Right Side)
+        // 1. Draw Admin Canvas Signature (Place on the line)
         const sigData = canvas.toDataURL("image/png");
         const sigImg = await loadImage(sigData);
-        mCtx.drawImage(sigImg, 1450, 3050, 700, 250); // Adjusted coordinates
+        // Positioned above the right-side line
+        mCtx.drawImage(sigImg, 1680, 2850, 600, 200); 
 
-        // Draw Text (Admin Name & Date)
-        mCtx.fillStyle = "black";
-        mCtx.font = "italic 35px Arial";
-        mCtx.fillText(`${adminName}  -  ${adminDateInput.value}`, 1500, 3350);
+        // 2. Draw Admin Name & Date (Formatted like Merchant Side)
+        mCtx.fillStyle = "#000";
+        mCtx.textAlign = "left";
+        
+        // Use a clean font for the printed name
+        mCtx.font = "40px Helvetica";
+        const adminText = adminName.toUpperCase();
+        const nameWidth = mCtx.measureText(adminText).width;
+        
+        // Positioning text right above the line (sigY is 3100 in your generator)
+        const textY = 3055; 
+        const startX = 1680; // Align with the start of the admin line
+        
+        mCtx.fillText(adminText, startX, textY);
+        
+        // Draw the separator and date
+        mCtx.fillStyle = "#555";
+        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, startX + nameWidth, textY);
 
-        // Convert to Blob and Upload
+        // Convert to Blob and Upload to Cloudinary
         const blob = await new Promise(res => mergeCanvas.toBlob(res, 'image/png'));
         const uploadedUrl = await uploadImage(blob);
 
-        // Save to Firebase
-        await updateDoc(ref, {
+        // Update Firestore
+        const appRef = doc(db, "merchant_applications", appId);
+        await updateDoc(appRef, {
             signedAgreementUrl: uploadedUrl,
             adminSignedByName: adminName,
-            agreementUploadedAt: new Date().toISOString()
+            agreementFinalizedAt: new Date().toISOString()
         });
 
-        alert("Final agreement created and saved!");
+        alert("Agreement Finalized Successfully!");
         location.reload();
 
     } catch (err) {
         console.error(err);
-        alert("Error finalizing agreement.");
-        saveSignedDocBtn.innerText = "Retry Save";
+        alert("Error finalizing agreement. Please try again.");
+        saveSignedDocBtn.innerText = "Stamp & Finalize Agreement";
         saveSignedDocBtn.disabled = false;
     }
 };
