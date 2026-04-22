@@ -825,7 +825,7 @@ function renderSignature(ctx, canvasWidth, margin, sigY, data) {
 
     // 1. Set font to MonteCarlo for Name and Matric
     // We use a larger size (80px) because cursive fonts often look smaller
-    ctx.font = "80px 'MonteCarlo', cursive"; 
+    ctx.font = "40px 'MonteCarlo', cursive"; 
     
     const signatureText = `${data.fullName.toUpperCase()} (${data.matricNumber})`;
     ctx.fillText(signatureText, margin + 10, sigY - 40);
