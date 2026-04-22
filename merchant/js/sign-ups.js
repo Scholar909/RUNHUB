@@ -992,7 +992,7 @@ async function sendAdminMerchantAlert(data) {
     }
 
 // ✅ ONE-LINE MESSAGE (no \n at all)
-        const replyMessage = `Hello ${data.fullName}, your NOVAHUB Merchant application has been received! 🚀 Our team is currently verifying your documents. This process usually takes 24-48 hours. Once approved, you'll receive a link to set your password and access your account. Thank you for your patience!`;
+        const replyMessage = `Hello ${data.fullName}, your NOVAHUB Merchant application has been received! 🚀 Our team is currently verifying your documents. This process usually takes 24-48 hours. Once approved, you will receive a link to set your password and access your account. Thank you for your patience!`;
 
         // ✅ Encode once (safe now)
         const encodedMessage = encodeURIComponent(replyMessage);
