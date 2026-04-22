@@ -404,7 +404,11 @@ window.blockMerchant = (id) => {
 
       // 2️⃣ Delete username and matric, only if they exist
       const deletes = [];
-      if (app.username) deletes.push(deleteDoc(doc(db, "usernames", app.username.toLowerCase())));
+      if (app.username) {
+          // Ensure this matches exactly how you saved it (lowercase)
+          const usernameId = app.username.toLowerCase().trim();
+          deletes.push(deleteDoc(doc(db, "usernames", usernameId)));
+      }
       if (app.matricNumber) {
           const matricId = `${encodeMatric(app.matricNumber.toUpperCase())}_merchant`;
           deletes.push(deleteDoc(doc(db, "matricNumbers", matricId)));
