@@ -257,15 +257,46 @@ margin-top:20px;
     cursor:pointer;
 }
 
-.preview-img, .preview-video{
+.preview-img{
     width:100%;
     margin-top:10px;
     border-radius:12px;
     border:1px solid var(--border);
 }
 
-.video-timer{
-    font-size:0.8rem;
-    color:var(--text-dim);
-    margin-top:5px;
+/* Agreement Preview Styling */
+.agreement-preview-box {
+    background: #444;
+    padding: 15px;
+    border-radius: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.agreement-paper {
+    background: #fff;
+    color: #000;
+    padding: 30px;
+    font-family: 'Times New Roman', serif;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.preview-sig-area {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    font-size: 0.6rem;
+}
+
+.sig-line {
+    text-align: center;
+}
+
+/* Checkbox specific */
+.checkbox-group input[type="checkbox"] {
+    accent-color: var(--success);
+    cursor: pointer;
 }
