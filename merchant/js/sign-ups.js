@@ -819,23 +819,24 @@ function renderSignature(ctx, canvasWidth, margin, sigY, data) {
 
     const date = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY format
 
-    // --- MERCHANT SIGNATURE AREA (3 Columns on one line) ---
-    ctx.fillStyle = "#000"; // Deep black for the "Certificate" look
-    
-    // Column 1: The Name (Bold Certificate Font)
-    ctx.font = "bold italic 55px 'Georgia', serif"; 
+    // --- MERCHANT SIGNATURE AREA ---
+    ctx.fillStyle = "#000"; 
     ctx.textAlign = "left";
-    ctx.fillText(data.fullName.toUpperCase(), margin + 10, sigY - 40);
+
+    // 1. Set font to MonteCarlo for Name and Matric
+    // We use a larger size (80px) because cursive fonts often look smaller
+    ctx.font = "80px 'MonteCarlo', cursive"; 
     
-    // Column 2: The Matric (Next to name)
+    const signatureText = `${data.fullName.toUpperCase()} (${data.matricNumber})`;
+    ctx.fillText(signatureText, margin + 10, sigY - 40);
+
+    // 2. Measure the signature width to place the Date accurately after it
+    const sigWidth = ctx.measureText(signatureText).width;
+
+    // 3. Switch back to standard font for the Date (as requested)
     ctx.font = "40px Helvetica";
-    const nameWidth = ctx.measureText(data.fullName.toUpperCase()).width;
-    ctx.fillText(`|  ${data.matricNumber}`, margin + 30 + nameWidth, sigY - 45);
-    
-    // Column 3: The Date (Next to matric)
-    const matricWidth = ctx.measureText(`|  ${data.matricNumber}`).width;
-    ctx.fillStyle = "#555"; // Slight grey for the date to look printed
-    ctx.fillText(`|  DATE: ${date}`, margin + 50 + nameWidth + matricWidth, sigY - 45);
+    ctx.fillStyle = "#555"; 
+    ctx.fillText(`  |  Date: ${date}`, margin + 20 + sigWidth, sigY - 45);
 
     // --- LABELS ---
     ctx.fillStyle = "#000";
@@ -844,8 +845,9 @@ function renderSignature(ctx, canvasWidth, margin, sigY, data) {
     ctx.fillText("MERCHANT DIGITAL SIGNATURE & IDENTITY", margin, sigY + 60);
     
     ctx.textAlign = "right";
-    ctx.fillText("OFFICIAL NOVAHUB ADMINISTRATIVE SEAL", canvasWidth - margin, sigY + 60);
+    ctx.fillText("NOVAHUB ADMINISTRATIVE SIGNATURE", canvasWidth - margin, sigY + 60);
 }
+
 
 
 
