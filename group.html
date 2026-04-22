@@ -1,248 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Virtual Group Picker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-  /* Reset */
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GET 306 Project Picker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --dark: #1e293b;
+            --accent: #f59e0b;
+        }
 
-  body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-  }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--dark);
+        }
 
-  .container {
-    background: #fff;
-    border-radius: 20px;
-    padding: 30px 20px;
-    max-width: 700px;
-    width: 100%;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-  }
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
 
-  h1 { text-align: center; font-weight: 600; margin-bottom: 20px; color: #333; }
-  p { text-align: center; margin-bottom: 15px; color: #555; }
+        h2 { margin-bottom: 0.5rem; color: var(--primary); }
+        p.subtitle { margin-bottom: 2rem; font-size: 0.9rem; opacity: 0.8; }
 
-  input, button {
-    width: 100%;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    font-size: 16px;
-    transition: all 0.3s ease;
-  }
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
 
-  button {
-    background: #007bff; color: #fff; border: none; font-weight: 500; cursor: pointer;
-  }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
 
-  button:hover:not(:disabled) { background: #0056b3; transform: translateY(-2px); }
-  button:disabled { background: #ccc; cursor: not-allowed; transform: none !important; }
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background: white;
+        }
 
-  /* Hidden UI Elements */
-  #tableContainer, #downloadBtn { display: none; }
+        .warning-box {
+            background: #fffbeb;
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            text-align: left;
+        }
 
-  .table-wrapper {
-    margin-top: 25px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-  }
+        #pickButton {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, background 0.2s;
+        }
 
-  table { width: 100%; border-collapse: collapse; }
-  .group-header { background: #007bff; color: #fff; font-weight: 600; text-align: left; padding: 10px 15px; }
-  th { background: #e9ecef; color: #333; font-size: 14px; text-align: left; padding: 8px 15px; }
-  td { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; font-size: 14px; }
+        #pickButton:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
 
-  @media (max-width: 480px) { h1 { font-size: 22px; } }
-</style>
+        #animationArea { display: none; margin-top: 2rem; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #resultArea {
+            display: none;
+            margin-top: 2rem;
+            padding: 2rem;
+            border: 3px dashed var(--primary);
+            border-radius: 15px;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .project-title { font-size: 1.5rem; font-weight: 800; color: #1d4ed8; margin-top: 10px; }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Virtual Group Picker</h1>
-    <p id="statusMsg">Enter your details to get assigned to a group (1-10):</p>
-    <input type="text" id="fullName" placeholder="Full Name">
-    <input type="text" id="matric" placeholder="Matric Number">
-    <button id="submitBtn" onclick="pickGroup()">Select Group</button>
+    <h2>GET 306 Project Allocation</h2>
+    <p class="subtitle">Computer Engineering (April 2026)</p>
 
-    <div id="tableContainer" class="table-wrapper">
-      <table id="groupTable">
-          <tbody id="groupList"></tbody>
-      </table>
+    <div id="selectionForm">
+        <div class="form-group">
+            <label>Select Your Group Letter</label>
+            <select id="groupLetter">
+                <option value="">-- Choose Group --</option>
+                <option value="A">Group A</option>
+                <option value="B">Group B</option>
+                <option value="C">Group C</option>
+                <option value="D">Group D</option>
+                <option value="E">Group E</option>
+                <option value="F">Group F</option>
+                <option value="G">Group G</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Select Your Name (Representative)</label>
+            <select id="studentSelect">
+                <option value="">-- Select Group First --</option>
+            </select>
+        </div>
+
+        <div class="warning-box">
+            ⚠️ <strong>WARNING:</strong> You are picking for your whole group. This action is irreversible and will be recorded.
+        </div>
+
+        <button id="pickButton">PROCEED TO PICK PROJECT</button>
     </div>
 
-    <button id="downloadBtn" style="margin-top:20px;" onclick="downloadExcel()">Download Excel</button>
+    <div id="animationArea">
+        <div class="spinner"></div>
+        <p id="suspenseText">Calculating probabilities...</p>
+    </div>
+
+    <div id="resultArea">
+        <p>Your Group has been assigned:</p>
+        <div id="projectResult" class="project-title"></div>
+        <p style="font-size: 0.8rem; margin-top: 20px;">Selection recorded successfully.</p>
+    </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script type="module">
+    // Import the functions you need from the SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-<script>
-  const firebaseConfig = {
-      apiKey: "AIzaSyC7onB0OptTyu-J6J1PwU6zX799tQIjh4k",
-      authDomain: "affiliate-app-dab95.firebaseapp.com",
-      projectId: "affiliate-app-dab95",
-      storageBucket: "affiliate-app-dab95.appspot.com",
-      messagingSenderId: "510180440268",
-      appId: "1:510180440268:web:99be47162857f635d8ea69"
-  };
-  
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+    const firebaseConfig = {
+        apiKey: "AIzaSyC7onB0OptTyu-J6J1PwU6zX799tQIjh4k",
+        authDomain: "affiliate-app-dab95.firebaseapp.com",
+        projectId: "affiliate-app-dab95",
+        storageBucket: "affiliate-app-dab95.appspot.com",
+        messagingSenderId: "510180440268",
+        appId: "1:510180440268:web:99be47162857f635d8ea69"
+    };
 
-  const MAX_PER_GROUP = 6;
-  const TOTAL_GROUPS = 10; 
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  window.onload = function() {
-      // ONE-TIME RESET: Clears storage once for all users to ensure fresh start
-      if (!localStorage.getItem('system_v2_stable')) {
-          localStorage.clear();
-          localStorage.setItem('system_v2_stable', 'true');
-          location.reload();
-          return;
-      }
+    const students = {
+        "A": ["OGBOLE ENEH FAVOUR (RUN/CPE/23/14551)", "IPINLAIYE OLUWASEGUN (RUN/CPE/23/14539)", "ABIOLA MOYOSORE DAVID (RUN/CHE/23/14482)", "ADEWOYIN ENOCH (RUN/CPE/23/14518)", "LAWAL AYOMIDE (RUN/CPE/23/14545)", "ODEY ZEAL DONNY (RUN/CPE/23/14550)", "JEGEDE OLUWADARASIMI (RUN/CPE/23/14542)", "IBUDE SAMUEL (RUN/CPE/23/14537)"],
+        "B": ["OGUNBODEDE SAMUEL (RUN/CPE/23/14552)", "ADEBAJO EMMANUEL (RUN/CPE/23/14515)", "MUIBI MUIZ (RUN/CPE/23/14547)", "SIMON-ALADE PEACE (RUN/CPE/23/14568)", "ISIBOR EMMANUEL (RUN/CPE/23/14540)", "ONORIODE BLESSED (RUN/CPE/23/14562)", "OGUNSAKIN SOLOMON (RUN/CPE/23/14555)", "EKUNDAYO EVERBRIGHT (RUN/CPE/23/14531)", "OLATOYE FISAYOMI (RUN/CPE/22/12071)"],
+        "C": ["OGUNGBE FAVOUR (RUN/CPE/23/14553)", "IDOWU KEHINDE (RUN/CPE/23/14538)", "BOLARINWA FEYINSOLA (RUN/CPE/23/14528)", "ADEBANWO AYOMIDE SAMUEL (RUN/CHE/23/14483)", "GWATANA SAMUEL (RUN/CPE/23/14535)", "OGUNLANA FULFILMENT (RUN/CPE/23/14554)", "OKUNOLA PRAISE (RUN/CPE/23/14559)", "AWOGBEMI AYOMIDE (RUN/CPE/23/14524)", "AKINBOHUN ISRAEL AKINTOMIWA (RUN/CPE/22/12021)"],
+        "D": ["TIM-MORDI ISRAEL (RUN/CPE/23/14570)", "GODSWILL KINGSLEY EDOHO (RUN/CPE/22/12046)", "JESUGBAMILA TIJESULOGO (RUN/CPE/23/14543)", "AYODELE AYO ADAMS (RUN/CPE/23/14525)", "MATANMI TIJESUNMI (RUN/CPE/23/14546)", "OYINLOYE DANIEL (RUN/CPE/23/14566)", "OYERINDE IREOLUWADE (RUN/CPE/23/14565)", "OLUWADARE VICTOR (RUN/CPE/23/14561)", "HARMONY HARMONY (RUN/CPE/23/14536)"],
+        "E": ["ADEFARATI MOLOLUWA (RUN/CPE/23/14516)", "JAMES EMMANUEL (RUN/CPE/23/14541)", "FOHUNOLA DAVID (RUN/CPE/23/14533)", "EJEMBI REX (RUN/CPE/23/14530)", "LASEKAN ENOCH (RUN/CPE/23/14544)", "TAYLOR MICHAEL (RUN/CPE/23/14569)", "OJO MOYOSOREOLUWA (RUN/CPE/23/14557)", "AKOBE OLADIPUPO (RUN/CPE/23/14523)"],
+        "F": ["BASSEY INI-ABASI EKAN (RUN/CPE/23/14527)", "AKINWUMI DOMINIC (RUN/CPE/23/14522)", "OYEKUNLE TESTIMONY (RUN/CPE/23/14564)", "CHUKWUEMEKA NMESOMA (RUN/CPE/23/14529)", "OBISESAN KOLADE (RUN/CPE/23/14548)", "SAMUEL UCHECHUKWU (RUN/CPE/23/14567)", "AFOLABI SHARON (RUN/CPE/23/14520)", "ADEBAYO KHALID (RUN/CPE/24/16549)", "AFOLABI FERANMI (RUN/CPE/23/14519)"],
+        "G": ["ADEFUYE OLUWADARA (RUN/CPE/23/14517)", "OKUNOLA GABRIELLA (RUN/CPE/23/14558)", "EZEH DIVINE EBUBECHUKWU (RUN/CPE/24/16574)", "ENIAYEKAN JOSHUA (RUN/CPE/23/14532)", "ODEBODE IYANUOLUWA (RUN/CPE/23/14549)", "OGUNTUNDE TIMILEHIN (RUN/CPE/23/14556)", "OKWARA DELIGHT (RUN/CPE/23/14560)", "GANIYU FAVOUR (RUN/CPE/23/14534)", "BANKOLE OLUWATOMIYIN (RUN/CPE/23/14526)"]
+    };
 
-      if (localStorage.getItem('groupPicked')) {
-          disableForm();
-          showData();
-      }
-  };
+    const projects = [
+        "GROUP 1 - Clinometer",
+        "GROUP 2 - Small wind turbine vertical axis",
+        "GROUP 3 - Small wind turbine horizontal axis",
+        "GROUP 4 - Mini-solar power for charging and lighting",
+        "GROUP 5 - Energy Audit for Engineering",
+        "GROUP 6 - Design a solar battery hybrid system",
+        "GROUP 7 - Use of wind resources in Nigeria"
+    ];
 
-  function disableForm() {
-      document.getElementById('fullName').disabled = true;
-      document.getElementById('matric').disabled = true;
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.innerText = "Already Assigned";
-      document.getElementById('statusMsg').innerText = "You are already in a group.";
-  }
+    // Functions to handle logic
+    const updateStudentList = () => {
+        const group = document.getElementById('groupLetter').value;
+        const studentSelect = document.getElementById('studentSelect');
+        studentSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
+        
+        if(group && students[group]) {
+            students[group].forEach(s => {
+                let opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                studentSelect.appendChild(opt);
+            });
+        }
+    };
 
-  function showData() {
-      document.getElementById('tableContainer').style.display = 'block';
-      document.getElementById('downloadBtn').style.display = 'block';
-  }
+    const startRolling = async () => {
+        const group = document.getElementById('groupLetter').value;
+        const student = document.getElementById('studentSelect').value;
+        const btn = document.getElementById('pickButton');
 
-  async function pickGroup() {
-      const btn = document.getElementById('submitBtn');
-      const name = document.getElementById('fullName').value.trim();
-      const matric = document.getElementById('matric').value.trim();
+        if(!group || !student) {
+            alert("Please select both your Group and your Name.");
+            return;
+        }
 
-      if (!name || !matric) {
-          alert('Please enter both name and matric number!');
-          return;
-      }
+        btn.disabled = true;
+        btn.innerText = "Checking...";
 
-      // CRITICAL: Immediately lock the button to prevent double-tapping
-      btn.disabled = true;
-      btn.innerText = "Processing... Please wait";
+        try {
+            // 1. Check if this group already picked
+            const docRef = doc(db, "selections", group);
+            const docSnap = await getDoc(docRef);
 
-      try {
-          // Fetch current state
-          const snapshot = await db.collection('groups').get();
-          
-          let isDuplicate = false;
-          const groups = {};
-          for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
-          
-          snapshot.forEach(doc => {
-              const data = doc.data();
-              if (data.matric && data.matric.toLowerCase() === matric.toLowerCase()) {
-                  isDuplicate = true;
-              }
-              if(groups[data.group]) groups[data.group].push(data);
-          });
+            if (docSnap.exists()) {
+                alert("This group has already picked a project!");
+                location.reload();
+                return;
+            }
 
-          if (isDuplicate) {
-              alert("Error: This Matric Number is already registered!");
-              btn.disabled = false; // Let them fix the typo
-              btn.innerText = "Select Group";
-              showData();
-              return;
-          }
+            // 2. Check which projects are already taken
+            const querySnapshot = await getDocs(collection(db, "selections"));
+            let takenProjects = [];
+            querySnapshot.forEach((doc) => {
+                takenProjects.push(doc.data().project);
+            });
 
-          // Group Assignment Logic
-          let availableGroups = [];
-          for (let i = 1; i <= TOTAL_GROUPS; i++) {
-              if (groups[i].length < MAX_PER_GROUP) availableGroups.push(i);
-          }
+            let availableProjects = projects.filter(p => !takenProjects.includes(p));
 
-          let selectedGroup;
-          if (availableGroups.length === 0) {
-              // The 61st student logic
-              selectedGroup = Math.floor(Math.random() * TOTAL_GROUPS) + 1;
-          } else {
-              selectedGroup = availableGroups[Math.floor(Math.random() * availableGroups.length)];
-          }
+            if (availableProjects.length === 0) {
+                alert("All projects have been assigned!");
+                return;
+            }
 
-          // Save to Database
-          await db.collection('groups').add({
-              fullName: name,
-              matric: matric,
-              group: selectedGroup,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp()
-          });
+            // 3. Random pick
+            const finalProject = availableProjects[Math.floor(Math.random() * availableProjects.length)];
 
-          // Permanent lock for this device
-          localStorage.setItem('groupPicked', 'true');
-          alert(`Confirmed! You are assigned to Group ${selectedGroup}`);
-          disableForm();
-          showData();
+            // 4. UI Transition
+            document.getElementById('selectionForm').style.display = 'none';
+            document.getElementById('animationArea').style.display = 'block';
 
-      } catch (error) {
-          console.error("Firebase Error:", error);
-          alert("Connection error. Please check your internet and try again.");
-          btn.disabled = false;
-          btn.innerText = "Select Group";
-      }
-  }
+            const messages = ["Verifying Representative...", "Running Randomizer...", "Securing Assignment...", "Generating Result..."];
+            let mIdx = 0;
+            const msgInterval = setInterval(() => {
+                if(messages[mIdx]) {
+                    document.getElementById('suspenseText').innerText = messages[mIdx];
+                    mIdx++;
+                }
+            }, 1200);
 
-  // Live Table Sync
-  db.collection('groups').orderBy('timestamp').onSnapshot(snapshot => {
-      const groups = {};
-      for(let i=1; i<=TOTAL_GROUPS; i++) groups[i] = [];
-      
-      snapshot.forEach(doc => {
-          const data = doc.data();
-          if(groups[data.group]) groups[data.group].push(data);
-      });
+            // 5. Save and Show
+            setTimeout(async () => {
+                clearInterval(msgInterval);
+                await setDoc(doc(db, "selections", group), {
+                    representative: student,
+                    groupLetter: group,
+                    project: finalProject,
+                    timestamp: serverTimestamp()
+                });
 
-      let html = '';
-      for (let i = 1; i <= TOTAL_GROUPS; i++) {
-          html += `<tr><td colspan="2" class="group-header">GROUP ${i}</td></tr>`;
-          html += `<tr><th>Name</th><th>Matric No.</th></tr>`;
-          
-          if (groups[i].length === 0) {
-              html += `<tr><td colspan="2" style="color:#999; text-align:center;">No students assigned</td></tr>`;
-          } else {
-              groups[i].forEach(student => {
-                  html += `<tr><td>${student.fullName}</td><td>${student.matric}</td></tr>`;
-              });
-          }
-      }
-      document.getElementById('groupList').innerHTML = html;
-  });
+                document.getElementById('animationArea').style.display = 'none';
+                document.getElementById('resultArea').style.display = 'block';
+                document.getElementById('projectResult').innerText = finalProject;
+            }, 5000);
 
-  async function downloadExcel() {
-      const snapshot = await db.collection('groups').orderBy('group').get();
-      const dataForExcel = snapshot.docs.map(doc => {
-          const d = doc.data();
-          return { "Group": d.group, "Full Name": d.fullName, "Matric Number": d.matric };
-      });
+        } catch (e) {
+            console.error("Error: ", e);
+            alert("Connection error. Please try again.");
+            btn.disabled = false;
+            btn.innerText = "PROCEED TO PICK PROJECT";
+        }
+    };
 
-      const ws = XLSX.utils.json_to_sheet(dataForExcel);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Groups");
-      XLSX.writeFile(wb, "Class_Groups_Final.xlsx");
-  }
+    // Attach events (since using type="module", we can't use onclick in HTML easily)
+    document.getElementById('groupLetter').addEventListener('change', updateStudentList);
+    document.getElementById('pickButton').addEventListener('click', startRolling);
 </script>
 
 </body>
