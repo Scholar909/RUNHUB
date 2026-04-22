@@ -14,7 +14,7 @@
 
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-<link rel="stylesheet" href="css/view-verify.css?v=6">
+<link rel="stylesheet" href="css/view-verify.css?v=8">
 
 </head>
 
@@ -122,26 +122,47 @@ VERIFY APPLICATION
 </div>
 
 <div class="trust-card">
-  <div class="card-tag">BINDING AGREEMENT</div>
-  
-  <div class="info-row">
-    <span class="label">Print & Sign</span>
-    <a id="downloadAgreement" href="#" target="_blank" class="btn-download" style="color: #007aff; text-decoration: underline;">
-      Download Blank Agreement
-    </a>
-  </div>
+    <div class="card-tag">ADMIN BINDING REVIEW & SIGNATURE</div>
+    
+    <div class="info-row">
+        <span class="label">Merchant's Signed Copy</span>
+        <a id="downloadAgreement" href="#" class="btn-download" style="color: #007aff; text-decoration: underline;">
+            View Merchant Agreement
+        </a>
+    </div>
 
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #333;">
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #333;">
 
-  <div class="upload-area">
-    <label for="signedDocInput" class="label">Upload Signed Agreement</label>
-    <input type="file" id="signedDocInput" accept="image/*,application/pdf">
+    <div class="admin-sign-container">
+        <div class="sign-header">
+            <span class="label">ADMIN SIGNATURE BOARD</span>
+            <div class="board-controls">
+                <button type="button" id="clearBoard" class="mini-btn">Clear</button>
+            </div>
+        </div>
+        
+        <div class="signature-wrapper">
+            <canvas id="adminSignCanvas"></canvas>
+            <div class="signature-line"></div>
+        </div>
+
+        <div class="admin-inputs-row">
+            <div class="input-group">
+                <label>ADMIN FULL NAME</label>
+                <input type="text" id="adminFullName" placeholder="Enter your name">
+            </div>
+            <div class="input-group">
+                <label>SIGNING DATE</label>
+                <input type="text" id="adminSignDate" readonly>
+            </div>
+        </div>
+    </div>
+
     <p id="uploadStatus"></p>
-  </div>
 
-  <button id="saveSignedDocBtn" disabled>
-    Save Signed Agreement
-  </button>
+    <button id="saveSignedDocBtn" class="btn-primary">
+        Stamp & Finalize Agreement
+    </button>
 </div>
 
 </section>
@@ -160,7 +181,7 @@ Back to Applications
 
 </div>
 <script src="/start/pwa-handler.js"></script>
-<script type="module" src="js/view-verify.js?v=28"></script>
+<script type="module" src="js/view-verify.js?v=29"></script>
 
 </body>
 </html>
