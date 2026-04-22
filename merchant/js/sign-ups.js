@@ -501,7 +501,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   submitBtn.disabled = true;
   submitBtn.innerText = "Processing Application...";
   
-  const rawUsername = usernameInput.value.trim();
+  const rawUsername = usernameInput.value.trim().toLowerCase();
   const rawEmail = emailInput.value.trim().toLowerCase(); // Lowercase email here
   const rawName = document.getElementById("fullName").value.trim(); // Add this line
   const emailResult = isValidRunEmail(rawEmail, rawName, matricInput.value);
