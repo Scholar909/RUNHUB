@@ -257,20 +257,100 @@ color:var(--error);
     color: var(--text-dim);
 }
 
+/* ADMIN SIGNATURE BOARD STYLES */
+.admin-sign-container {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.sign-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.mini-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-dim);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+.signature-wrapper {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: #fff; /* High contrast for signing */
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: crosshair;
+    touch-action: none; /* Prevents scrolling while signing */
+}
+
+#adminSignCanvas {
+    width: 100%;
+    height: 100%;
+}
+
+.signature-line {
+    position: absolute;
+    bottom: 40px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #000;
+    opacity: 0.2;
+}
+
+.admin-inputs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 80%;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    padding: 8px;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.85rem;
+}
+
 #saveSignedDocBtn {
-    box-sizing: border-box; /* Also apply fix here */
-    background-color: var(--success); 
-    opacity: 0.5; 
-    cursor: not-allowed; 
-    width: 100%; 
-    margin-top: 15px; 
-    padding: 14px; 
-    border-radius: 12px; 
-    color: white; 
-    border: none; 
+    background: var(--success);
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    color: white;
     font-weight: bold;
+    margin-top: 20px;
+    cursor: pointer;
     transition: 0.3s;
 }
+
+#saveSignedDocBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 
 /* Active state for the button */
 #saveSignedDocBtn:not(:disabled) {
