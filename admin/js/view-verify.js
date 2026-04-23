@@ -187,18 +187,31 @@ if (data.signedAgreementUrl) {
         </div>
     `;
     
-    // View Logic: Opens the final stamped agreement in a new window (same style as blank)
+    // View Logic: Opens ALL pages of the agreement
     document.getElementById("viewFinalDoc").onclick = (e) => {
         e.preventDefault();
         const printWindow = window.open('', '_blank');
+        
+        // Map through all sheets, but swap the last sheet with the signed one
+        const allSheets = [...data.files.bindingAgreementSheets];
+        allSheets[allSheets.length - 1] = data.signedAgreementUrl; // Swap blank last page for signed one
+
+        const imagesHtml = allSheets.map(url => 
+            `<div style="text-align:center; background:#525659; padding:20px 0;">
+                <img src="${url}" style="max-width:100%; height:auto; background:white; box-shadow:0 0 10px rgba(0,0,0,0.5);">
+            </div>`
+        ).join('');
+
         printWindow.document.write(`
             <html>
-                <body style="margin:0; background:#525659; display:flex; justify-content:center;">
-                    <img src="${data.signedAgreementUrl}" style="max-width:100%; height:auto; background:white;">
+                <head><title>Final Signed Agreement</title></head>
+                <body style="margin:0; background:#525659;">
+                    ${imagesHtml}
                 </body>
             </html>
         `);
     };
+
 
     // Hide Board and Save button since signing is final
     document.querySelector('.admin-sign-container').style.display = "none";
@@ -234,28 +247,29 @@ saveSignedDocBtn.onclick = async () => {
 
         // 1. Draw Admin Canvas Signature (Place on the line)
         const sigData = canvas.toDataURL("image/png");
-        const sigImg = await loadImage(sigData);
-        // Positioned above the right-side line
-        mCtx.drawImage(sigImg, 1680, 2850, 600, 200); 
+        // Draw Signature Handwriting at the START of the line (1480)
+        const sigImg = await loadImage(canvas.toDataURL("image/png"));
+        mCtx.drawImage(sigImg, 1480, 2850, 600, 200); 
 
-        // 2. Draw Admin Name & Date (Formatted like Merchant Side)
-        mCtx.fillStyle = "#000";
-        mCtx.textAlign = "left";
-        
-        // Use a clean font for the printed name
+        // Draw Name and Date at the START of the line (1480)
         mCtx.font = "40px Helvetica";
         const adminText = adminName.toUpperCase();
+        mCtx.fillText(adminText, 1480, 3055);
         const nameWidth = mCtx.measureText(adminText).width;
+        mCtx.fillStyle = "#555";
+        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, 1480 + nameWidth + 10, 3055);
         
-        // Positioning text right above the line (sigY is 3100 in your generator)
+        // Positioning: sigY is 3100. We draw text above the line at 3055.
         const textY = 3055; 
-        const startX = 1680; // Align with the start of the admin line
+        const startX = 1480; // Start of the admin signature line
         
+        // Draw Name
         mCtx.fillText(adminText, startX, textY);
         
-        // Draw the separator and date
+        // Draw the separator and date on the same row
         mCtx.fillStyle = "#555";
-        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, startX + nameWidth, textY);
+        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, startX + nameWidth + 10, textY);
+
 
         // Convert to Blob and Upload to Cloudinary
         const blob = await new Promise(res => mergeCanvas.toBlob(res, 'image/png'));
