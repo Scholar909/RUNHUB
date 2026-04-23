@@ -254,7 +254,7 @@ saveSignedDocBtn.onclick = async () => {
         // We set Y to 2900 so the signature sits ON the line (sigY is 3100)
         const sigWidth = 510; 
         const sigHeight = 200;
-        const startX = 1480; // Start of the admin signature line
+        
         const lineY = 3100;  // The actual Y coordinate of the horizontal line
         
         mCtx.drawImage(sigImg, startX, lineY - sigHeight, sigWidth, sigHeight); 
