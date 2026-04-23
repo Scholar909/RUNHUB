@@ -232,3 +232,38 @@ input:checked + .slider:before { transform: translateX(20px); }
 .options-dropdown button:last-child {
     border-bottom: none;
 }
+
+
+select {
+    width: 100%;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    padding: 14px;
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+/* Specific layout for the time row */
+.time-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* Creates 3 equal columns */
+    gap: 10px;
+}
+
+/* Optional: Make the labels or inputs look more compact for the small space */
+.time-row .form-group {
+    margin-bottom: 0;
+}
+
+/* Ensure the select matches the input heights exactly */
+select {
+    appearance: none; /* Removes default browser styling */
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 1em;
+    padding-right: 30px;
+}
