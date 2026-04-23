@@ -143,44 +143,55 @@ onAuthStateChanged(auth, (user) => {
             }
         });
 
-        // 2. NEW: Fetch Legal Docs from KYC collection
-        const kycRef = doc(db, "kyc", user.uid);
-        onSnapshot(kycRef, (kycSnap) => {
-            const legalDocsSection = document.getElementById("legalDocs");
-            if (!legalDocsSection) return;
-
-            if (kycSnap.exists()) {
-                const kycData = kycSnap.data();
-                const blankDocPages = kycData.files?.bindingAgreementBlank || [];
-                const signedDocUrl = kycData.files?.signedAgreement || "";
-
-                legalDocsSection.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--text-dim); font-size: 0.9rem;">Agreement Status</span>
-                            <span style="color: #34c759; font-weight: bold; font-size: 0.8rem;">VERIFIED & SIGNED</span>
-                        </div>
-                        <button id="viewFinalDocBtn" class="btn btn-outline" style="width: 100%; font-size: 0.9rem; padding: 10px;">
-                            <i class="fi-page-filled"></i> View My Signed Agreement
-                        </button>
-                    </div>
-                `;
-
-                // Logic to show the merged document
-                document.getElementById("viewFinalDocBtn").onclick = () => {
-                    const finalPages = [...blankDocPages];
-                    // Replace the last page with the merchant's signature page
-                    if (finalPages.length > 0) {
-                        finalPages[finalPages.length - 1] = signedDocUrl;
-                    } else {
-                        finalPages.push(signedDocUrl);
-                    }
-                    openAgreementViewer(finalPages, "My Signed Agreement");
-                };
-            } else {
-                legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">No legal documents found.</p>`;
-            }
-        });
+      // 2. Fetch Legal Docs from KYC collection
+      const kycRef = doc(db, "kyc", user.uid);
+      onSnapshot(kycRef, (kycSnap) => {
+          const legalDocsSection = document.getElementById("legalDocs");
+          if (!legalDocsSection) return;
+      
+          if (kycSnap.exists()) {
+              const kycData = kycSnap.data();
+              // Ensure files object exists
+              const files = kycData.files || {};
+              
+              // Match the Admin side: get blank pages and the signed URL
+              const blankDocPages = Array.isArray(files.bindingAgreementBlank) 
+                  ? files.bindingAgreementBlank 
+                  : (files.bindingAgreementBlank ? [files.bindingAgreementBlank] : []);
+                  
+              const signedDocUrl = files.signedAgreement || "";
+      
+              if (signedDocUrl) {
+                  legalDocsSection.innerHTML = `
+                      <div style="display: flex; flex-direction: column; gap: 12px;">
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                              <span style="color: var(--text-dim); font-size: 0.9rem;">Agreement Status</span>
+                              <span style="color: #34c759; font-weight: bold; font-size: 0.8rem;">VERIFIED & SIGNED</span>
+                          </div>
+                          <button id="viewFinalDocBtn" class="btn btn-outline" style="width: 100%; font-size: 0.9rem; padding: 10px; border-color: #34c759; color: #34c759;">
+                              <i class="fi-page-filled"></i> View My Signed Agreement
+                          </button>
+                      </div>
+                  `;
+      
+                  document.getElementById("viewFinalDocBtn").onclick = () => {
+                      // Logic to show the merged document (Copying Admin's Swap Logic)
+                      const finalPages = [...blankDocPages];
+                      if (finalPages.length > 0) {
+                          // Replace the last blank page with the signed one
+                          finalPages[finalPages.length - 1] = signedDocUrl;
+                      } else {
+                          finalPages.push(signedDocUrl);
+                      }
+                      openAgreementViewer(finalPages, "My Signed Agreement");
+                  };
+              } else {
+                  legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">Agreement pending signature.</p>`;
+              }
+          } else {
+              legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">No legal documents found.</p>`;
+          }
+      });
     }
 });
 
@@ -191,8 +202,9 @@ function openAgreementViewer(pagesArray, title) {
     const printWindow = window.open('', '_blank');
     
     const imagesHtml = pages.map(url => `
-        <div style="text-align:center; background:#1c1c1e; padding:20px 0;">
+        <div style="text-align:center; background:#1c1c1e; padding:20px 0; border-bottom: 1px solid #333;">
             <img src="${url}" style="max-width:90%; height:auto; background:white; box-shadow:0 0 15px rgba(0,0,0,0.5); display:inline-block; border-radius:4px;">
+            <p style="color: #666; margin-top: 10px;">Page ${pages.indexOf(url) + 1}</p>
         </div>
     `).join('');
         
@@ -200,15 +212,21 @@ function openAgreementViewer(pagesArray, title) {
         <html>
             <head>
                 <title>${title}</title>
-                <style>body { margin:0; background:#1c1c1e; font-family: sans-serif; }</style>
+                <style>
+                    body { margin:0; background:#1c1c1e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+                </style>
             </head>
             <body>
+                <div style="padding: 10px; background: #2c2c2e; color: white; text-align: center; position: sticky; top: 0; z-index: 100;">
+                    ${title}
+                </div>
                 ${imagesHtml}
             </body>
         </html>
     `);
     printWindow.document.close();
 }
+
 
 
 // Init drawer and modal
