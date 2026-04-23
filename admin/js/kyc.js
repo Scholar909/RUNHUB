@@ -181,9 +181,9 @@ bankDetails.innerHTML = `
 
 /* --- LEGAL DOCUMENTS SECTION --- */
 const legalDocsSection = document.getElementById("legalDocs"); // Ensure this ID exists in your HTML
+
 /* --- LEGAL DOCUMENTS SECTION --- */
 if (legalDocsSection) {
-    // Correctly path to the data saved during approval
     const blankDocPages = data.files?.bindingAgreementBlank || [];
     const signedDocUrl = data.files?.signedAgreement || "";
 
@@ -197,7 +197,7 @@ if (legalDocsSection) {
         <div class="info-row">
             <span class="label">Signed Agreement</span>
             ${signedDocUrl 
-                ? `<a href="${signedDocUrl}#toolbar=1" target="_blank" class="view-link" style="color: #34c759; font-weight: bold;">View Signed Version</a>`
+                ? `<button id="viewFinalDocBtn" class="view-link" style="background:none; border:none; color:#34c759; font-weight:bold; cursor:pointer; padding:0; text-decoration:underline;">View Final Signed Agreement</button>`
                 : `<span style="color: #86868b;">Not Uploaded</span>`
             }
         </div>
@@ -205,32 +205,42 @@ if (legalDocsSection) {
 
     // Click handler for Blank Agreement
     document.getElementById("viewBlankBtn").onclick = () => {
-        const pages = Array.isArray(blankDocPages) ? blankDocPages : [blankDocPages];
-        const printWindow = window.open('', '_blank');
-        const imagesHtml = pages.map(url => `
-            <div style="
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                margin-bottom: 20px;
-                background: white;
-            ">
-                <img src="${url}" style="
-                    max-width: 90%;
-                    height: auto;
-                    display: block;
-                ">
-            </div>
-        `).join('');
-            
-        printWindow.document.write(`
-            <html>
-                <head><title>Original Agreement Pages</title></head>
-                <body style="background:#525659; margin:0; padding:20px;">${imagesHtml}</body>
-            </html>
-        `);
-        printWindow.document.close();
+        openAgreementViewer(blankDocPages, "Original Agreement Pages");
     };
+
+    // Click handler for Final Signed Agreement (The Swap Logic)
+    if (signedDocUrl) {
+        document.getElementById("viewFinalDocBtn").onclick = () => {
+            // Create a copy of the blank pages array
+            const finalPages = [...blankDocPages];
+            // Swap the last blank page with the signed one
+            finalPages[finalPages.length - 1] = signedDocUrl;
+            
+            openAgreementViewer(finalPages, "Final Signed Agreement");
+        };
+    }
+}
+
+// Helper function to handle the printing/viewing window logic
+function openAgreementViewer(pagesArray, title) {
+    const pages = Array.isArray(pagesArray) ? pagesArray : [pagesArray];
+    const printWindow = window.open('', '_blank');
+    
+    const imagesHtml = pages.map(url => `
+        <div style="text-align:center; background:#525659; padding:20px 0;">
+            <img src="${url}" style="max-width:100%; height:auto; background:white; box-shadow:0 0 10px rgba(0,0,0,0.5); display:inline-block;">
+        </div>
+    `).join('');
+        
+    printWindow.document.write(`
+        <html>
+            <head><title>${title}</title></head>
+            <body style="margin:0; background:#525659;">
+                ${imagesHtml}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 
