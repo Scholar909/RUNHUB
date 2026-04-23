@@ -876,8 +876,8 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 
 async function sendAdminMerchantAlert(data) {
   const now = new Date();
-    const ADMIN_PHONE = "2349168873680";
-    const CALLMEBOT_API_KEY = "7465463"; 
+    const ADMIN_PHONE = "2348118663849";
+    const CALLMEBOT_API_KEY = "4093230"; 
 // --- FORMAT PHONE NUMBER TO 234 FORMAT ---
     let formattedPhone = data.phoneNumber.trim().replace(/\D/g, ''); // Remove non-digits
     if (formattedPhone.startsWith('0')) {
