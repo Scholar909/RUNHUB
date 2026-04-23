@@ -357,8 +357,8 @@ NOVAHUB Team`;
 
       alert(`Merchant approved successfully.\nAn email has been sent to ${data.email}.\n\nClick OK to notify the merchant via WhatsApp.`);
       
-      // Open WhatsApp in a new tab
-      window.open(whatsappURL, "_blank");
+      // Open WhatsApp
+      window.location.href = whatsappURL;
 
     } catch (err) {
       console.error("Email Error:", err);
@@ -442,7 +442,7 @@ We hope to see you join the NOVAHUB merchant community soon.
       const encoded = encodeURIComponent(message);
       const phone = formatNGNumber(app.phoneNumber);
       const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
-      window.open(whatsappURL, "_blank");
+      window.location.href = whatsappURL;
 
       modal.style.display = "none";
     } catch (err) {
