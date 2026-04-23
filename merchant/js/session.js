@@ -26,6 +26,8 @@ const sessionListView = document.getElementById('sessionListView');
 const sessionFormView = document.getElementById('sessionFormView');
 const menuContainer = document.getElementById('menuContainer');
 const sessionGrid = document.querySelector('.session-grid');
+const closingToggle = document.getElementById('closingToggle');
+const closingInputs = document.getElementById('closingTimeInputs');
 
 document.addEventListener("DOMContentLoaded", () => {
     deliveryInput = document.getElementById('deliveryChargeInput');
@@ -39,6 +41,10 @@ document.addEventListener("DOMContentLoaded", () => {
     slotsInput.addEventListener("input", () => {
         if (slotsInput.value > MAX_SLOTS_LIMIT) slotsInput.value = MAX_SLOTS_LIMIT;
         if (slotsInput.value < 1) slotsInput.value = 1;
+    });
+    
+    closingToggle.addEventListener('change', () => {
+        closingInputs.style.display = closingToggle.checked ? 'grid' : 'none';
     });
 });
 
@@ -223,6 +229,17 @@ window.saveSession = async () => {
     // --- PERSISTENCE LOGIC ---
     // If editing, find the existing session to keep its live status and slots
     const existingSession = editingSessionId ? sessions.find(s => s.id === editingSessionId) : null;
+    
+    const closingEnabled = document.getElementById('closingToggle').checked;
+    const closingHour = document.getElementById('closingHour').value;
+    const closingMinute = document.getElementById('closingMinute').value;
+    const closingPeriod = document.getElementById('closingPeriod').value;
+    
+    let closingTime = null;
+    
+    if (closingEnabled && closingHour && closingMinute) {
+        closingTime = `${closingHour}:${closingMinute} ${closingPeriod}`;
+    }
 
     const sessionData = {
         sessionName: nameInput.value,
@@ -231,11 +248,11 @@ window.saveSession = async () => {
         deliveryCharge: finalDeliveryCharge,
         maxSlots: finalMaxSlots,
         menu: menuItems,
+        closingTime: closingTime,
         // Keep current status if editing, otherwise default to off for new sessions
         isActive: existingSession ? existingSession.isActive : false,
         slotsFilled: existingSession ? existingSession.slotsFilled : 0,
         lastTurnedOff: existingSession ? existingSession.lastTurnedOff : 0,
-        menu: menuItems,
         version: Date.now(), // Use timestamp as a unique version ID
         copyCount: 0,
         timestamp: existingSession ? existingSession.timestamp : Date.now()
@@ -359,6 +376,27 @@ window.showForm = (mode, id = null) => {
         document.querySelector('input[placeholder="Destination"]').value = s.toLocation;
         document.getElementById('deliveryChargeInput').value = s.deliveryCharge;
         document.getElementById('maxSlotsInput').value = s.maxSlots;
+        const closingToggle = document.getElementById('closingToggle');
+        const closingInputs = document.getElementById('closingTimeInputs');
+        const closingHour = document.getElementById('closingHour');
+        const closingMinute = document.getElementById('closingMinute');
+        
+        if (s.closingTime) {
+            closingToggle.checked = true;
+            closingInputs.style.display = 'grid';
+        
+            const [time, period] = s.closingTime.split(' ');
+            const [h, m] = time.split(':');
+            
+            closingHour.value = h;
+            closingMinute.value = m;
+            document.getElementById('closingPeriod').value = period;
+            closingHour.value = h;
+            closingMinute.value = m;
+        } else {
+            closingToggle.checked = false;
+            closingInputs.style.display = 'none';
+        }
         s.menu.forEach(item => window.addMenuItem(item.name, item.price, item.available !== false));
     } else {
         editingSessionId = null;
@@ -370,17 +408,23 @@ window.showForm = (mode, id = null) => {
 
 // --- Updated Formatting Helper for WhatsApp ---
 function formatWhatsAppText(session) {
+    let closingText = "";
+
+    if (session.closingTime) {
+        closingText = `⏰ Closing by ${session.closingTime}\n\n`;
+    }
+
     const menuText = session.menu
         .filter(item => item.available !== false)
         .map(item => `• ${item.name}: ₦${item.price}`)
         .join('\n');
 
-    // Note: We use a placeholder or the actual merchant UID for the link
     return `*NOVAHUB DELIVERY AVAILABLE*\n` +
            `Route: ${session.fromLocation} → ${session.toLocation}\n\n` +
            `*MENU:*\n${menuText}\n\n` +
            `Delivery fee: ₦${session.deliveryCharge}\n` +
-           `Limit: ${session.slotsFilled || 0}/${session.maxSlots} slots\n` +
+           `Limit: ${session.slotsFilled || 0}/${session.maxSlots} slots\n\n` +
+           `${closingText}` +
            `Order here: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${currentUid}&s=${session.id}`;
 }
 
@@ -411,6 +455,7 @@ window.copySessionLink = async (id) => {
         toLocation: session.toLocation,
         deliveryCharge: session.deliveryCharge,
         maxSlots: session.maxSlots,
+        closingTime: session.closingTime || null,
         menu: session.menu.map(item => ({ name: item.name, price: item.price })),
         createdAt: serverTimestamp()
     };
@@ -448,6 +493,11 @@ window.importSession = async () => {
         document.querySelector('input[placeholder="Destination"]').value = data.toLocation || "";
         document.getElementById('deliveryChargeInput').value = data.deliveryCharge || 300;
         document.getElementById('maxSlotsInput').value = data.maxSlots || 5;
+        document.getElementById('closingToggle').checked = false;
+        document.getElementById('closingTimeInputs').style.display = 'none';
+        document.getElementById('closingHour').value = "";
+        document.getElementById('closingMinute').value = "";
+        document.getElementById('closingPeriod').value = "AM";
 
         // Reset and fill menu
         menuContainer.innerHTML = '';
@@ -458,6 +508,18 @@ window.importSession = async () => {
         // Clean up UI
         importInput.value = ''; 
         document.getElementById('addOptions').style.display = 'none';
+        
+        if (data.closingTime) {
+            document.getElementById('closingToggle').checked = true;
+            document.getElementById('closingTimeInputs').style.display = 'grid';
+        
+            const [time, period] = data.closingTime.split(' ');
+            const [h, m] = time.split(':');
+            
+            document.getElementById('closingHour').value = h;
+            document.getElementById('closingMinute').value = m;
+            document.getElementById('closingPeriod').value = period;
+        }
 
     } catch (e) {
         console.error("Import failed", e);
