@@ -247,17 +247,35 @@ saveSignedDocBtn.onclick = async () => {
 
         // 1. Draw Admin Canvas Signature (Place on the line)
         const sigData = canvas.toDataURL("image/png");
-        // Draw Signature Handwriting at the START of the line (1480)
+        // --- 1. Draw Admin Handwriting Signature ---
         const sigImg = await loadImage(canvas.toDataURL("image/png"));
-        mCtx.drawImage(sigImg, 1480, 2850, 600, 200); 
+        
+        // We set the width to 510 (calculated from your 17/20 ratio: 600 * 0.85)
+        // We set Y to 2900 so the signature sits ON the line (sigY is 3100)
+        const sigWidth = 510; 
+        const sigHeight = 200;
+        const startX = 1480; // Start of the admin signature line
+        const lineY = 3100;  // The actual Y coordinate of the horizontal line
+        
+        mCtx.drawImage(sigImg, startX, lineY - sigHeight, sigWidth, sigHeight); 
 
-        // Draw Name and Date at the START of the line (1480)
+        // --- 2. Draw Admin Name & Date to the RIGHT of the signature ---
         mCtx.font = "40px Helvetica";
+        mCtx.fillStyle = "#000";
+        mCtx.textAlign = "left";
+        
         const adminText = adminName.toUpperCase();
-        mCtx.fillText(adminText, 1480, 3055);
+        const nameX = startX + sigWidth + 20; // 20px gap after the signature
+        const textBaselineY = lineY - 10; // Sits slightly above the line for readability
+        
+        // Draw Name
+        mCtx.fillText(adminText, nameX, textBaselineY);
+        
+        // Draw Date on the same line
         const nameWidth = mCtx.measureText(adminText).width;
         mCtx.fillStyle = "#555";
-        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, 1480 + nameWidth + 10, 3055);
+        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, nameX + nameWidth + 10, textBaselineY);
+
         
         // Positioning: sigY is 3100. We draw text above the line at 3055.
         const textY = 3055; 
