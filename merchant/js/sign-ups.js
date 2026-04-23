@@ -836,7 +836,7 @@ function renderSignature(ctx, canvasWidth, margin, sigY, data) {
     // 3. Switch back to standard font for the Date (as requested)
     ctx.font = "40px Helvetica";
     ctx.fillStyle = "#555"; 
-    ctx.fillText(`  |  Date: ${date}`, margin + 20 + sigWidth, sigY - 45);
+    ctx.fillText(`  |  ${date}`, margin + 20 + sigWidth, sigY - 45);
 
     // --- LABELS ---
     ctx.fillStyle = "#000";
