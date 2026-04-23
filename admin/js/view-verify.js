@@ -248,9 +248,9 @@ saveSignedDocBtn.onclick = async () => {
         // --- 1. SET DRAWING CONSTANTS ---
         const startX = 1350; // Start of the admin signature line
         const lineY = 3100;  // The actual Y coordinate of the horizontal line
-        const sigWidth = 450; // Adjusted for 17/20 ratio
+        const sigWidth = 450;
         const sigHeight = 160;
-        const textBaselineY = lineY - 10; // Baseline sits slightly above the line
+        const textBaselineY = lineY - 25; // Baseline sits slightly above the line
 
         // --- 2. DRAW ADMIN HANDWRITING SIGNATURE ---
         const sigImg = await loadImage(canvas.toDataURL("image/png"));
@@ -271,7 +271,7 @@ saveSignedDocBtn.onclick = async () => {
         // Draw Date on the same row
         const nameWidth = mCtx.measureText(adminText).width;
         mCtx.fillStyle = "#555";
-        mCtx.fillText(` | ${adminDateInput.value}`, nameX + nameWidth + 10, textBaselineY);
+        mCtx.fillText(` |  ${adminDateInput.value}`, nameX + nameWidth + 10, textBaselineY);
 
         // --- 4. UPLOAD & SAVE ---
         const blob = await new Promise(res => mergeCanvas.toBlob(res, 'image/png'));
