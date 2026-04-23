@@ -232,7 +232,7 @@ saveSignedDocBtn.onclick = async () => {
     saveSignedDocBtn.innerText = "Stamping & Finalizing...";
     saveSignedDocBtn.disabled = true;
 
-    try {
+        try {
         const sheets = data.files.bindingAgreementSheets;
         const lastPageUrl = sheets[sheets.length - 1];
 
@@ -245,55 +245,38 @@ saveSignedDocBtn.onclick = async () => {
         mergeCanvas.height = 3508;
         mCtx.drawImage(baseImg, 0, 0, 2480, 3508);
 
-        // 1. Draw Admin Canvas Signature (Place on the line)
-        const sigData = canvas.toDataURL("image/png");
-        // --- 1. Draw Admin Handwriting Signature ---
-        const sigImg = await loadImage(canvas.toDataURL("image/png"));
-        
-        // We set the width to 510 (calculated from your 17/20 ratio: 600 * 0.85)
-        // We set Y to 2900 so the signature sits ON the line (sigY is 3100)
-        const sigWidth = 510; 
-        const sigHeight = 200;
-        
+        // --- 1. SET DRAWING CONSTANTS ---
+        const startX = 1480; // Start of the admin signature line
         const lineY = 3100;  // The actual Y coordinate of the horizontal line
-        
+        const sigWidth = 510; // Adjusted for 17/20 ratio
+        const sigHeight = 200;
+        const textBaselineY = lineY - 10; // Baseline sits slightly above the line
+
+        // --- 2. DRAW ADMIN HANDWRITING SIGNATURE ---
+        const sigImg = await loadImage(canvas.toDataURL("image/png"));
+        // Position: sits exactly ON the line
         mCtx.drawImage(sigImg, startX, lineY - sigHeight, sigWidth, sigHeight); 
 
-        // --- 2. Draw Admin Name & Date to the RIGHT of the signature ---
+        // --- 3. DRAW NAME & DATE TO THE RIGHT ---
         mCtx.font = "40px Helvetica";
         mCtx.fillStyle = "#000";
         mCtx.textAlign = "left";
         
         const adminText = adminName.toUpperCase();
-        const nameX = startX + sigWidth + 20; // 20px gap after the signature
-        const textBaselineY = lineY - 10; // Sits slightly above the line for readability
+        const nameX = startX + sigWidth + 20; // 20px gap after handwriting
         
         // Draw Name
         mCtx.fillText(adminText, nameX, textBaselineY);
         
-        // Draw Date on the same line
+        // Draw Date on the same row
         const nameWidth = mCtx.measureText(adminText).width;
         mCtx.fillStyle = "#555";
         mCtx.fillText(`  |  Date: ${adminDateInput.value}`, nameX + nameWidth + 10, textBaselineY);
 
-        
-        // Positioning: sigY is 3100. We draw text above the line at 3055.
-        const textY = 3055; 
-        const startX = 1480; // Start of the admin signature line
-        
-        // Draw Name
-        mCtx.fillText(adminText, startX, textY);
-        
-        // Draw the separator and date on the same row
-        mCtx.fillStyle = "#555";
-        mCtx.fillText(`  |  Date: ${adminDateInput.value}`, startX + nameWidth + 10, textY);
-
-
-        // Convert to Blob and Upload to Cloudinary
+        // --- 4. UPLOAD & SAVE ---
         const blob = await new Promise(res => mergeCanvas.toBlob(res, 'image/png'));
         const uploadedUrl = await uploadImage(blob);
 
-        // Update Firestore
         const appRef = doc(db, "merchant_applications", appId);
         await updateDoc(appRef, {
             signedAgreementUrl: uploadedUrl,
