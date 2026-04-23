@@ -130,25 +130,86 @@ const loadMerchantData = (uid) => {
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // location.js handles the Gatekeeper rules (GPS/Debt/Sub)
-        // This listener just keeps the Profile UI updated in real-time
+        // 1. Listen to Profile Data
         onSnapshot(doc(db, "users", user.uid), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                
-                // Account Locking Logic (Keep this unique profile check)
                 if (data.rating < 2 || data.status === "Locked") {
                     alert("Your account has been restricted by Admin.");
                     window.handleLogout();
                     return;
                 }
-                
                 renderProfileUI(data);
             }
         });
+
+        // 2. NEW: Fetch Legal Docs from KYC collection
+        const kycRef = doc(db, "kyc", user.uid);
+        onSnapshot(kycRef, (kycSnap) => {
+            const legalDocsSection = document.getElementById("legalDocs");
+            if (!legalDocsSection) return;
+
+            if (kycSnap.exists()) {
+                const kycData = kycSnap.data();
+                const blankDocPages = kycData.files?.bindingAgreementBlank || [];
+                const signedDocUrl = kycData.files?.signedAgreement || "";
+
+                legalDocsSection.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--text-dim); font-size: 0.9rem;">Agreement Status</span>
+                            <span style="color: #34c759; font-weight: bold; font-size: 0.8rem;">VERIFIED & SIGNED</span>
+                        </div>
+                        <button id="viewFinalDocBtn" class="btn btn-outline" style="width: 100%; font-size: 0.9rem; padding: 10px;">
+                            <i class="fi-page-filled"></i> View My Signed Agreement
+                        </button>
+                    </div>
+                `;
+
+                // Logic to show the merged document
+                document.getElementById("viewFinalDocBtn").onclick = () => {
+                    const finalPages = [...blankDocPages];
+                    // Replace the last page with the merchant's signature page
+                    if (finalPages.length > 0) {
+                        finalPages[finalPages.length - 1] = signedDocUrl;
+                    } else {
+                        finalPages.push(signedDocUrl);
+                    }
+                    openAgreementViewer(finalPages, "My Signed Agreement");
+                };
+            } else {
+                legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">No legal documents found.</p>`;
+            }
+        });
     }
-    // No 'else' needed; location.js handles unauthorized users
 });
+
+
+// Helper to view signed documents (Same logic as Admin KYC)
+function openAgreementViewer(pagesArray, title) {
+    const pages = Array.isArray(pagesArray) ? pagesArray : [pagesArray];
+    const printWindow = window.open('', '_blank');
+    
+    const imagesHtml = pages.map(url => `
+        <div style="text-align:center; background:#1c1c1e; padding:20px 0;">
+            <img src="${url}" style="max-width:90%; height:auto; background:white; box-shadow:0 0 15px rgba(0,0,0,0.5); display:inline-block; border-radius:4px;">
+        </div>
+    `).join('');
+        
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>${title}</title>
+                <style>body { margin:0; background:#1c1c1e; font-family: sans-serif; }</style>
+            </head>
+            <body>
+                ${imagesHtml}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
 
 // Init drawer and modal
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
