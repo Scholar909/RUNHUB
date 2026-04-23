@@ -62,29 +62,38 @@ function renderSessions(merchants) {
     }
 
     container.innerHTML = merchants.map(m => {
-        // Format the Menu Items for WhatsApp
+        // 1. Handle Closing Time logic (matches Merchant logic)
+        let closingText = "";
+        if (m.closingTime) {
+            closingText = `⏰ Closing by ${m.closingTime}\n\n`;
+        }
+
+        // 2. Format Menu
         const menuText = m.menu
             .filter(item => item.available !== false)
             .map(item => `• ${item.name}: ₦${item.price}`)
             .join('\n');
 
+        // 3. Construct the Full WhatsApp Text
         const waText = `*NOVAHUB DELIVERY AVAILABLE*\n` +
-                       `Merchant: ${m.username}\n` +
-                       `From: ${m.fromLocation}\n` +
-                       `To: ${m.toLocation}\n\n` +
+                       `Route: ${m.fromLocation} → ${m.toLocation}\n\n` + // Removed "Merchant:" to match merchant version
                        `*MENU:*\n${menuText}\n\n` +
                        `Delivery fee: ₦${m.deliveryCharge}\n` +
-                       `Limit: ${m.slotsFilled}/${m.maxSlots} slots\n` +
-                       `Link: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${m.id}&s=${m.currentSessionId}`;
+                       `Limit: ${m.slotsFilled}/${m.maxSlots} slots\n\n` +
+                       `${closingText}` + // <--- Injected here
+                       `Order here: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${m.id}&s=${m.sessionId}`;
 
         return `
             <div class="copy-card">
                 <div class="copy-title">@${m.username} Session</div>
-                <div class="copy-line">${m.fromLocation} → ${m.toLocation}</div>
+                <div class="copy-line">
+                    ${m.fromLocation} → ${m.toLocation}
+                    ${m.closingTime ? `<br><span style="color:var(--accent); font-size:0.75rem;">⏰ Closes: ${m.closingTime}</span>` : ''}
+                </div>
                 <button class="copy-btn"
                     data-text="${encodeURIComponent(waText)}"
                     data-mid="${m.id}"
-                    data-sid="${m.currentSessionId}"
+                    data-sid="${m.sessionId}"
                     onclick="copyToClipboard(this)">
                     Copy for WhatsApp (${m.copyCount})
                 </button>
@@ -92,7 +101,6 @@ function renderSessions(merchants) {
         `;
     }).join('');
 }
-
 
 function renderRatings(ratings) {
     const container = document.getElementById('ratingsTab');
