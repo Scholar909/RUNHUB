@@ -226,20 +226,32 @@ function encodeMatric(matric) {
  */
 const triggerSearch = () => {
     const term = searchInput.value.toLowerCase().trim();
-    
-    const filtered = allUsers.filter(user => {
-        // Safe string conversions
-        const name = (user.fullName || "").toLowerCase();
-        const phone = (user.phoneNumber || user.phone || "").toLowerCase();
-        const email = (user.email || "").toLowerCase();
-        const userId = (user.id || "").toLowerCase();
 
-        return name.includes(term) || 
-               phone.includes(term) || 
-               email.includes(term) || 
-               userId.includes(term);
+    const filtered = allUsers.filter(user => {
+        // Normalize everything to string safely
+        const fields = [
+            user.fullName,
+            user.phoneNumber,
+            user.phone,
+            user.email,
+            user.username,
+            user.matricNumber,
+            user.matricNo,
+            user.gender,
+            user.role,
+            user.department,
+            user.level,
+            user.hostelLocation,
+            user.status,
+            user.id
+        ];
+
+        // Convert all to lowercase strings
+        return fields.some(field => 
+            (field || "").toString().toLowerCase().includes(term)
+        );
     });
-    
+
     renderUserTable(filtered);
 };
 
