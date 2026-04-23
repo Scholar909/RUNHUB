@@ -150,15 +150,11 @@ onAuthStateChanged(auth, (user) => {
           if (!legalDocsSection) return;
       
           if (kycSnap.exists()) {
-              const kycData = kycSnap.data();
-              // Ensure files object exists
-              const files = kycData.files || {};
+              const data = kycSnap.data();
               
-              // Match the Admin side: get blank pages and the signed URL
-              const blankDocPages = Array.isArray(files.bindingAgreementBlank) 
-                  ? files.bindingAgreementBlank 
-                  : (files.bindingAgreementBlank ? [files.bindingAgreementBlank] : []);
-                  
+              // We look for files inside data.files (Admin style) OR the root (Fallback)
+              const files = data.files || data; 
+              const blankDocPages = files.bindingAgreementBlank || [];
               const signedDocUrl = files.signedAgreement || "";
       
               if (signedDocUrl) {
@@ -168,28 +164,30 @@ onAuthStateChanged(auth, (user) => {
                               <span style="color: var(--text-dim); font-size: 0.9rem;">Agreement Status</span>
                               <span style="color: #34c759; font-weight: bold; font-size: 0.8rem;">VERIFIED & SIGNED</span>
                           </div>
-                          <button id="viewFinalDocBtn" class="btn btn-outline" style="width: 100%; font-size: 0.9rem; padding: 10px; border-color: #34c759; color: #34c759;">
+                          <button id="viewFinalDocBtn" class="btn btn-outline" style="width: 100%; font-size: 0.9rem; padding: 10px; color: #34c759; border-color: #34c759;">
                               <i class="fi-page-filled"></i> View My Signed Agreement
                           </button>
                       </div>
                   `;
       
                   document.getElementById("viewFinalDocBtn").onclick = () => {
-                      // Logic to show the merged document (Copying Admin's Swap Logic)
-                      const finalPages = [...blankDocPages];
+                      // EXACT same swap logic as your Admin KYC page
+                      const finalPages = Array.isArray(blankDocPages) ? [...blankDocPages] : [blankDocPages];
+                      
                       if (finalPages.length > 0) {
-                          // Replace the last blank page with the signed one
                           finalPages[finalPages.length - 1] = signedDocUrl;
                       } else {
                           finalPages.push(signedDocUrl);
                       }
+                      
                       openAgreementViewer(finalPages, "My Signed Agreement");
                   };
               } else {
-                  legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">Agreement pending signature.</p>`;
+                  legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">Agreement not yet signed.</p>`;
               }
           } else {
-              legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">No legal documents found.</p>`;
+              // This triggers if there is no document in 'kyc' collection with this UID
+              legalDocsSection.innerHTML = `<p style="color: #86868b; font-size: 0.9rem;">No legal records found for this account.</p>`;
           }
       });
     }
@@ -202,30 +200,22 @@ function openAgreementViewer(pagesArray, title) {
     const printWindow = window.open('', '_blank');
     
     const imagesHtml = pages.map(url => `
-        <div style="text-align:center; background:#1c1c1e; padding:20px 0; border-bottom: 1px solid #333;">
-            <img src="${url}" style="max-width:90%; height:auto; background:white; box-shadow:0 0 15px rgba(0,0,0,0.5); display:inline-block; border-radius:4px;">
-            <p style="color: #666; margin-top: 10px;">Page ${pages.indexOf(url) + 1}</p>
+        <div style="text-align:center; background:#525659; padding:20px 0;">
+            <img src="${url}" style="max-width:100%; height:auto; background:white; box-shadow:0 0 10px rgba(0,0,0,0.5); display:inline-block;">
         </div>
     `).join('');
         
     printWindow.document.write(`
         <html>
-            <head>
-                <title>${title}</title>
-                <style>
-                    body { margin:0; background:#1c1c1e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-                </style>
-            </head>
-            <body>
-                <div style="padding: 10px; background: #2c2c2e; color: white; text-align: center; position: sticky; top: 0; z-index: 100;">
-                    ${title}
-                </div>
+            <head><title>${title}</title></head>
+            <body style="margin:0; background:#525659;">
                 ${imagesHtml}
             </body>
         </html>
     `);
     printWindow.document.close();
 }
+
 
 
 
