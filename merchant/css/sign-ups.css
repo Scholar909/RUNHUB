@@ -307,3 +307,57 @@ margin-top:20px;
     accent-color: var(--success);
     cursor: pointer;
 }
+
+/* ICON GUIDE */
+
+.icon-guide{
+    background:rgba(0,122,255,0.05);
+    border:1px solid rgba(0,122,255,0.15);
+    border-radius:16px;
+    padding:16px;
+    margin-top:15px;
+}
+
+.icon-guide-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.75rem;
+    font-weight:700;
+    letter-spacing:1px;
+    color:var(--accent);
+    margin-bottom:12px;
+}
+
+.icon-guide-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.icon-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:0.85rem;
+    color:var(--text-main);
+}
+
+.icon-item i{
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:10px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);
+    font-size:0.9rem;
+}
+
+.icon-note{
+    margin-top:12px;
+    font-size:0.75rem;
+    color:var(--text-dim);
+    line-height:1.5;
+}
