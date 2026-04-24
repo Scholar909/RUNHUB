@@ -300,6 +300,7 @@ window.submitOrder = async () => {
                     selectedItems.push({
                         name: item.name,
                         price: item.price,
+                        category: item.category || "food",
                         qty: parseInt(document.getElementById(`qty-${index}`).innerText)
                     });
                 }
