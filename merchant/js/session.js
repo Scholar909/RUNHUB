@@ -471,7 +471,11 @@ window.copySessionLink = async (id) => {
         deliveryCharge: session.deliveryCharge,
         maxSlots: session.maxSlots,
         closingTime: session.closingTime || null,
-        menu: session.menu.map(item => ({ name: item.name, price: item.price })),
+        menu: session.menu.map(item => ({ 
+            name: item.name, 
+            price: item.price, 
+            category: item.category || 'food' 
+        })),
         createdAt: serverTimestamp()
     };
 
@@ -490,7 +494,6 @@ window.importSession = async () => {
     if (!shareId) return;
 
     try {
-        // Fetch the shared data using the short ID
         const sharedDoc = await getDoc(doc(db, "shared_sessions", shareId));
         
         if (!sharedDoc.exists()) {
@@ -500,30 +503,28 @@ window.importSession = async () => {
 
         const data = sharedDoc.data();
         
-        // Open form and fill fields
+        // 1. Open form (this resets the category containers automatically)
         window.showForm('add');
         
+        // 2. Fill basic fields
         document.querySelector('input[placeholder="e.g. Dinner Run"]').value = data.sessionName || "";
         document.querySelector('input[placeholder="Pickup point"]').value = data.fromLocation || "";
         document.querySelector('input[placeholder="Destination"]').value = data.toLocation || "";
         document.getElementById('deliveryChargeInput').value = data.deliveryCharge || 300;
         document.getElementById('maxSlotsInput').value = data.maxSlots || 5;
-        document.getElementById('closingToggle').checked = false;
-        document.getElementById('closingTimeInputs').style.display = 'none';
-        document.getElementById('closingHour').value = "";
-        document.getElementById('closingMinute').value = "";
-        document.getElementById('closingPeriod').value = "AM";
 
-        // Reset and fill menu
-        menuContainer.innerHTML = '';
-        data.menu.forEach(item => {
-            window.addMenuItem(item.name, item.price, true);
-        });
+        // 3. Reset and fill categorized menu
+        // We don't need to clear menuContainer manually because showForm() already cleared the category divs
+        if (data.menu && Array.isArray(data.menu)) {
+            // Remove the default empty item added by showForm('add')
+            document.getElementById('foodContainer').innerHTML = ''; 
+            
+            data.menu.forEach(item => {
+                window.addMenuItem(item.category || 'food', item.name, item.price, true);
+            });
+        }
 
-        // Clean up UI
-        importInput.value = ''; 
-        document.getElementById('addOptions').style.display = 'none';
-        
+        // 4. Handle Closing Time
         if (data.closingTime) {
             document.getElementById('closingToggle').checked = true;
             document.getElementById('closingTimeInputs').style.display = 'grid';
@@ -536,11 +537,16 @@ window.importSession = async () => {
             document.getElementById('closingPeriod').value = period;
         }
 
+        // Clean up UI
+        importInput.value = ''; 
+        document.getElementById('addOptions').style.display = 'none';
+
     } catch (e) {
         console.error("Import failed", e);
         alert("Error importing session. Make sure the code is correct.");
     }
 };
+
 
 window.toggleAddOptions = () => {
     const opts = document.getElementById('addOptions');
