@@ -84,7 +84,7 @@ async function loadOrderDetails(user) {
         const itemsSubtotal = totals.food + totals.drink + totals.snacks;
         const firstTotal = order.total; // total sent by customer
         const deliveryCommission = delivery * 0.10;
-        const merchantEarning = firstTotal - platformFee - deliveryCommission;
+        const merchantEarning = firstTotal - platformFee - deliveryCommission - itemsSubtotal;
 
         // --- 3. UI Update: Category Breakdown ---
         const breakdownContainer = document.getElementById('categoryBreakdown');
