@@ -137,14 +137,24 @@
                     <div class="divider-line"></div>
 
                     <div class="card-tag">MENU SETUP</div>
-                    <div id="menuContainer">
-                        <div class="menu-item-input">
-                            <input type="text" placeholder="Food Name">
-                            <input type="number" placeholder="Price">
-                            <i class="fi-x remove-btn"></i>
-                        </div>
+                    <div class="category-block" style="margin-bottom: 20px;">
+                        <h4 style="font-size: 0.8rem; color: green; margin-bottom: 10px;">FOOD</h4>
+                        <div id="foodContainer"></div>
+                        <button class="btn-text" onclick="addMenuItem('food')">+ Add Food Item</button>
                     </div>
-                    <button class="btn-text" onclick="addMenuItem()">+ Add Food Item</button>
+                    
+                    <div class="category-block" style="margin-bottom: 20px;">
+                        <h4 style="font-size: 0.8rem; color: orange; margin-bottom: 10px;">DRINK</h4>
+                        <div id="drinkContainer"></div>
+                        <button class="btn-text" onclick="addMenuItem('drink')">+ Add Drink Item</button>
+                    </div>
+                    
+                    <div class="category-block">
+                        <h4 style="font-size: 0.8rem; color: red; margin-bottom: 10px;">SNACKS</h4>
+                        <div id="snackContainer"></div>
+                        <button class="btn-text" onclick="addMenuItem('snacks')">+ Add Snack Item</button>
+                    </div>
+
 
                     <div class="cta-group" style="margin-top: 30px;">
                         <button class="btn btn-filled w-100" onclick="saveSession()">Save Session</button>
@@ -163,7 +173,7 @@
         </footer>
     </div>
 <script src="/start/pwa-handler.js"></script>
-    <script src="js/session.js?=v28" type="module"></script>
+    <script src="js/session.js?=v29" type="module"></script>
     <script src="js/location.js?=v21" type="module"></script>
     <script src="js/firebase-config.js?=v11" type="module"></script>
 </body>
