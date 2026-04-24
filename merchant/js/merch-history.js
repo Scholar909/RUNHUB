@@ -9,6 +9,11 @@ let currentMerchantId = null;
 let currentTab = 'pending'; // Default tab
 let unsubscribe = null;
 
+let isSelectionMode = false;
+let selectedOrders = new Set();
+let allOrdersData = []; // To keep track of current tab's data
+
+
 // --- 1. Auth Guard & Initialization ---
 // location.js handles enforcement (GPS/Debt/Sub). 
 // This listener only initializes the page data once authed.
@@ -106,9 +111,12 @@ async function renderHistoryList(orders) {
         });
 
         const statusStyle = getStatusLabel(order.status);
-
+        
+        allOrdersData = orders; // Sync data for summary math
+        
         return `
-            <div class="trust-card history-card">
+            <div class="trust-card history-card ${isSelectionMode ? 'selectable' : ''} ${selectedOrders.has(order.id) ? 'selected' : ''}" 
+                 onclick="handleCardClick('${order.id}', event)">
                 <div class="order-info-stack">
                     <div class="card-tag ${statusStyle.class}">${statusStyle.label}</div>
                     <div class="order-header">
@@ -119,9 +127,10 @@ async function renderHistoryList(orders) {
                     </div>
                     <span class="order-date">${dateString}</span>
                 </div>
-                <button class="btn btn-outline" onclick="viewDetails('${order.id}')">View</button>
+                ${!isSelectionMode ? `<button class="btn btn-outline" onclick="viewDetails('${order.id}')">View</button>` : ''}
             </div>
         `;
+
     }));
 
     grid.innerHTML = listHtml.join('');
@@ -143,6 +152,60 @@ function getStatusLabel(status) {
         default: return { label: status.toUpperCase(), class: '' };
     }
 }
+
+window.toggleSelectionMode = () => {
+    isSelectionMode = !isSelectionMode;
+    selectedOrders.clear();
+    document.getElementById('selectionModeBtn').classList.toggle('active', isSelectionMode);
+    document.getElementById('infoBtn').style.display = isSelectionMode ? 'block' : 'none';
+    renderHistoryList(allOrdersData); // Refresh UI
+};
+
+window.handleCardClick = (orderId, event) => {
+    if (!isSelectionMode) return;
+    
+    if (selectedOrders.has(orderId)) {
+        selectedOrders.delete(orderId);
+    } else {
+        selectedOrders.add(orderId);
+    }
+    renderHistoryList(allOrdersData);
+};
+
+window.showSummaryModal = () => {
+    if (selectedOrders.size === 0) return alert("Select at least one receipt");
+
+    const selectedData = allOrdersData.filter(o => selectedOrders.has(o.id));
+    
+    // Math logic based on your request
+    let foodTotal = 0, drinkTotal = 0, snackTotal = 0, totalSent = 0;
+
+    selectedData.forEach(order => {
+        // We assume the order object has categorized totals (added in next session task)
+        // If categories aren't in DB yet, it defaults to 0
+        foodTotal += (order.foodTotal || 0);
+        drinkTotal += (order.drinkTotal || 0);
+        snackTotal += (order.snackTotal || 0);
+        totalSent += order.total;
+    });
+
+    const subTotal = foodTotal + drinkTotal + snackTotal;
+
+    document.getElementById('summaryContent').innerHTML = `
+        <div class="summary-item"><span>Receipts Selected:</span> <span>${selectedOrders.size}</span></div>
+        <div class="summary-item"><span>Food Total:</span> <span>₦${foodTotal.toLocaleString()}</span></div>
+        <div class="summary-item"><span>Drinks Total:</span> <span>₦${drinkTotal.toLocaleString()}</span></div>
+        <div class="summary-item"><span>Snacks Total:</span> <span>₦${snackTotal.toLocaleString()}</span></div>
+        <div class="summary-item total"><span>Items SubTotal:</span> <span>₦${subTotal.toLocaleString()}</span></div>
+        <div class="summary-item total" style="color:var(--text-main)"><span>Total Sent:</span> <span>₦${totalSent.toLocaleString()}</span></div>
+    `;
+    document.getElementById('summaryModal').style.display = 'flex';
+};
+
+window.closeSummaryModal = () => {
+    document.getElementById('summaryModal').style.display = 'none';
+};
+
 
 // --- 5. Global Helpers ---
 window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
