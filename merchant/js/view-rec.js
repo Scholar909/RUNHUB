@@ -57,69 +57,87 @@ async function loadOrderDetails(user) {
 
         const platformFee = 25;
         const delivery = order.deliveryCharge || 0;
-        const packaging = order.hasPack ? 200 : 0;
+        const packPrice = 200;
         
-        // TRUE subtotal (items only)
-        const subtotal = order.total - delivery - platformFee;
-        
-        const firstTotal = order.total;
-        
-        // Commission
+        // --- 1. Categorization Logic ---
+        let totals = { food: 0, drink: 0, snacks: 0 };
+        let itemsHtml = '';
+        const listContainer = document.getElementById('itemList');
+
+        // Add Pack to Food if it exists
+        if (order.hasPack) {
+            totals.food += packPrice;
+            itemsHtml += `<div class="item-row"><span>1x Food Pack (Standard)</span><span>₦${packPrice}</span></div>`;
+        }
+
+        // Group items and calculate category totals
+        (order.items || []).forEach(item => {
+            const itemTotal = item.price * item.qty;
+            const cat = (item.category || 'food').toLowerCase();
+            if (totals.hasOwnProperty(cat)) totals[cat] += itemTotal;
+            
+            itemsHtml += `<div class="item-row"><span>${item.qty}x ${item.name}</span><span>₦${itemTotal.toLocaleString()}</span></div>`;
+        });
+        listContainer.innerHTML = itemsHtml;
+
+        // --- 2. Calculate Final Values ---
+        const itemsSubtotal = totals.food + totals.drink + totals.snacks;
+        const firstTotal = order.total; // total sent by customer
         const deliveryCommission = delivery * 0.10;
-        
-        // ✅ Final merchant earning (clean & logical)
         const merchantEarning = firstTotal - platformFee - deliveryCommission;
-          
+
+        // --- 3. UI Update: Category Breakdown ---
+        const breakdownContainer = document.getElementById('categoryBreakdown');
+        let breakdownHtml = '';
+        
+        // Only show categories that have items
+        if (totals.food > 0) breakdownHtml += `<div class="price-row"><span>Food Total ${order.hasPack ? '(incl. Pack)' : ''}</span><span>₦${totals.food.toLocaleString()}</span></div>`;
+        if (totals.drink > 0) breakdownHtml += `<div class="price-row"><span>Drink Total</span><span>₦${totals.drink.toLocaleString()}</span></div>`;
+        if (totals.snacks > 0) breakdownHtml += `<div class="price-row"><span>Snacks Total</span><span>₦${totals.snacks.toLocaleString()}</span></div>`;
+        
+        breakdownContainer.innerHTML = breakdownHtml;
+
+        // --- 4. UI Update: Main Summary ---
+        document.getElementById('subtotal').innerText = `₦${itemsSubtotal.toLocaleString()}`;
+        document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
+        document.getElementById('firstTotal').innerText = `₦${firstTotal.toLocaleString()}`;
+
         // Fetch Customer Info
         const custDoc = await getDoc(doc(db, "users", order.customerId));
         const customer = custDoc.exists() ? custDoc.data() : {};
         
-        const finalDeliverySpot = order.deliveryAddress || customer.hostelLocation || 'Location not set';
-        const fromSpot = order.fromLocation || 'Merchant Hub';
-
-        // UI Header & Status
         document.getElementById('recId').innerText = `#RH-${currentOrderId.slice(-5).toUpperCase()}`;
         document.getElementById('custUser').innerText = `@${customer.username || 'user'}`;
-        
         document.getElementById('custName').innerHTML = `
             <div style="margin-top: 10px;">
                 <p><b>Customer:</b> ${customer.fullName}</p>
                 <p style="font-size: 0.9em; color: var(--text-dim);">
-                    <span style="color: var(--accent)">●</span> Pick-up: ${fromSpot}<br>
-                    <span style="color: #28a745">●</span> Delivery: ${finalDeliverySpot}
+                    <span style="color: var(--accent)">●</span> Pick-up: ${order.fromLocation || 'Hub'}<br>
+                    <span style="color: #28a745">●</span> Delivery: ${order.deliveryAddress || customer.hostelLocation || 'N/A'}
                 </p>
-            </div>
-        `;
-        
-        const badge = document.getElementById('statusBadge');
-        badge.innerText = order.status.toUpperCase();
-        badge.className = `status-badge status-${order.status === 'declined' ? 'error' : (order.status === 'delivered' ? 'success' : 'pending')}`;
+            </div>`;
 
-        // Item List
-        const listContainer = document.getElementById('itemList');
-        let itemsHtml = '';
-        if (order.hasPack) itemsHtml += `<div class="item-row"><span>1x Food Pack (Standard)</span><span>₦200</span></div>`;
-        (order.items || []).forEach(item => {
-            itemsHtml += `<div class="item-row"><span>${item.qty}x ${item.name}</span><span>₦${(item.price * item.qty).toLocaleString()}</span></div>`;
-        });
-        listContainer.innerHTML = itemsHtml;
-
-        document.getElementById('subtotal').innerText = `₦${subtotal.toLocaleString()}`;
-        document.getElementById('delivery').innerText = `₦${delivery.toLocaleString()}`;
-        document.getElementById('firstTotal').innerText = `₦${firstTotal.toLocaleString()}`;
-        
         const isMerchant = user.uid === order.merchantId;
-          if (isMerchant) {
-              document.getElementById('platformFee').innerText = `-₦${platformFee}`;
-              document.getElementById('deliveryCommission').innerText = `-₦${deliveryCommission.toLocaleString()}`;
-              document.getElementById('adminFeeRow').style.display = 'flex';
-              document.getElementById('totalLabel').innerText = "YOU RECEIVED";
-              document.getElementById('grandTotal').innerText = `₦${merchantEarning.toLocaleString()}`;
-          } else {
-              document.getElementById('platformFee').style.display = 'none';
-              document.getElementById('totalLabel').innerText = "TOTAL PAID";
-              document.getElementById('grandTotal').innerText = `₦${order.total.toLocaleString()}`;
-          }
+        if (isMerchant) {
+            document.getElementById('platformFee').innerText = `-₦${platformFee}`;
+            document.getElementById('deliveryCommission').innerText = `-₦${deliveryCommission.toLocaleString()}`;
+            document.getElementById('adminFeeRow').style.display = 'flex';
+            document.getElementById('totalLabel').innerText = "YOU EARNED";
+            document.getElementById('grandTotal').innerText = `₦${merchantEarning.toLocaleString()}`;
+            
+            // Save categorized data back to order doc for History Summary (Silent Update)
+            // This ensures the "History Select Info" feature works correctly!
+            updateDoc(doc(db, "orders", currentOrderId), {
+                foodTotal: totals.food,
+                drinkTotal: totals.drink,
+                snackTotal: totals.snacks
+            });
+
+        } else {
+            document.getElementById('adminFeeRow').style.display = 'none';
+            document.getElementById('totalLabel').innerText = "TOTAL PAID";
+            document.getElementById('grandTotal').innerText = `₦${firstTotal.toLocaleString()}`;
+        }
 
         renderTimeline(order);
 
@@ -132,6 +150,7 @@ async function loadOrderDetails(user) {
         console.error("Error loading receipt:", e);
     }
 }
+
 
 // --- 4. UI Rendering Helpers ---
 function renderTimeline(order) {
