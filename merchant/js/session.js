@@ -215,11 +215,14 @@ window.saveSession = async () => {
     deliveryInput.value = finalDeliveryCharge;
     slotsInput.value = finalMaxSlots;
     
+    // Inside saveSession, change the menuItems mapping:
     const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
         name: row.querySelectorAll('input[type="text"]')[0].value,
         price: Number(row.querySelectorAll('input[type="number"]')[0].value),
-        available: row.querySelector('.item-availability').checked 
+        available: row.querySelector('.item-availability').checked,
+        category: row.dataset.category // Capture the category!
     }));
+
 
     if (!nameInput.value || !fromInput.value || menuItems.length === 0) {
         alert("Please fill all fields and add items.");
@@ -343,22 +346,25 @@ window.handleLogout = async () => {
     } catch (error) { console.error("Logout failed", error); }
 };
 
-window.addMenuItem = (name = "", price = "", isAvailable = true) => {
+window.addMenuItem = (category = "food", name = "", price = "", isAvailable = true) => {
+    const containerMap = { 'food': 'foodContainer', 'drink': 'drinkContainer', 'snacks': 'snackContainer' };
+    const container = document.getElementById(containerMap[category]);
+    
     const div = document.createElement('div');
     div.className = "menu-item-input";
+    div.dataset.category = category;
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.gap = "8px";
-
+    
     div.innerHTML = `
-        <input type="checkbox" class="item-availability" ${isAvailable ? 'checked' : ''} title="Available?">
-        <input type="text" placeholder="Food Name" value="${name}" required style="flex: 2;">
+        <input type="checkbox" class="item-availability" ${isAvailable ? 'checked' : ''}>
+        <input type="text" placeholder="Item Name" value="${name}" required style="flex: 2;">
         <input type="number" placeholder="Price" value="${price}" required style="flex: 1;">
         <i class="fi-x remove-btn" onclick="this.parentElement.remove()"></i>
     `;
-    menuContainer.appendChild(div);
+    container.appendChild(div);
 };
-
 
 window.showForm = (mode, id = null) => {
     sessionListView.style.display = 'none';
