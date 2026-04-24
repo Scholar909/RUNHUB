@@ -369,7 +369,12 @@ window.addMenuItem = (category = "food", name = "", price = "", isAvailable = tr
 window.showForm = (mode, id = null) => {
     sessionListView.style.display = 'none';
     sessionFormView.style.display = 'block';
-    menuContainer.innerHTML = '';
+    
+    // Clear all category containers
+    document.getElementById('foodContainer').innerHTML = '';
+    document.getElementById('drinkContainer').innerHTML = '';
+    document.getElementById('snackContainer').innerHTML = '';
+
     const nums = sessionFormView.querySelectorAll('input[type="number"]');
     
     if (mode === 'edit' && id) {
@@ -403,7 +408,11 @@ window.showForm = (mode, id = null) => {
             closingToggle.checked = false;
             closingInputs.style.display = 'none';
         }
-        s.menu.forEach(item => window.addMenuItem(item.name, item.price, item.available !== false));
+        // Ensure we pass the category stored in the database back to the function
+        s.menu.forEach(item => {
+            window.addMenuItem(item.category || 'food', item.name, item.price, item.available !== false);
+        });
+
     } else {
         editingSessionId = null;
         document.getElementById('formTitle').innerText = "CREATE NEW SESSION";
@@ -539,6 +548,7 @@ window.toggleAddOptions = () => {
 };
 
 window.hideForm = () => {
+    editingSessionId = null;
     sessionListView.style.display = 'block';
     sessionFormView.style.display = 'none';
 
