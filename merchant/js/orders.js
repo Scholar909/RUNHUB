@@ -81,6 +81,13 @@ async function renderOrders() {
                     <h3>${customer.fullName || 'Unknown Customer'}</h3>
                     <p>@${customer.username || 'user'}</p>
                     
+                    <div style="margin-top: 8px; font-size: 0.9rem; font-weight: bold;">
+                <i class="fi-phone"></i> 
+                <a href="tel:${order.customerPhone}" style="color: var(--accent); text-decoration: none;">
+                    ${order.customerPhone || 'No Phone'}
+                </a>
+                </div>
+                    
                   <div class="delivery-spot" style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
                       <div style="font-size: 0.8rem;">
                           <span style="color: var(--accent); font-weight: bold;">FROM:</span> 
