@@ -358,10 +358,21 @@ window.submitOrder = async () => {
         const selectedDeliveryAddress = localStorage.getItem("deliveryLocation") || "No address provided";
         
         // Determine customer details based on status
-        let finalCustomerId = isGuest ? "GUEST_" + Date.now() : auth.currentUser.uid;
-        let finalCustomerName = isGuest ? guestData.fullName : (merchantData.username || 'User'); 
-        let finalPhone = isGuest ? guestData.phone : (customerData.phoneNumber || "No Phone");
-        let finalUsername = isGuest ? guestData.fullName : (customerData.username || "Guest");
+        let finalCustomerId = isGuest
+            ? "GUEST_" + Date.now()
+            : auth.currentUser.uid;
+        
+        let finalCustomerName = isGuest
+            ? (guestData?.fullName || "Guest User")
+            : (customerData.fullName || customerData.username || "User");
+        
+        let finalPhone = isGuest
+            ? (guestData?.phone || "No Phone")
+            : (customerData.phoneNumber || "No Phone");
+        
+        let finalUsername = isGuest
+            ? (guestData?.fullName || "Guest")
+            : (customerData.username || "User");
         
         const orderObj = {
             customerId: finalCustomerId,
@@ -391,7 +402,11 @@ window.submitOrder = async () => {
 
         // Update Slots
         const merchantRef = doc(db, "users", merchantId);
-        const sessionRef = doc(db, "merchants", merchantId, "sessions", merchantData.currentSessionId);
+        const params = new URLSearchParams(window.location.search);
+        const urlSessionId = params.get("s");
+        const targetSessionId = urlSessionId || merchantData.currentSessionId;
+        
+        const sessionRef = doc(db, "merchants", merchantId, "sessions", targetSessionId);
         await updateDoc(merchantRef, { slotsFilled: increment(1) });
         await updateDoc(sessionRef, { slotsFilled: increment(1) });
         
@@ -413,8 +428,8 @@ window.submitOrder = async () => {
         }
 
     } catch (e) {
-        console.error(e);
-        alert("Failed to process order.");
+        console.error("ORDER ERROR:", e);
+        alert("Failed to process order: " + e.message);
         submitBtn.disabled = false;
         submitBtn.style.opacity = '1';
     }
