@@ -401,6 +401,7 @@ window.submitOrder = async () => {
         localStorage.removeItem("deliveryLocation");
 
         // Update Slots
+        try {
         const merchantRef = doc(db, "users", merchantId);
         const params = new URLSearchParams(window.location.search);
         const urlSessionId = params.get("s");
@@ -416,6 +417,9 @@ window.submitOrder = async () => {
             const displayUsername = isGuest ? "Guest" : (customerData.username || 'User');
             const msg = `*New Order - NOVAHUB*\nID: ${orderRef.id}\nCustomer: @${displayUsername}\nTotal: ₦${totalAmount.toLocaleString()}\nRoute: ${orderObj.route}`;
             // You can add your fetch or window.open logic here if needed
+        }
+        } catch (bgError) {
+        console.warn("Background update failed, but order was placed:", bgError);
         }
 
         alert("Order Sent! Awaiting Merchant Approval.");
