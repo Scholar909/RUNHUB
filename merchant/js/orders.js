@@ -80,7 +80,7 @@ async function renderOrders() {
                 </div>
                 
                 <div class="customer-info">
-                    <h3>${customer.fullName || 'Unknown Customer' || order.customerName} ${guestTag}</h3>
+                    <h3>${customer.fullName || order.customerName || 'Unknown Customer'} ${guestTag}</h3>
                     <p>@${customer.username || 'user'}</p>
                     
                     <div style="margin-top: 8px; font-size: 0.9rem; font-weight: bold;">

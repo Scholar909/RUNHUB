@@ -86,6 +86,7 @@ function initHistoryListener() {
 // --- 3. UI Rendering ---
 async function renderHistoryList(orders) {
     const grid = document.getElementById('historyGrid');
+    allOrdersData = orders; // Sync data for summary math
     
     if (orders.length === 0) {
         grid.innerHTML = `
@@ -96,34 +97,30 @@ async function renderHistoryList(orders) {
         return;
     }
 
-    // Map through orders and fetch customer names for display
     const listHtml = await Promise.all(orders.map(async (order) => {
-    let customerName = order.customerName || "Guest User";
+        let customerName = order.customerName || "Guest User";
         
-        // Only try to fetch if it's NOT a guest (to save on read costs)
-        if (!order.isGuest) {
+        // Fetch real name for registered users
+        if (!order.isGuest && order.customerId) {
             const customerSnap = await getDoc(doc(db, "users", order.customerId));
             if (customerSnap.exists()) {
-                customerName = customerSnap.data().fullName;
+                customerName = customerSnap.data().fullName || customerName;
             }
-        } else {
-            // For guests, use the name they typed in the guest form
-            customerName = order.customerName; 
         }
-    
+
+        // --- FIX: Define missing variables ---
+        const statusInfo = getStatusLabel(order.status);
+        const dateString = new Date(order.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         const guestTag = order.isGuest ? `<span style="background: #ff9500; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-left: 10px;">• GUEST</span>` : '';
-        
-        allOrdersData = orders; // Sync data for summary math
         
         return `
             <div class="trust-card history-card ${isSelectionMode ? 'selectable' : ''} ${selectedOrders.has(order.id) ? 'selected' : ''}" 
                  onclick="handleCardClick('${order.id}', event)">
                 <div class="order-info-stack">
-                    <div class="card-tag ${statusStyle.class}">${statusStyle.label}</div>
+                    <div class="card-tag ${statusInfo.class}">${statusInfo.label}</div>
                     <div class="order-header">
                         <h3>${customerName} ${guestTag}</h3>
                     </div>
-                    
                     <div class="order-summary">
                         <p>Total Revenue: <span class="accent">₦${order.total.toLocaleString()}</span></p>
                     </div>
@@ -132,11 +129,11 @@ async function renderHistoryList(orders) {
                 ${!isSelectionMode ? `<button class="btn btn-outline" onclick="viewDetails('${order.id}')">View</button>` : ''}
             </div>
         `;
-
     }));
 
     grid.innerHTML = listHtml.join('');
 }
+
 
 // --- 4. Navigation & Details ---
 window.viewDetails = (orderId) => {
