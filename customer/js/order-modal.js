@@ -13,44 +13,51 @@ let platformFee = 25;
 let packagingCost = 200;
 let pendingMerchantId = null; 
 
+// --- Updated State ---
+let isGuest = false;
+let guestData = null;
+
 onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        // Save the full current URL (with ?m=...&s=...) so we can come back here
-        localStorage.setItem("redirectAfterLogin", window.location.href);
-        window.location.href = "./sign-login.html";
-        return; 
+    const params = new URLSearchParams(window.location.search);
+    pendingMerchantId = params.get('m') || localStorage.getItem("selectedMerchantId");
+
+    // 1. If not logged in and no guest flag, show the choice modal
+    if (!user && !localStorage.getItem("isGuestSession")) {
+        document.getElementById('gatekeeperModal').style.display = 'flex';
+        return;
     }
-    
-// NEW & IMPROVED: Verify they exist AND are specifically a "customer"
+
+    // 2. If proceeding as guest
+    if (localStorage.getItem("isGuestSession")) {
+        isGuest = true;
+        guestData = JSON.parse(localStorage.getItem("guestTempData"));
+        document.querySelector('.modal-container').style.display = 'flex';
+        loadMerchantAndMenu();
+        return;
+    }
+
+    // 3. Regular logged in user logic (Existing)
     const userDoc = await getDoc(doc(db, "users", user.uid));
     const userData = userDoc.data();
 
     if (!userDoc.exists() || userData.role !== 'customer') {
         alert("Access Denied. Only customer accounts can place orders.");
-        // Clear session so they aren't stuck in a loop if they are the wrong role
         localStorage.removeItem("selectedMerchantId"); 
         window.location.href = "./sign-login.html";
         return;
     }
 
-    // Hide the main order container initially so it's not a blank screen
     document.querySelector('.modal-container').style.display = 'none';
-
-    const params = new URLSearchParams(window.location.search);
-    pendingMerchantId = params.get('m') || localStorage.getItem("selectedMerchantId");
     const deliveryLoc = localStorage.getItem("deliveryLocation");
 
     if (pendingMerchantId && !deliveryLoc) {
-        // Show the location prompt
         document.getElementById('locationModal').style.display = 'flex';
     } else if (pendingMerchantId && deliveryLoc) {
-        // We have both, show the UI and load data
         document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
-    } else {
-        window.location.href = "./home.html";
     }
 });
+
 
 
 window.openOrderModal = (merchantId) => {
@@ -329,10 +336,20 @@ window.submitOrder = async () => {
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
         const customerLoc = await getCustomerLocation().catch(() => null);
         const selectedDeliveryAddress = localStorage.getItem("deliveryLocation") || "No address provided";
-
+        
+        // Determine customer details based on status
+        let finalCustomerId = isGuest ? "GUEST_" + Date.now() : auth.currentUser.uid;
+        let finalCustomerName = isGuest ? guestData.fullName : (merchantData.username || 'User'); 
+        let finalPhone = isGuest ? guestData.phone : (customerData.phoneNumber || "No Phone");
+        let finalUsername = isGuest ? guestData.fullName : (customerData.username || "Guest");
+        
         const orderObj = {
-            customerId: auth.currentUser.uid,
-            customerPhone: customerData.phoneNumber || "No Phone Provided",
+            customerId: finalCustomerId,
+            customerPhone: finalPhone,
+            customerName: finalCustomerName,
+            customerUsername: finalUsername,
+            isGuest: isGuest, // <--- MERCHANT TAG
+            matricNo: isGuest ? guestData.matricNo : (customerData.matricNo || "N/A"),
             merchantId: merchantId,
             merchantName: merchantData.username,
             items: selectedItems,
@@ -343,9 +360,11 @@ window.submitOrder = async () => {
             timestamp: Date.now(),
             fromLocation: merchantData.fromLocation || "Merchant Hub", 
             route: `${merchantData.fromLocation} to ${merchantData.toLocation}`,
-            customerLocation: customerLoc,
-            deliveryAddress: selectedDeliveryAddress 
+            deliveryAddress: selectedDeliveryAddress,
+            // Add guest bank details for refunds
+            guestBankInfo: isGuest ? guestData.bankDetails : null 
         };
+
 
         const orderRef = await addDoc(collection(db, "orders"), orderObj);
         localStorage.removeItem("deliveryLocation");
@@ -363,7 +382,13 @@ window.submitOrder = async () => {
         }
 
         alert("Order Sent! Awaiting Merchant Approval.");
-        window.location.href = "./history.html";
+        if (isGuest) {
+            localStorage.clear(); // Clear guest session
+            alert("Since you are a guest, you can't track this order. Please screenshot this page. We recommend signing up next time!");
+            window.location.href = "./sign-login.html"; // Send to signup
+        } else {
+            window.location.href = "./history.html";
+        }
 
     } catch (e) {
         console.error(e);
@@ -413,6 +438,36 @@ function startPaymentTimer(duration) {
         }
     }, 1000);
 }
+
+window.showGuestForm = () => {
+    document.getElementById('gatekeeperModal').style.display = 'none';
+    document.getElementById('guestFormModal').style.display = 'flex';
+};
+
+window.submitGuestDetails = () => {
+    const data = {
+        fullName: document.getElementById('guestName').value.trim(),
+        matricNo: document.getElementById('guestMatric').value.trim(),
+        phone: document.getElementById('guestPhone').value.trim(),
+        location: document.getElementById('guestAddress').value.trim(),
+        bankDetails: {
+            bankName: document.getElementById('guestBankName').value,
+            accName: document.getElementById('guestAccName').value,
+            accNo: document.getElementById('guestAccNum').value
+        }
+    };
+
+    if (!data.fullName || !data.phone || !data.location) {
+        alert("Please fill in Name, Phone, and Location.");
+        return;
+    }
+
+    localStorage.setItem("isGuestSession", "true");
+    localStorage.setItem("guestTempData", JSON.stringify(data));
+    localStorage.setItem("deliveryLocation", data.location);
+    
+    window.location.reload(); // Refresh to trigger the Auth Listener Guest logic
+};
 
 
 document.querySelector('.close-btn').onclick = () => window.location.href = "./home.html";
