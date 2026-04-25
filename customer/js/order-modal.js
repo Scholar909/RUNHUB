@@ -19,43 +19,39 @@ let guestData = null;
 
 onAuthStateChanged(auth, async (user) => {
     const params = new URLSearchParams(window.location.search);
+    // Ensure we capture the merchant ID from URL and lock it into localStorage immediately
     const mFromUrl = params.get('m');
-    
     if (mFromUrl) {
         localStorage.setItem("selectedMerchantId", mFromUrl);
     }
     
     pendingMerchantId = localStorage.getItem("selectedMerchantId");
 
-    // 1. Determine if we are in a Guest Session
-    const isGuestSession = localStorage.getItem("isGuestSession") === "true";
+    // 1. If not logged in and no guest flag, show the choice modal
+    if (!user && !localStorage.getItem("isGuestSession")) {
+        document.getElementById('gatekeeperModal').style.display = 'flex';
+        return;
+    }
 
-    if (isGuestSession) {
+    // 2. If proceeding as guest
+    if (localStorage.getItem("isGuestSession")) {
         isGuest = true;
         guestData = JSON.parse(localStorage.getItem("guestTempData"));
         
+        // Safety check: if merchantId is missing, we can't load the menu
         if (!pendingMerchantId) {
             alert("Merchant reference lost. Returning home.");
             window.location.href = "./home.html";
             return;
         }
 
-        // HIDE all modals and SHOW the main container
-        document.getElementById('gatekeeperModal').style.display = 'none';
-        document.getElementById('guestFormModal').style.display = 'none';
         document.querySelector('.modal-container').style.display = 'flex';
-        
         loadMerchantAndMenu();
-        return; // Exit here for guests
-    }
-
-    // 2. If NOT a guest and NOT logged in, show gatekeeper
-    if (!user) {
-        document.getElementById('gatekeeperModal').style.display = 'flex';
         return;
     }
 
-    // 3. Regular logged-in user logic
+    // 3. Regular logged in user logic (Existing)
+    if (user) {
     const userDoc = await getDoc(doc(db, "users", user.uid));
     const userData = userDoc.data();
 
@@ -66,9 +62,7 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    // Hide gatekeeper for logged-in users
-    document.getElementById('gatekeeperModal').style.display = 'none';
-    
+    document.querySelector('.modal-container').style.display = 'none';
     const deliveryLoc = localStorage.getItem("deliveryLocation");
 
     if (pendingMerchantId && !deliveryLoc) {
@@ -77,8 +71,8 @@ onAuthStateChanged(auth, async (user) => {
         document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
     }
+  }
 });
-
 
 
 
@@ -352,8 +346,12 @@ window.submitOrder = async () => {
             return;
         }
 
-        const customerSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const customerData = customerSnap.exists() ? customerSnap.data() : {};
+        let customerData = {};
+        if (auth.currentUser) {
+            const customerSnap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            customerData = customerSnap.exists() ? customerSnap.data() : {};
+        }
+
         const totalAmountText = document.querySelector('.total-row .accent').innerText;
         const totalAmount = parseInt(totalAmountText.replace(/[^0-9]/g, ''));
         const customerLoc = await getCustomerLocation().catch(() => null);
@@ -396,11 +394,13 @@ window.submitOrder = async () => {
         const sessionRef = doc(db, "merchants", merchantId, "sessions", merchantData.currentSessionId);
         await updateDoc(merchantRef, { slotsFilled: increment(1) });
         await updateDoc(sessionRef, { slotsFilled: increment(1) });
-
+        
         // WhatsApp Notification
         const alertSnap = await getDoc(doc(db, "merchant_alerts", merchantId));
         if (alertSnap.exists() && alertSnap.data().enabled) {
-            const msg = `*New Order - NOVAHUB*\nID: ${orderRef.id}\nCustomer: @${customerData.username || 'Guest'}\nTotal: ₦${totalAmount.toLocaleString()}\nRoute: ${orderObj.route}`;
+            const displayUsername = isGuest ? "Guest" : (customerData.username || 'User');
+            const msg = `*New Order - NOVAHUB*\nID: ${orderRef.id}\nCustomer: @${displayUsername}\nTotal: ₦${totalAmount.toLocaleString()}\nRoute: ${orderObj.route}`;
+            // You can add your fetch or window.open logic here if needed
         }
 
         alert("Order Sent! Awaiting Merchant Approval.");
