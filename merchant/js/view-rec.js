@@ -110,6 +110,8 @@ async function loadOrderDetails(user) {
         document.getElementById('custUser').innerText = `@${customer.username || 'user'}`;
         document.getElementById('custName').innerHTML = `
             <div style="margin-top: 10px;">
+            <p style="font-size: 0.85rem; color: #ffffff;">ID: ${order.customerPhone || 'N/A'}</p>
+            <br>
                 <p><b>Customer:</b> ${customer.fullName}</p>
                 <p style="font-size: 0.9em; color: var(--text-dim);">
                     <span style="color: var(--accent)">●</span> Pick-up: ${order.fromLocation || 'Hub'}<br>
