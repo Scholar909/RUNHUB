@@ -345,3 +345,18 @@ h3 {
     margin-bottom: 15px;
 }
 
+/* Fix for Guest and Gatekeeper modals to be centered, not at the bottom */
+#gatekeeperModal, #guestFormModal, #locationModal {
+    align-items: center !important; 
+}
+
+/* Ensure the content doesn't hug the very top of the screen on mobile */
+#guestFormModal .modal-content {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Optional: Make the guest form feel more like a card and less like a giant wall */
+#guestFormModal .modal-body {
+    padding-top: 10px;
+}
