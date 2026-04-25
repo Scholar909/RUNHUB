@@ -327,3 +327,21 @@ h3 {
     background: transparent; border: none; color: var(--text-dim);
     margin-top: 20px; font-size: 0.8rem; cursor: pointer;
 }
+
+.input-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+#guestFormModal .modal-content {
+    max-width: 450px;
+}
+
+#guestFormModal .custom-input {
+    margin-bottom: 15px;
+}
+
