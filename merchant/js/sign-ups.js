@@ -488,18 +488,22 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
 
   e.preventDefault();
   
+  const overlay = document.getElementById("processingOverlay");
+  const submitBtn = document.getElementById("finalSubmitBtn");
+  
   if (!document.getElementById("signatureConsent").checked) {
         alert("Please consent to the agreement by checking the box before submitting.");
         return;
     }
+    
+    overlay.style.display = "flex"; 
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Processing...";
   
+  try {
   const usernameInput = document.getElementById("username");
   const emailInput = document.getElementById("email");
   const matricInput = document.getElementById("matricNumber");
-  
-  const submitBtn = document.getElementById("finalSubmitBtn");
-  submitBtn.disabled = true;
-  submitBtn.innerText = "Processing Application...";
   
   const rawUsername = usernameInput.value.trim().toLowerCase();
   const rawEmail = emailInput.value.trim().toLowerCase(); // Lowercase email here
@@ -508,6 +512,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   
   // 1. Format Check for Username
   if (!isValidUsername(rawUsername)) {
+    overlay.style.display = "none";
       alert("Only a-Z, 0-9 & _");
       submitBtn.disabled = false;
       submitBtn.innerText = "Submitting Application...";
@@ -515,6 +520,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   }
 
   if(!urls.idFront || !urls.idBack || !urls.selfie || !urls.face){
+    overlay.style.display = "none";
     alert("Please capture all required files.");
     submitBtn.disabled = false; // Add this
     submitBtn.innerText = "Submit Application";
@@ -522,11 +528,13 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   }
 
   if(!isUsernameValid || !isMatricValid || !isEmailValid){
+    overlay.style.display = "none";
     alert("Username or Matric already exists.\n or Please correct the errors in Username, Matric, or Email.");
     return;
   }
   
   if (!emailResult.valid) {
+    overlay.style.display = "none";
     alert(`Email Error: ${emailResult.msg}`);
     submitBtn.disabled = false;
     submitBtn.innerText = "Submit Application";
@@ -589,7 +597,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   
   // Check if any upload failed
   if (pageUrls.some(url => !url)) {
-      alert("Failed to generate or upload the Binding Agreement pages. Please try again.");
+      alert("Document upload failed. Please check your internet and try again.");
       submitBtn.disabled = false;
       submitBtn.innerText = "Submit Application";
       return; 
@@ -611,23 +619,28 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
     submittedAt: serverTimestamp()
   });
 
-  
+  overlay.style.display = "none";
   // MOVE THE ALERT HERE - Before external API calls
   alert(`Submission Successful! 🚀\n\nYour application has been sent and is awaiting approval. We will review your documents within 48 hours.\n\nYour Catch Phrase: "${catchPhrase}"\n(Save this! You will need it for verification).\n\nOnce approved, you will receive an email to set your password and log in to your dashboard.`);
   
-  try {
-      // These are secondary; don't let them block the success message
-      await sendAdminMerchantAlert(data);
-      await Promise.all([
-          setDoc(doc(db,"usernames",usernameId),{reserved:true}),
-          setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
-      ]);
+    
+    // These are secondary; don't let them block the success message
+    await sendAdminMerchantAlert(data);
+    await Promise.all([
+        setDoc(doc(db,"usernames",usernameId),{reserved:true}),
+        setDoc(doc(db,"matricNumbers",matricId),{reserved:true})
+    ]);
+      
+    window.location.href = "./sign-login.html";
   } catch (err) {
-      console.error("Secondary tasks failed:", err);
-  }
-  
-  window.location.href = "./sign-login.html";
+    console.error(err);
+    
+    overlay.style.display = "none";
+    alert(err.message || "An error occurred. Please try again.");
 
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Submit Application";
+  }
 });
 
 function generateCatchPhrase() {
