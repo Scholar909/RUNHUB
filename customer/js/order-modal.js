@@ -19,7 +19,13 @@ let guestData = null;
 
 onAuthStateChanged(auth, async (user) => {
     const params = new URLSearchParams(window.location.search);
-    pendingMerchantId = params.get('m') || localStorage.getItem("selectedMerchantId");
+    // Ensure we capture the merchant ID from URL and lock it into localStorage immediately
+    const mFromUrl = params.get('m');
+    if (mFromUrl) {
+        localStorage.setItem("selectedMerchantId", mFromUrl);
+    }
+    
+    pendingMerchantId = localStorage.getItem("selectedMerchantId");
 
     // 1. If not logged in and no guest flag, show the choice modal
     if (!user && !localStorage.getItem("isGuestSession")) {
@@ -31,12 +37,21 @@ onAuthStateChanged(auth, async (user) => {
     if (localStorage.getItem("isGuestSession")) {
         isGuest = true;
         guestData = JSON.parse(localStorage.getItem("guestTempData"));
+        
+        // Safety check: if merchantId is missing, we can't load the menu
+        if (!pendingMerchantId) {
+            alert("Merchant reference lost. Returning home.");
+            window.location.href = "./home.html";
+            return;
+        }
+
         document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
         return;
     }
 
     // 3. Regular logged in user logic (Existing)
+    if (user) {
     const userDoc = await getDoc(doc(db, "users", user.uid));
     const userData = userDoc.data();
 
@@ -56,6 +71,7 @@ onAuthStateChanged(auth, async (user) => {
         document.querySelector('.modal-container').style.display = 'flex';
         loadMerchantAndMenu();
     }
+  }
 });
 
 
