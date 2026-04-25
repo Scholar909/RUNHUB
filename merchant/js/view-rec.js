@@ -103,21 +103,35 @@ async function loadOrderDetails(user) {
         document.getElementById('firstTotal').innerText = `₦${firstTotal.toLocaleString()}`;
 
         // Fetch Customer Info
-        const custDoc = await getDoc(doc(db, "users", order.customerId));
-        const customer = custDoc.exists() ? custDoc.data() : {};
+        // --- Updated Customer Info Logic in view-rec.js ---
         
+        // 1. Determine Display Name and Username
+        let displayCustName = order.customerName || "Guest User";
+        let displayCustUser = order.customerUsername || "guest";
+        let displayCustPhone = order.customerPhone || "No Phone";
+        
+        // 2. Identify the correct delivery address
+        // Priority: Order Address -> Guest Location -> Profile Location
+        const displayAddress = order.deliveryAddress || order.deliveryAddress; 
+        
+        // Update the UI
         document.getElementById('recId').innerText = `#RH-${currentOrderId.slice(-5).toUpperCase()}`;
-        document.getElementById('custUser').innerText = `@${customer.username || 'user'}`;
+        document.getElementById('custUser').innerText = `@${displayCustUser}`;
+        
+        // Handle the Guest Tag visually
+        const guestTag = order.isGuest ? `<span style="background: #ff9500; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-left: 5px;">• GUEST</span>` : '';
+        
         document.getElementById('custName').innerHTML = `
             <div style="margin-top: 10px;">
-            <p style="font-size: 0.85rem; color: #ffffff;">ID: ${order.customerPhone || 'N/A'}</p>
-            <br>
-                <p><b>Customer:</b> ${customer.fullName}</p>
+                <p style="font-size: 0.85rem; color: #ffffff;">Phone/ID: ${displayCustPhone} ${guestTag}</p>
+                <br>
+                <p><b>Customer:</b> ${displayCustName}</p>
                 <p style="font-size: 0.9em; color: var(--text-dim);">
                     <span style="color: var(--accent)">●</span> Pick-up: ${order.fromLocation || 'Hub'}<br>
-                    <span style="color: #28a745">●</span> Delivery: ${order.deliveryAddress || customer.hostelLocation || 'N/A'}
+                    <span style="color: #28a745">●</span> Delivery: ${displayAddress}
                 </p>
             </div>`;
+
 
         const isMerchant = user.uid === order.merchantId;
         if (isMerchant) {

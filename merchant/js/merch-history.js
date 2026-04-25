@@ -98,19 +98,20 @@ async function renderHistoryList(orders) {
 
     // Map through orders and fetch customer names for display
     const listHtml = await Promise.all(orders.map(async (order) => {
-        const customerSnap = await getDoc(doc(db, "users", order.customerId));
-        const customerData = customerSnap.exists() ? customerSnap.data() : { fullName: "User" };
+    let customerName = order.customerName || "Guest User";
         
-        const dateString = new Date(
-            order.timestamp?.toDate ? order.timestamp.toDate() : order.timestamp
-        ).toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        const statusStyle = getStatusLabel(order.status);
+        // Only try to fetch if it's NOT a guest (to save on read costs)
+        if (!order.isGuest) {
+            const customerSnap = await getDoc(doc(db, "users", order.customerId));
+            if (customerSnap.exists()) {
+                customerName = customerSnap.data().fullName;
+            }
+        } else {
+            // For guests, use the name they typed in the guest form
+            customerName = order.customerName; 
+        }
+    
+        const guestTag = order.isGuest ? `<span style="background: #ff9500; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-left: 10px;">• GUEST</span>` : '';
         
         allOrdersData = orders; // Sync data for summary math
         
@@ -120,7 +121,7 @@ async function renderHistoryList(orders) {
                 <div class="order-info-stack">
                     <div class="card-tag ${statusStyle.class}">${statusStyle.label}</div>
                     <div class="order-header">
-                        <h3>${customerData.fullName}</h3>
+                        <h3>${customerName} ${guestTag}</h3>
                     </div>
                     
                     <div class="order-summary">

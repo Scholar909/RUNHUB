@@ -69,6 +69,8 @@ async function renderOrders() {
         const timeAgo = formatTime(order.timestamp);
         
         const displayAddress = order.deliveryAddress || customer.hostelLocation || 'No location provided';
+        
+        const guestTag = order.isGuest ? `<span style="background: #ff9500; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; margin-left: 10px;">• GUEST</span>` : '';
 
         return `
             <div class="trust-card order-card">
@@ -78,7 +80,7 @@ async function renderOrders() {
                 </div>
                 
                 <div class="customer-info">
-                    <h3>${customer.fullName || 'Unknown Customer'}</h3>
+                    <h3>${customer.fullName || 'Unknown Customer' || order.customerName} ${guestTag}</h3>
                     <p>@${customer.username || 'user'}</p>
                     
                     <div style="margin-top: 8px; font-size: 0.9rem; font-weight: bold;">
@@ -188,15 +190,24 @@ window.prepareDecline = async (orderId) => {
     orderToDecline = order;
 
     try {
-        // Fetch fresh customer bank details directly from their profile
-        const customerSnap = await getDoc(doc(db, "users", order.customerId));
-        const customer = customerSnap.exists() ? customerSnap.data() : {};
-        
-        // Mapping to your signup keys: bankName, accName, accNo
-        const bank = customer.bankDetails || {};
+        let bank = {};
+        let refundAmount = order.total;
 
-        const refundAmount = order.total;
+        // Logic Check: If Guest, use data embedded in order. If User, fetch from profile.
+        if (order.isGuest && order.guestBankInfo) {
+            bank = {
+                accName: order.guestBankInfo.accName,
+                accNo: order.guestBankInfo.accNo,
+                bankName: order.guestBankInfo.bankName
+            };
+        } else {
+            // Fetch fresh customer bank details directly from their profile
+            const customerSnap = await getDoc(doc(db, "users", order.customerId));
+            const customer = customerSnap.exists() ? customerSnap.data() : {};
+            bank = customer.bankDetails || {};
+        }
 
+        // Update Modal UI
         document.getElementById('refundName').innerText = bank.accName || "Not Provided";
         document.getElementById('refundNumber').innerText = bank.accNo || "Not Provided";
         document.getElementById('refundBank').innerText = bank.bankName || "Not Provided";
@@ -208,6 +219,7 @@ window.prepareDecline = async (orderId) => {
         alert("Could not retrieve customer bank details.");
     }
 };
+
 
 window.confirmRefund = async () => {
     if (!orderToDecline) return;
