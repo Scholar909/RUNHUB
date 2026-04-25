@@ -123,8 +123,6 @@ async function renderHistoryList(orders) {
                         <h3>${customerData.fullName}</h3>
                     </div>
                     
-                    <p style="font-size: 0.85rem; margin-bottom: 5px;">ID: ${order.customerPhone || 'N/A'}</p>
-                    
                     <div class="order-summary">
                         <p>Total Revenue: <span class="accent">₦${order.total.toLocaleString()}</span></p>
                     </div>
