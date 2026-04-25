@@ -313,7 +313,18 @@
 
 </form>
 </div>
+
+<div id="processingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,11,16,0.9); backdrop-filter:blur(8px); z-index:10000; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;">
+    <div class="loader-circle" style="width:60px; height:60px; border:5px solid var(--glass); border-top:5px solid var(--accent); border-radius:50%; animation: spin 1s linear infinite; margin-bottom:20px;"></div>
+    <h2 style="color:var(--text-main); font-size:1.5rem; margin-bottom:10px;">Processing Application</h2>
+    <p style="color:var(--text-dim); max-width:300px; line-height:1.6;">Generating your Binding Agreement and securing your documents. <br><strong>Do not exit this page.</strong></p>
+</div>
+
+<style>
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
 <script src="/start/pwa-handler.js"></script>
-<script type="module" src="js/sign-ups.js?v=31"></script>
+<script type="module" src="js/sign-ups.js?v=32"></script>
 </body>
 </html>
