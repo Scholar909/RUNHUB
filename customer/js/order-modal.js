@@ -332,6 +332,7 @@ window.submitOrder = async () => {
 
         const orderObj = {
             customerId: auth.currentUser.uid,
+            customerPhone: customerData.phoneNumber || "No Phone Provided",
             merchantId: merchantId,
             merchantName: merchantData.username,
             items: selectedItems,
