@@ -253,6 +253,7 @@ window.approveMerchant = async(id) => {
       level: data.level || "",
       gender: data.gender || "",
       phoneNumber: data.phoneNumber || "",
+      referrerName: data.referrerName || "Direct",
       hostel: {
         hostel: data.hostel || "",
         block: data.block || "",
@@ -298,6 +299,7 @@ window.approveMerchant = async(id) => {
       matricNumber: data.matricNumber || "",
       department: data.department || "",
       phoneNumber: data.phoneNumber || "",
+      referrerName: data.referrerName || "Direct",
       gender: data.gender || "",
       hostelLocation: `Block ${data.block}, Room ${data.room}, ${data.hostel}`,
       bankDetails: {
