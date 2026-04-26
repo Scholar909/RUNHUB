@@ -92,7 +92,7 @@ function renderMerchantGrid() {
                  ontouchend="handleEndClick()">
                 <div class="card-tag">AVAILABLE</div>
                 <div class="merchant-header">
-                    <h3 class="merchant-name-label">@${m.username}</h3>
+                    <h3 class="merchant-name-label">@${m.username} <span style="font-size: 0.8em; color: #ccc;">(${m.gender} Merchant)</span></h3>
                     <div class="rating">
                         ${generateStars(m.rating || 5)} 
                         (${(m.rating || 5.0).toFixed(1)}) 
