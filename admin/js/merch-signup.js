@@ -353,12 +353,16 @@ NOVAHUB Team`;
 
       const encoded = encodeURIComponent(message);
       const phone = formatNGNumber(data.phoneNumber);
-      const whatsappURL = `https://wa.me/${phone}?text=${encoded}`;
-
-      alert(`Merchant approved successfully.\nAn email has been sent to ${data.email}.\n\nClick OK to notify the merchant via WhatsApp.`);
       
-      // Open WhatsApp
-      window.location.href = whatsappURL;
+      const appURL = `whatsapp://send?phone=${phone}&text=${encoded}`;
+      const webURL = `https://wa.me/${phone}?text=${encoded}`;
+      
+      window.location.href = appURL;
+      
+      setTimeout(() => {
+        window.location.href = webURL;
+      }, 1500);
+      
 
     } catch (err) {
       console.error("Email Error:", err);
