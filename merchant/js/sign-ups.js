@@ -43,6 +43,16 @@ v.srcObject=null;
 });
 }
 
+/* ---------------- Referral Link Logic ---------------- */
+const urlParams = new URLSearchParams(window.location.search);
+const referrerFromURL = urlParams.get('ref'); 
+const referrerInput = document.getElementById('referrerInput');
+
+if (referrerFromURL && referrerInput) {
+    referrerInput.value = referrerFromURL.toLowerCase();
+}
+
+
 
 /* ---------------- CLOUDINARY ---------------- */
 
@@ -552,6 +562,7 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
   const bankName = document.getElementById("bankName").value;
   const accountName = document.getElementById("accountName").value;
   const accountNumber = document.getElementById("accountNumber").value;
+  const referrerName = document.getElementById('referrerInput').value || "Direct";
   
   const data = {
       fullName: rawName, // Use the rawName variable you defined earlier
@@ -567,7 +578,8 @@ document.getElementById("merchantVerificationForm").addEventListener("submit", a
       room: room,
       bankName: bankName,
       accountName: accountName,
-      accountNumber: accountNumber
+      accountNumber: accountNumber,
+      referrerName: referrerName
   };
 
   const usernameId = data.username;
