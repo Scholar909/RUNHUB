@@ -166,6 +166,7 @@ async function toggleSession(sessionId, targetState, isAutoOff = false) {
             await updateDoc(merchantRef, {
                 isActive: true,
                 currentSessionId: sessionId,
+                isPrivate: activeSession.isPrivate || false,
                 fromLocation: activeSession.fromLocation,
                 toLocation: activeSession.toLocation,
                 deliveryCharge: Number(activeSession.deliveryCharge),
@@ -205,6 +206,7 @@ window.saveSession = async () => {
     const nameInput = document.querySelector('input[placeholder="e.g. Dinner Run"]');
     const fromInput = document.querySelector('input[placeholder="Pickup point"]');
     const toInput = document.querySelector('input[placeholder="Destination"]');
+    const isPrivate = document.getElementById('privateCheckbox')?.checked || false;
 
     const rawDelivery = Number(deliveryInput.value);
     const rawSlots = Number(slotsInput.value);
@@ -253,6 +255,7 @@ window.saveSession = async () => {
         menu: menuItems,
         closingTime: closingTime,
         // Keep current status if editing, otherwise default to off for new sessions
+        isPrivate: isPrivate,
         isActive: existingSession ? existingSession.isActive : false,
         slotsFilled: existingSession ? existingSession.slotsFilled : 0,
         lastTurnedOff: existingSession ? existingSession.lastTurnedOff : 0,
@@ -304,11 +307,15 @@ function renderSessions() {
 
     sessionGrid.innerHTML = sessions.map(s => {
         const isFull = s.slotsFilled >= s.maxSlots;
+        const privateBadge = s.isPrivate ? `<span style="background: #ff9500; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; vertical-align: middle; margin-left: 8px;">PRIVATE</span>` : '';
         return `
         <div class="trust-card session-card ${s.isActive ? 'active-session' : ''}">
             <div class="card-options">
                 <i class="fi-list-bullet"></i>
                 <div class="options-dropdown">
+                  <label>
+                    <input type="checkbox" ${s.isPrivate ? 'checked' : ''} onchange="updatePrivateStatus('${s.id}', this.checked)"> Private
+                  </label>
                     <button onclick="showForm('edit', '${s.id}')">Edit</button>
                     <button onclick="copyForWhatsApp('${s.id}')">Copy for WhatsApp</button>
                     <button onclick="copySessionLink('${s.id}')">Copy for Friend</button>
@@ -318,7 +325,7 @@ function renderSessions() {
             <div class="card-tag" style="color: ${s.isActive ? 'var(--success)' : isFull ? '#ff3b30' : 'var(--accent)'}">
                 ${s.isActive ? '● LIVE ON FEED' : isFull ? '● SESSION FULL' : 'SAVED SESSION'}
             </div>
-            <h3>${s.sessionName}</h3>
+            <h3>${s.sessionName} ${privateBadge}</h3>
             <p class="route">${s.fromLocation} → ${s.toLocation}</p>
             <div class="card-footer">
                 <div class="load-info">
@@ -566,5 +573,19 @@ window.hideForm = () => {
     if (importInput) importInput.value = '';           // Clear the link
 };
 
-
 window.toggleSession = toggleSession;
+
+window.updatePrivateStatus = async (sessionId, isPrivate) => {
+    try {
+        await updateDoc(doc(db, "merchants", currentUid, "sessions", sessionId), {
+            isPrivate: isPrivate
+        });
+        // If this is the currently active session, update the global profile too
+        const userSnap = await getDoc(doc(db, "users", currentUid));
+        if (userSnap.data().currentSessionId === sessionId) {
+            await updateDoc(doc(db, "users", currentUid), { isPrivate: isPrivate });
+        }
+    } catch (e) {
+        console.error("Error updating privacy:", e);
+    }
+};
