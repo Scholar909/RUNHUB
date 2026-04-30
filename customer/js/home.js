@@ -57,7 +57,7 @@ function listenToActiveMerchants() {
         const resolvedMerchants = await Promise.all(merchantPromises);
 
         // Filter out full slots and update the global state
-        merchants = resolvedMerchants.filter(m => m.slotsFilled < m.maxSlots);
+        merchants = resolvedMerchants.filter(m => m.slotsFilled < m.maxSlots && m.isPrivate !== true);
 
         renderMerchantGrid();
     });
