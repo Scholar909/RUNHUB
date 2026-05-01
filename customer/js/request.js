@@ -1,495 +1,364 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { 
-    doc, getDoc, updateDoc, collection, onSnapshot, 
-    addDoc, deleteDoc, query, orderBy, where, getDocs, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { collection, doc, addDoc, deleteDoc, updateDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-// --- State Management ---
-let currentUid = null;
-let sessions = [];
-let editingSessionId = null;
-let unsubscribeSessions = null;
-let deliveryInput;
-let slotsInput;
+/* =========================
+   STATE & CONSTANTS
+========================= */
+let uid = null;
+let requests = [];
+let intents = [];
+let alerts = [];
+let activeTab = 0;
+let editingRequestId = null;
 
-// --- Enforcement Constants (Synced with Location JS) ---
-const WAL_THRESHOLD = 300;
-const ADMIN_FEE = 25;
-const TRIAL_DAYS = 14;
-const GRACE_HOURS = 24;
-const MAX_SLOTS_LIMIT = 20;
-const MAX_DELIVERY_FEE = 1000;
+const $ = (q) => document.querySelector(q);
+const $$ = (q) => document.querySelectorAll(q);
 
-// --- DOM Elements ---
-const sessionListView = document.getElementById('sessionListView');
-const sessionFormView = document.getElementById('sessionFormView');
-const menuContainer = document.getElementById('menuContainer');
-const sessionGrid = document.querySelector('.session-grid');
-const closingToggle = document.getElementById('closingToggle');
-const closingInputs = document.getElementById('closingTimeInputs');
-
-document.addEventListener("DOMContentLoaded", () => {
-    deliveryInput = document.getElementById('deliveryChargeInput');
-    slotsInput = document.getElementById('maxSlotsInput');
-
-    deliveryInput.addEventListener("input", () => {
-        if (deliveryInput.value > MAX_DELIVERY_FEE) deliveryInput.value = MAX_DELIVERY_FEE;
-        if (deliveryInput.value < 0) deliveryInput.value = 0;
-    });
-
-    slotsInput.addEventListener("input", () => {
-        if (slotsInput.value > MAX_SLOTS_LIMIT) slotsInput.value = MAX_SLOTS_LIMIT;
-        if (slotsInput.value < 1) slotsInput.value = 1;
-    });
-    
-    closingToggle.addEventListener('change', () => {
-        closingInputs.style.display = closingToggle.checked ? 'grid' : 'none';
-    });
-});
-
-// --- 1. Initialization & Auth Guard ---
+/* =========================
+   AUTH CHECK
+========================= */
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUid = user.uid;
-        // Check rules before allowing the merchant to manage sessions
-        await enforceRules(user.uid);
-        listenToSessions();
-    } else {
-        window.location.href = "sign-login.html";
+    if (!user) { 
+        window.location.href = "./sign-login.html"; 
+        return; 
     }
+    uid = user.uid;
+    initUI();
+    initData();
 });
 
-// --- 2. Enforcement Logic (The "Security Guard") ---
-async function enforceRules(uid) {
-    if (window.location.pathname.includes("plans.html")) return;
-
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return;
-
-    const userData = userSnap.data();
-    const now = new Date();
-    const toJSDate = (val) => (val && typeof val.toDate === 'function') ? val.toDate() : new Date(val || 0);
-
-    // Subscription/Trial Check
-    const createdAt = toJSDate(userData.createdAt);
-    let isRestricted = false;
-
-    if (isRestricted) {
-        await deactivateActiveSession(uid);
-        window.location.href = "./plans.html";
-        return;
-    }
-
-    // Wallet/Debt Check
-    if (userData.walletDueSince) {
-        const dueSince = toJSDate(userData.walletDueSince);
-        const hoursPassed = (now - dueSince) / (1000 * 60 * 60);
-        if (hoursPassed >= GRACE_HOURS) {
-            await deactivateActiveSession(uid);
-            window.location.href = "./plans.html?reason=debt";
-        }
-    }
-}
-
-// Helper to kill sessions if restricted
-async function deactivateActiveSession(uid) {
-    try {
-        await updateDoc(doc(db, "users", uid), { isActive: false });
-        const q = query(collection(db, "merchants", uid, "sessions"), where("isActive", "==", true));
-        const snap = await getDocs(q);
-        const batch = [];
-        snap.forEach(d => batch.push(updateDoc(d.ref, { isActive: false, lastTurnedOff: Date.now() })));
-        await Promise.all(batch);
-    } catch (e) { console.error("Session cleanup failed", e); }
-}
-
-// --- 3. Real-time Session Listener ---
-function listenToSessions() {
-    if (unsubscribeSessions) unsubscribeSessions();
-
-    const q = query(
-        collection(db, "merchants", currentUid, "sessions"),
-        orderBy("timestamp", "desc")
-    );
-
-    unsubscribeSessions = onSnapshot(q, (snapshot) => {
-        sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        sessions.forEach(session => {
-            if (session.isActive === true && session.slotsFilled >= session.maxSlots) {
-                console.log(`Session ${session.id} hit limit. Auto-toggling off.`);
-                toggleSession(session.id, false, true); 
-            }
-        });
-
-        renderSessions();
-    }, (error) => {
-        console.error("Error fetching sessions:", error);
+/* =========================
+   INITIALIZE UI
+========================= */
+function initUI() {
+    $$(".tab").forEach((btn, i) => {
+        btn.addEventListener("click", () => switchTab(i));
     });
-}
 
-// --- 4. Persistent Toggle Logic ---
-async function toggleSession(sessionId, targetState, isAutoOff = false) {
-    try {
-        const merchantRef = doc(db, "users", currentUid);
-        const sessionRef = doc(db, "merchants", currentUid, "sessions", sessionId);
-        
-        const activeSession = sessions.find(s => s.id === sessionId);
-        if (!activeSession) return;
+    const submitBtn = $("#submitBtn");
+    if (submitBtn) {
+        submitBtn.addEventListener("click", handleRequestSubmit);
+    }
+    
+    window.toggleDrawer = () => $("#navDrawer")?.classList.toggle("active");
 
-        if (targetState === true) {
-            let newSlotCount = activeSession.slotsFilled || 0;
-            const now = Date.now();
-            const lastOff = activeSession.lastTurnedOff || 0;
-            const thirtyMinutes = 30 * 60 * 1000;
+    window.openForm = () => { $("#formModal").style.display = "flex"; };
 
-            // Logic to reset slots to 0 if 30 mins passed or session was full
-            if ((now - lastOff > thirtyMinutes) || activeSession.slotsFilled >= activeSession.maxSlots) {
-                newSlotCount = 0;
-            }
-
-            // Deactivate any other currently active sessions first
-            const deactivateTasks = sessions.map(s => {
-                if (s.id !== sessionId && s.isActive) {
-                    return updateDoc(doc(db, "merchants", currentUid, "sessions", s.id), { isActive: false });
-                }
-                return Promise.resolve();
-            });
-            await Promise.all(deactivateTasks);
-
-            const merchantSnap = await getDoc(merchantRef);
-            const mData = merchantSnap.data();
-
-            // 1. Update the Global Merchant Profile (Used for Home Page queries)
-            await updateDoc(merchantRef, {
-                isActive: true,
-                currentSessionId: sessionId,
-                isPrivate: activeSession.isPrivate || false,
-                fromLocation: activeSession.fromLocation,
-                toLocation: activeSession.toLocation,
-                deliveryCharge: Number(activeSession.deliveryCharge),
-                maxSlots: Number(activeSession.maxSlots),
-                slotsFilled: newSlotCount, // <--- CRITICAL: Syncs reset to Home Page
-                whatsappNumber: mData?.phoneNumber || ""
-            });
-
-            // 2. Update the Specific Session Document
-            await updateDoc(sessionRef, {
-                isActive: true,
-                slotsFilled: newSlotCount,
-                lastTurnedOff: 0 // Reset the off-timer
-            });
-
-        } else {
-            // Toggling OFF logic
-            await updateDoc(merchantRef, { 
-              isActive: false,
-              currentSessionId: null // Clear this so Admin/Home Page knows nothing is live
-            });
-            await updateDoc(sessionRef, {
-                isActive: false,
-                slotsFilled: activeSession.slotsFilled || 0,
-                lastTurnedOff: Date.now() 
-            });
+    window.closeForm = async () => { 
+        // If we close the form and were editing, set it back to pending so it shows up again
+        if (editingRequestId) {
+            try {
+                await updateDoc(doc(db, "requests", editingRequestId), { status: "pending" });
+            } catch (e) { console.error("Revert failed", e); }
         }
-
-    } catch (e) {
-        console.error("Toggle failed:", e);
-        if (!isAutoOff) alert("Sync error. Please check your connection.");
-    }
-}
-
-// --- 5. CRUD Operations ---
-window.saveSession = async () => {
-    const nameInput = document.querySelector('input[placeholder="e.g. Dinner Run"]');
-    const fromInput = document.querySelector('input[placeholder="Pickup point"]');
-    const toInput = document.querySelector('input[placeholder="Destination"]');
-    const isPrivate = document.getElementById('privateCheckbox')?.checked || false;
-
-    const rawDelivery = Number(deliveryInput.value);
-    const rawSlots = Number(slotsInput.value);
-    
-    const finalDeliveryCharge = Math.max(0, Math.min(rawDelivery || 0, MAX_DELIVERY_FEE));
-    const finalMaxSlots = Math.max(1, Math.min(rawSlots || 1, MAX_SLOTS_LIMIT));
-    
-    deliveryInput.value = finalDeliveryCharge;
-    slotsInput.value = finalMaxSlots;
-    
-    // Inside saveSession, change the menuItems mapping:
-    const menuItems = Array.from(document.querySelectorAll('.menu-item-input')).map(row => ({
-        name: row.querySelectorAll('input[type="text"]')[0].value,
-        price: Number(row.querySelectorAll('input[type="number"]')[0].value),
-        available: row.querySelector('.item-availability').checked,
-        category: row.dataset.category // Capture the category!
-    }));
-
-
-    if (!nameInput.value || !fromInput.value || menuItems.length === 0) {
-        alert("Please fill all fields and add items.");
-        return;
-    }
-
-    // --- PERSISTENCE LOGIC ---
-    // If editing, find the existing session to keep its live status and slots
-    const existingSession = editingSessionId ? sessions.find(s => s.id === editingSessionId) : null;
-    
-    const closingEnabled = document.getElementById('closingToggle').checked;
-    const closingHour = document.getElementById('closingHour').value;
-    const closingMinute = document.getElementById('closingMinute').value;
-    const closingPeriod = document.getElementById('closingPeriod').value;
-    
-    let closingTime = null;
-    
-    if (closingEnabled && closingHour && closingMinute) {
-        closingTime = `${closingHour}:${closingMinute} ${closingPeriod}`;
-    }
-
-    const sessionData = {
-        sessionName: nameInput.value,
-        fromLocation: fromInput.value,
-        toLocation: toInput.value,
-        deliveryCharge: finalDeliveryCharge,
-        maxSlots: finalMaxSlots,
-        menu: menuItems,
-        closingTime: closingTime,
-        // Keep current status if editing, otherwise default to off for new sessions
-        isPrivate: isPrivate,
-        isActive: existingSession ? existingSession.isActive : false,
-        slotsFilled: existingSession ? existingSession.slotsFilled : 0,
-        lastTurnedOff: existingSession ? existingSession.lastTurnedOff : 0,
-        version: Date.now(), // Use timestamp as a unique version ID
-        copyCount: 0,
-        timestamp: existingSession ? existingSession.timestamp : Date.now()
+        editingRequestId = null;
+        $("#formModal").style.display = "none";
+        ["#fromInput", "#toInput", "#itemInput", "#durationInput"].forEach(id => $(id).value = "");
     };
 
+    window.handleLogout = async () => {
+        await signOut(auth);
+        window.location.href = "./sign-login.html";
+    };
+}
+
+
+/* =========================
+   DATA STREAMS
+========================= */
+function initData() {
+    // Listen to Requests
+    onSnapshot(collection(db, "requests"), (snap) => {
+        requests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        runMatchEngine();
+        refreshCurrentView();
+    });
+
+    // Listen to Merchant Intents
+    onSnapshot(collection(db, "intents"), (snap) => {
+        intents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        runMatchEngine();
+        refreshCurrentView();
+    });
+
+    // Listen to Alerts
+    onSnapshot(collection(db, "alerts"), (snap) => {
+        alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (activeTab === 0) renderAlerts();
+    });
+
+    // Real-time timer updates
+    setInterval(refreshCurrentView, 1000);
+}
+
+function refreshCurrentView() {
+    renderLiveBoard();
+    if (activeTab === 0) renderAlerts();
+    if (activeTab === 1) renderPeerRequests();
+    if (activeTab === 2) renderMyRequests();
+}
+
+/* =========================
+   NAVIGATION & TABS
+========================= */
+function switchTab(index) {
+    activeTab = index;
+    $$(".tab").forEach(t => t.classList.remove("active"));
+    $$(".tab")[index].classList.add("active");
+    
+    // Show "Create" button only on "My Requests" tab
+    $("#addContainer").style.display = (index === 2) ? "block" : "none";
+    refreshCurrentView();
+}
+
+/* =========================
+   RENDERING LOGIC
+========================= */
+
+function renderLiveBoard() {
+    const el = $(".live-board");
+    if (!el) return;
+    el.innerHTML = "";
+
+    // Render Requests
+    requests.forEach(r => {
+        if (r.expiresAt < Date.now()) return;
+        const isMine = r.userId === uid;
+        el.innerHTML += `
+        <div class="chat-row ${isMine ? 'right' : 'left'}">
+            <div class="chat-card ${isMine ? 'mine' : ''}">
+                <span class="type">REQUEST:</span>
+                <div class="route">${r.from} → ${r.to}</div>
+                <div class="meta">Items: ${r.item} • ${getTimeLeft(r.expiresAt)}</div>
+                </div>
+        </div>`;
+    });
+
+    // Render Merchant Intents
+    intents.forEach(i => {
+        if (i.expiresAt < Date.now()) return;
+        el.innerHTML += `
+        <div class="chat-row left">
+            <div class="chat-card" style="border-left: 4px solid var(--accent);">
+                <span class="type">MERCHANT INTENT:</span>
+                <div class="route">${i.from} → ${i.to}</div>
+                <div class="meta">Leaves in: ${getTimeLeft(i.expiresAt)}</div>
+                <div class="actions">
+                    <button class="btn primary" onclick="handleReact('intent', '${i.id}')">React</button>
+                </div>
+            </div>
+        </div>`;
+    });
+}
+
+/* =========================
+   NEW: renderReactions (The React Tab)
+========================= */
+async function renderReactions() {
+    const el = $(".tab-content");
+    el.innerHTML = "";
+
+    // Show all my requests (active and recently expired but not deleted)
+    const myRequests = requests.filter(r => r.userId === uid).sort((a,b) => b.createdAt - a.createdAt);
+
+    if (myRequests.length === 0) {
+        el.innerHTML = `<div class="empty-state">Post a request to see merchant reactions.</div>`;
+        return;
+    }
+
+    for (let r of myRequests) {
+        const isExpired = r.expiresAt < Date.now();
+        // Count merchant reactions for this specific request
+        const snap = await getDocs(query(collection(db, "reactions"), where("targetId", "==", r.id)));
+        
+        el.innerHTML += `
+            <div class="panel-card ${isExpired ? 'expired-card' : ''}" onclick="openReactionModal('${r.id}')" style="cursor:pointer; margin-bottom:10px;">
+                <div class="info">
+                    <div class="title">${r.item} ${isExpired ? '(Expired)' : ''}</div>
+                    <div class="sub">${r.from} → ${r.to}</div>
+                </div>
+                <div class="badge" style="background:var(--accent); padding:4px 10px; border-radius:12px; font-size:0.7rem;">
+                    ${snap.size} Reactions
+                </div>
+            </div>
+        `;
+    }
+}
+
+
+function renderAlerts() {
+    const el = $(".tab-content");
+    el.innerHTML = "";
+    const myAlerts = alerts.filter(a => a.users && a.users.includes(uid));
+
+    if (myAlerts.length === 0) {
+        el.innerHTML = `<div class="empty-state">No matches yet.</div>`;
+        return;
+    }
+
+    myAlerts.forEach(a => {
+        el.innerHTML += `
+        <div class="panel-card">
+            <div class="info">
+                <div class="title">Match Found</div>
+                <div class="sub">${a.from} → ${a.to}</div>
+            </div>
+            <div class="actions">
+                <button class="btn ghost" onclick="deleteAlert('${a.id}')">Delete</button>
+            </div>
+        </div>`;
+    });
+}
+
+function renderPeerRequests() {
+    const el = $(".tab-content");
+    el.innerHTML = "";
+    const others = requests.filter(r => r.userId !== uid && r.status === "pending" && r.expiresAt > Date.now());
+
+    if (others.length === 0) {
+        el.innerHTML = `<div class="empty-state">No intents active.</div>`;
+        return;
+    }
+
+    others.forEach(r => {
+        el.innerHTML += `
+        <div class="panel-card">
+            <div class="info">
+                <div class="title">Customer Request</div>
+                <div class="sub">${r.from} → ${r.to} • ${r.item}</div>
+            </div>
+        </div>`;
+    });
+}
+
+function renderMyRequests() {
+    const el = $(".tab-content");
+    el.innerHTML = "";
+    const myData = requests.filter(r => r.userId === uid);
+
+    if (myData.length === 0) {
+        el.innerHTML = `<div class="empty-state">You haven't posted any requests.</div>`;
+        return;
+    }
+
+    myData.forEach(r => {
+        const isExpired = r.expiresAt < Date.now();
+        el.innerHTML += `
+        <div class="panel-card ${isExpired ? 'expired-card' : ''}">
+            <div class="info">
+                <div class="title">My Request (${r.visibility})</div>
+                <div class="sub">${r.from} → ${r.to} • ${getTimeLeft(r.expiresAt)}</div>
+            </div>
+            <div class="actions">
+                ${!isExpired ? `<button class="btn ghost" onclick="editRequest('${r.id}')">Edit</button>` : ''}
+                <button class="btn danger" onclick="deleteRequest('${r.id}')">Delete</button>
+            </div>
+        </div>`;
+    });
+}
+
+/* =========================
+   REPLACED: handleRequestSubmit
+========================= */
+async function handleRequestSubmit() {
+    const from = $("#fromInput").value;
+    const to = $("#toInput").value;
+    const item = $("#itemInput").value;
+    const duration = parseInt($("#durationInput").value);
+
+    if (!from || !to || !item || !duration) return alert("Fill all fields");
+    
+    // Increased limit to 5 as requested
+    const activeCount = requests.filter(r => r.userId === uid && r.expiresAt > Date.now()).length;
+    if (!editingRequestId && activeCount >= 5) return alert("Limit: 5 active requests.");
+
+    const expiresAt = Date.now() + (duration * 60 * 1000);
+
     try {
-        if (editingSessionId) {
-            await updateDoc(doc(db, "merchants", currentUid, "sessions", editingSessionId), sessionData);
+        if (editingRequestId) {
+            const docId = editingRequestId;
+            editingRequestId = null;
+            await updateDoc(doc(db, "requests", docId), {
+                from, to, item, expiresAt, status: "pending"
+            });
+        } else {
+            await addDoc(collection(db, "requests"), {
+                userId: uid, from, to, item, expiresAt,
+                status: "pending", createdAt: serverTimestamp()
+            });
+        }
+        window.closeForm(); 
+    } catch (e) { console.error(e); }
+}
+
+// EXPOSE ACTIONS TO WINDOW FOR HTML ONCLICK
+window.editRequest = async (id) => {
+    const r = requests.find(req => req.id === id);
+    if (!r) return;
+    editingRequestId = id;
+    
+    // Hide from public while editing
+    await updateDoc(doc(db, "requests", id), { status: "editing" });
+
+    $("#fromInput").value = r.from;
+    $("#toInput").value = r.to;
+    $("#itemInput").value = r.item;
+    window.openForm();
+};
+
+window.deleteRequest = async (id) => {
+    if (confirm("Delete this request?")) await deleteDoc(doc(db, "requests", id));
+};
+
+window.deleteAlert = async (id) => {
+    await deleteDoc(doc(db, "alerts", id));
+};
+
+window.startOrder = (intentId) => {
+    console.log("Navigating to order for intent:", intentId);
+    // window.location.href = `order.html?intentId=${intentId}`;
+};
+
+/* =========================
+   HELPERS & ENGINE
+========================= */
+
+function getTimeLeft(ex) {
+    const diff = ex - Date.now();
+    if (diff <= 0) return "Expired";
+    const mins = Math.floor(diff / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    return `${mins}m ${secs}s`;
+}
+
+const seenMatches = new Set();
+async function runMatchEngine() {
+    for (let r of requests) {
+        if (r.userId !== uid || r.expiresAt < Date.now()) continue;
+        for (let i of intents) {
+            if (i.expiresAt < Date.now()) continue;
+
+            const key = `${r.id}_${i.id}`;
+            if (seenMatches.has(key)) continue;
             
-            // If the session being edited is currently LIVE, update the Global Merchant Doc too
-            if (existingSession && existingSession.isActive) {
-                await updateDoc(doc(db, "users", currentUid), {
-                    fromLocation: sessionData.fromLocation,
-                    toLocation: sessionData.toLocation,
-                    deliveryCharge: sessionData.deliveryCharge,
-                    maxSlots: sessionData.maxSlots
+            const rFrom = r.from.toLowerCase().split(",").map(s => s.trim());
+            const iFrom = i.from.toLowerCase().split(",").map(s => s.trim());
+            
+            if (rFrom.some(l => iFrom.includes(l))) {
+                seenMatches.add(key);
+                await addDoc(collection(db, "alerts"), {
+                    type: "match", from: r.from, to: r.to, 
+                    users: [r.userId, i.userId], 
+                    createdAt: serverTimestamp()
                 });
             }
-        } else {
-            await addDoc(collection(db, "merchants", currentUid, "sessions"), sessionData);
         }
-        window.hideForm();
-    } catch (e) { 
-        console.error(e);
-        alert("Error saving session"); 
     }
-};
-
-
-window.deleteSession = async (id) => {
-    if (confirm("Delete this session?")) {
-        const session = sessions.find(s => s.id === id);
-        if (session.isActive) {
-            await updateDoc(doc(db, "users", currentUid), { isActive: false });
-        }
-        await deleteDoc(doc(db, "merchants", currentUid, "sessions", id));
-    }
-};
-
-// --- 6. UI Rendering ---
-function renderSessions() {
-    if (sessions.length === 0) {
-        sessionGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-dim);"><p>No saved sessions found.</p></div>`;
-        return;
-    }
-
-    sessionGrid.innerHTML = sessions.map(s => {
-        const isFull = s.slotsFilled >= s.maxSlots;
-        const privateBadge = s.isPrivate ? `<span style="background: #ff9500; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; vertical-align: middle; margin-left: 8px;">PRIVATE</span>` : '';
-        return `
-        <div class="trust-card session-card ${s.isActive ? 'active-session' : ''}">
-            <div class="card-options">
-                <i class="fi-list-bullet"></i>
-                <div class="options-dropdown">
-                  <label>
-                    <input type="checkbox" ${s.isPrivate ? 'checked' : ''} onchange="updatePrivateStatus('${s.id}', this.checked)"> Private
-                  </label>
-                    <button onclick="showForm('edit', '${s.id}')">Edit</button>
-                    <button onclick="copyForWhatsApp('${s.id}')">Copy for WhatsApp</button>
-                    <button onclick="copySessionLink('${s.id}')">Copy for Friend</button>
-                    <button class="text-error" onclick="deleteSession('${s.id}')">Delete</button>
-                </div>
-            </div>
-            <div class="card-tag" style="color: ${s.isActive ? 'var(--success)' : isFull ? '#ff3b30' : 'var(--accent)'}">
-                ${s.isActive ? '● LIVE ON FEED' : isFull ? '● SESSION FULL' : 'SAVED SESSION'}
-            </div>
-            <h3>${s.sessionName} ${privateBadge}</h3>
-            <p class="route">${s.fromLocation} → ${s.toLocation}</p>
-            <div class="card-footer">
-                <div class="load-info">
-                    <span class="label">Slots:</span>
-                    <span class="stat-value" style="color: ${isFull ? '#ff3b30' : 'var(--accent)'}">
-                        ${s.slotsFilled || 0} / ${s.maxSlots}
-                    </span>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" ${s.isActive ? 'checked' : ''} 
-                        onchange="toggleSession('${s.id}', this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-    `}).join('');
 }
 
-window.toggleDrawer = () => document.getElementById('navDrawer').classList.toggle('active');
-
-window.handleLogout = async () => {
-    try {
-        await signOut(auth);
-        window.location.href = "sign-login.html";
-    } catch (error) { console.error("Logout failed", error); }
-};
-
-window.addMenuItem = (category = "food", name = "", price = "", isAvailable = true) => {
-    const containerMap = { 'food': 'foodContainer', 'drink': 'drinkContainer', 'snacks': 'snackContainer' };
-    const container = document.getElementById(containerMap[category]);
-    
-    const div = document.createElement('div');
-    div.className = "menu-item-input";
-    div.dataset.category = category;
-    div.style.display = "flex";
-    div.style.alignItems = "center";
-    div.style.gap = "8px";
-    
-    div.innerHTML = `
-        <input type="checkbox" class="item-availability" ${isAvailable ? 'checked' : ''}>
-        <input type="text" placeholder="Item Name" value="${name}" required style="flex: 2;">
-        <input type="number" placeholder="Price" value="${price}" required style="flex: 1;">
-        <i class="fi-x remove-btn" onclick="this.parentElement.remove()"></i>
-    `;
-    container.appendChild(div);
-};
-
-window.showForm = (mode, id = null) => {
-    sessionListView.style.display = 'none';
-    sessionFormView.style.display = 'block';
-    
-    // Clear all category containers
-    document.getElementById('foodContainer').innerHTML = '';
-    document.getElementById('drinkContainer').innerHTML = '';
-    document.getElementById('snackContainer').innerHTML = '';
-
-    const nums = sessionFormView.querySelectorAll('input[type="number"]');
-    
-    if (mode === 'edit' && id) {
-        editingSessionId = id;
-        const s = sessions.find(x => x.id === id);
-        if (!s) return alert("Session not found!");
-        document.getElementById('formTitle').innerText = "EDIT SESSION";
-        document.querySelector('input[placeholder="e.g. Dinner Run"]').value = s.sessionName;
-        document.querySelector('input[placeholder="Pickup point"]').value = s.fromLocation;
-        document.querySelector('input[placeholder="Destination"]').value = s.toLocation;
-        document.getElementById('deliveryChargeInput').value = s.deliveryCharge;
-        document.getElementById('maxSlotsInput').value = s.maxSlots;
-        const closingToggle = document.getElementById('closingToggle');
-        const closingInputs = document.getElementById('closingTimeInputs');
-        const closingHour = document.getElementById('closingHour');
-        const closingMinute = document.getElementById('closingMinute');
-        
-        if (s.closingTime) {
-            closingToggle.checked = true;
-            closingInputs.style.display = 'grid';
-        
-            const [time, period] = s.closingTime.split(' ');
-            const [h, m] = time.split(':');
-            
-            closingHour.value = h;
-            closingMinute.value = m;
-            document.getElementById('closingPeriod').value = period;
-            closingHour.value = h;
-            closingMinute.value = m;
-        } else {
-            closingToggle.checked = false;
-            closingInputs.style.display = 'none';
-        }
-        // Ensure we pass the category stored in the database back to the function
-        s.menu.forEach(item => {
-            window.addMenuItem(item.category || 'food', item.name, item.price, item.available !== false);
-        });
-
-    } else {
-        editingSessionId = null;
-        document.getElementById('formTitle').innerText = "CREATE NEW SESSION";
-        document.querySelectorAll('#sessionFormView input').forEach(inp => inp.value = "");
-        window.addMenuItem();
-    }
-};
-
-// --- Updated Formatting Helper for WhatsApp ---
-function formatWhatsAppText(session) {
-    let closingText = "";
-
-    if (session.closingTime) {
-        closingText = `⏰ Closing by ${session.closingTime}\n\n`;
-    }
-
-    const menuText = session.menu
-        .filter(item => item.available !== false)
-        .map(item => `• ${item.name}: ₦${item.price}`)
-        .join('\n');
-
-    return `*NOVAHUB DELIVERY AVAILABLE*\n` +
-           `Route: ${session.fromLocation} → ${session.toLocation}\n\n` +
-           `*MENU:*\n${menuText}\n\n` +
-           `Delivery fee: ₦${session.deliveryCharge}\n` +
-           `Limit: ${session.slotsFilled || 0}/${session.maxSlots} slots\n\n` +
-           `${closingText}` +
-           `Order here: https://scholar909.github.io/RUNHUB/customer/order-modal.html?m=${currentUid}&s=${session.id}`;
-}
-
-// --- Updated Copy Actions ---
-
-// 1. Copy for WhatsApp
-window.copyForWhatsApp = async (id) => {
-    const session = sessions.find(s => s.id === id);
-    if (!session) return;
-
-    const text = formatWhatsAppText(session);
-    try {
-        await navigator.clipboard.writeText(text);
-        alert("WhatsApp message copied! You can now paste it in any chat.");
-    } catch (err) {
-        console.error('WhatsApp copy failed', err);
-    }
-};
-
-// 2. Copy for Friend (Existing Short Code logic)
-window.copySessionLink = async (id) => {
-    const session = sessions.find(s => s.id === id);
-    if (!session) return;
-
-    const shareableData = {
-        sessionName: session.sessionName,
-        fromLocation: session.fromLocation,
-        toLocation: session.toLocation,
-        deliveryCharge: session.deliveryCharge,
-        maxSlots: session.maxSlots,
-        closingTime: session.closingTime || null,
-        menu: session.menu.map(item => ({ 
-            name: item.name, 
-            price: item.price, 
-            category: item.category || 'food' 
-        })),
-        createdAt: serverTimestamp()
-    };
-
-    try {
-        const docRef = await addDoc(collection(db, "shared_sessions"), shareableData);
-        await navigator.clipboard.writeText(docRef.id);
-        alert("Friend Code copied! Your friend can paste this in 'Import Session' to clone your menu.");
-    } catch (e) {
-        alert("Failed to generate code.");
-    
+// Expose these so the HTML buttons can trigger them
+window.editRequest = editRequest;
+window.deleteRequest = deleteRequest;
+window.deleteAlert = deleteAlert;
+window.switchTab = switchTab; 
