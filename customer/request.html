@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Requests | NOVAHUB</title>
+<title>Requests | NOVA HUB</title>
 
 <link rel="manifest" href="/start/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/start/icon-512.png">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-<link rel="stylesheet" href="css/request.css?=v7">
+<link rel="stylesheet" href="css/request.css?=v9">
 </head>
 
 <body>
@@ -56,133 +56,55 @@
             </button>
         </div>
     </div>
+    
+      <div class="search-container" style="padding: 10px 6%; background: var(--bg-dark);">
+          <input type="text" id="boardSearch" placeholder="Search locations, items, or users..." 
+                 style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--glass); color: white;">
+      </div>
 
-    <!-- 🔝 LIVE BOARD -->
     <section class="live-board">
-
-        <!-- OTHER USER -->
-        <div class="chat-row left">
-            <div class="chat-card">
-              <span class="type">REQUEST:</span>
-                <div class="route">Wuse → Gwarinpa</div>
-                <div class="meta">Item: Food • 18 mins left</div>
-
-            </div>
-        </div>
-
-        <!-- MY REQUEST -->
-        <div class="chat-row right">
-            <div class="chat-card mine">
-              <span class="type">REQUEST:</span>
-                <div class="route">Wuse → Jabi</div>
-                <div class="meta">Item: Drinks • 25 mins left</div>
-
-                <div class="actions live-actions">
-                    <button class="btn ghost">Edit</button>
-                    <button class="btn danger">Delete</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- OTHER USER MERCHANT -->
-        <div class="chat-row left">
-            <div class="chat-card">
-              <span class="type">INTENT:</span>
-                <div class="route">Wuse → Gwarinpa</div>
-                <div class="meta">Leaving in 18 mins</div>
-                
-                <div class="actions">
-                    <button class="btn primary">Place Order</button>
-                </div>
-
-            </div>
-        </div>
-
-    </section>
-
-    <!-- DIVIDER -->
+        </section>
+    
     <div class="split-divider"></div>
-
-    <!-- 🔽 BOTTOM PANEL -->
+    
     <section class="bottom-panel">
-
         <div class="tabs">
             <button class="tab active">Alerts</button>
-            <button class="tab">Requests</button>
+            <button class="tab">Intents</button>
             <button class="tab">My Requests</button>
         </div>
         
-<!-- ADD BUTTON (hidden by default) -->
-<div id="addContainer" style="display:none; margin-bottom:10px;">
-    <button class="btn primary w-100" onclick="openForm()">+ Create Request</button>
-</div>
-
-        <div class="tab-content">
-
-            <div class="panel-card">
-                <div class="info">
-                    <div class="title">Match found</div>
-                    <div class="sub">Wuse → Gwarinpa</div>
-                </div>
-
-                <div class="actions">
-                    <button class="btn primary">View</button>
-                    <button class="btn ghost">Delete</button>
-                </div>
-            </div>
-
-            <div class="panel-card">
-                <div class="info">
-                    <div class="title">@John wants to take your order</div>
-                    <div class="sub">Wuse → Gwarinpa</div>
-                </div>
-
-                <div class="actions">
-                    <button class="btn ghost">Menu</button>
-                    <button class="btn success">Accept</button>
-                    <button class="btn danger">Decline</button>
-                </div>
-            </div>
-
-            <div class="panel-card">
-                <div class="info">
-                    <div class="title">My Request</div>
-                    <div class="sub">Wuse → Jabi • 12 mins left</div>
-                </div>
-
-                <div class="actions">
-                    <button class="btn ghost">Edit</button>
-                    <button class="btn danger">Delete</button>
-                </div>
-            </div>
-
+        <div id="addContainer" style="display:none; margin-bottom:10px;">
+            <button class="btn primary w-100" onclick="openForm()">+ Create Request</button>
         </div>
-
+    
+        <div class="tab-content">
+            </div>
     </section>
     
     <div id="formModal" class="form-modal">
-    <div class="form-box">
-
-        <h3>Create Request</h3>
-        
-        <select id="visibilityInput">
-            <option value="public">Public</option>
-            <option value="private">Private</option>
-        </select>
-
-        <input type="text" placeholder="From (e.g. Wuse, Wuse 2)">
-        <input type="text" placeholder="To (e.g. Gwarinpa)">
-        <input type="text" placeholder="Item (Food, Drinks...)">
-        
-        <input type="number" id="durationInput" placeholder="Enter minutes (e.g. 20)">
-
-        <div class="actions">
-            <button class="btn ghost" onclick="closeForm()">Cancel</button>
-            <button class="btn primary" onclick="createRequest()">Create</button>
-        </div>
-
+      
+      <div class="tabs">
+          <button class="tab active">Alerts</button>
+          <button class="tab">React</button> <button class="tab">My Requests</button>
       </div>
+        <div class="form-box">
+            <h3>Create Request</h3>
+            <input type="text" id="fromInput" placeholder="From (e.g. Wuse, Wuse 2)">
+            <input type="text" id="toInput" placeholder="To (e.g. Gwarinpa)">
+            <input type="text" id="itemInput" placeholder="Item (e.g. Food, Drinks)">
+            
+            <label style="font-size: 0.7rem; color: var(--text-dim);">Duration (Minutes)</label>
+            <input type="number" id="durationInput" placeholder="e.g. 20">
+    
+            <div class="actions">
+                <button class="btn ghost" onclick="closeForm()">Cancel</button>
+                <button class="btn primary" id="submitBtn">Create</button>
+            </div>
+        </div>
     </div>
+    
+
 
     <!-- FOOTER (UNCHANGED) -->
     <footer class="bottom-nav">
@@ -196,7 +118,7 @@
 </div>
 
 <script src="/start/pwa-handler.js"></script>
-    <script src="js/request.js?=v12" type="module"></script>
+    <script src="js/request.js?=v21" type="module"></script>
     <script src="js/firebase-config.js?=v10" type="module"></script>
 
 </body>
