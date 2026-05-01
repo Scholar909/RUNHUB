@@ -347,18 +347,44 @@ body {
     color: var(--text-dim);
 }
 
+/* REPLACE IN intent.css */
 .form-modal {
     position: fixed;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
-    background: rgba(10,11,16,0.98);
-    padding: 20px;
+    height: 100%;
+    background: rgba(10, 11, 16, 0.95); /* Deep dark overlay */
+    backdrop-filter: blur(10px);
     display: none;
+    justify-content: center;
+    align-items: center; /* Centers vertically and horizontally */
     z-index: 3000;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    padding: 20px;
 }
+
+.form-box {
+    width: 100%;
+    max-width: 400px;
+    background: #1a1c26;
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.form-box h3 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+/* Added for Expired styling in My Intents tab */
+.expired-card {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
 
 .form-box input,
 .form-box select {
@@ -395,3 +421,30 @@ body {
 .dot { width: 5px; height: 5px; background: var(--success); border-radius: 50%; }
 .animate-flicker { animation: flicker 2s infinite ease-in-out; }
 @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Add to end of request.css */
+
+.badge {
+    color: white;
+    font-weight: 700;
+}
+
+.expired-card {
+    opacity: 0.5;
+    border-style: dashed !important;
+    filter: grayscale(0.5);
+}
+
+.panel-card:active {
+    transform: scale(0.98);
+}
+
+.chat-card[style*="border-left"] {
+    background: rgba(0, 122, 255, 0.05); /* Soft highlight for supply */
+}
+
+#boardSearch:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0, 122, 255, 0.2);
+}
