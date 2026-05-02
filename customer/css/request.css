@@ -422,27 +422,6 @@ body {
 .animate-flicker { animation: flicker 2s infinite ease-in-out; }
 @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-/* Add to end of request.css */
-
-.badge {
-    color: white;
-    font-weight: 700;
-}
-
-.expired-card {
-    opacity: 0.5;
-    border-style: dashed !important;
-    filter: grayscale(0.5);
-}
-
-.panel-card:active {
-    transform: scale(0.98);
-}
-
-.chat-card[style*="border-left"] {
-    background: rgba(0, 122, 255, 0.05); /* Soft highlight for supply */
-}
-
 #boardSearch:focus {
     outline: none;
     border-color: var(--accent);
