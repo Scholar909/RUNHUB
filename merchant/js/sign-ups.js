@@ -900,42 +900,27 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 }
 
 async function sendAdminMerchantAlert(data) {
-  const now = new Date();
-    const ADMIN_PHONE = "2348118663849";
-    const CALLMEBOT_API_KEY = "4093230"; 
-// --- FORMAT PHONE NUMBER TO 234 FORMAT ---
-    let formattedPhone = data.phoneNumber.trim().replace(/\D/g, ''); // Remove non-digits
+    const now = new Date();
+
+    // Format phone
+    let formattedPhone = data.phoneNumber.replace(/\D/g, '');
     if (formattedPhone.startsWith('0')) {
         formattedPhone = '234' + formattedPhone.substring(1);
     } else if (!formattedPhone.startsWith('234')) {
         formattedPhone = '234' + formattedPhone;
     }
 
-// ✅ ONE-LINE MESSAGE (no \n at all)
-        const replyMessage = `Hello ${data.fullName}, your NOVAHUB Merchant application has been received! 🚀 Our team is currently verifying your documents. This process usually takes 24-48 hours. Once approved, you will receive a link to set your password and access your account. Thank you for your patience!`;
+    // Same WhatsApp reply message
+    const replyMessage = `Hello ${data.fullName}, your NOVAHUB Merchant application has been received! 🚀 Our team is currently verifying your documents. This process usually takes 24-48 hours. Once approved, you will receive a link to set your password and access your account. Thank you for your patience!`;
 
-        // ✅ Encode once (safe now)
-        const encodedMessage = encodeURIComponent(replyMessage);
+    const replyLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(replyMessage)}`;
 
-        // ✅ Single clean clickable link
-        const adminReplyUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-
-        const notificationRaw = 
-`*MERCHANT SIGN UP ALERT - NOVAHUB*
-
-*Name:* ${data.fullName}
-*Username:* ${data.username}
-*Matric:* ${data.matricNumber}
-*Submitted:* ${now.toLocaleTimeString()}
-
-*REPLY TO MERCHANT:*
-${adminReplyUrl}`;
-
-        const notificationText = encodeURIComponent(notificationRaw);
-
-        const url = `https://api.callmebot.com/whatsapp.php?phone=${ADMIN_PHONE}&text=${notificationText}&apikey=${CALLMEBOT_API_KEY}`;
-
-        await fetch(url, { mode: 'no-cors' });
-
-        console.log("✅ Perfect: One clean link + clean readable message.");
+    // Send email
+    await emailjs.send("service_oewr5ug", "template_r6wkkbb", {
+        fullName: data.fullName,
+        username: data.username,
+        matric: data.matricNumber,
+        time: now.toLocaleTimeString(),
+        replyLink: replyLink
+    });
 }
