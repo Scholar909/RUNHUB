@@ -207,85 +207,108 @@ function getTimeLeft(expiresAt) {
 }
 
 /* =========================
-   LIVE BOARD (Universal React)
+   LIVE BOARD
 ========================= */
 function renderLiveBoard() {
-    const el = $("#liveBoard");
-    const searchTerm = $("#boardSearch")?.value.toLowerCase() || "";
+    const el = $(".live-board");
     if (!el) return;
     el.innerHTML = "";
 
-    // Render Requests (Demand)
     requests.forEach(r => {
-        if (searchTerm && !(`${r.from} ${r.to} ${r.item}`).toLowerCase().includes(searchTerm)) return;
-        
         el.innerHTML += `
         <div class="chat-row left">
             <div class="chat-card">
                 <span class="type">REQUEST:</span>
                 <div class="route">${r.from} → ${r.to}</div>
-                <div class="meta">${r.item || "Items needed"} • ${getTimeLeft(r.expiresAt)}</div>
+                <div class="meta">${r.item || "N/A"}</div>
+                ${userRole === "merchant" ? `
                 <div class="actions">
-                    <button class="btn primary" onclick="handleReact('request', '${r.id}')">React</button>
-                </div>
-            </div>
-        </div>`;
-    });
-
-    // Render Intents (Supply)
-    intents.forEach(i => {
-        if (searchTerm && !(`${i.from} ${i.to}`).toLowerCase().includes(searchTerm)) return;
-        const isExpired = i.expiresAt < Date.now();
-        if (isExpired && i.userId !== uid) return; // Hide others' expired intents
-
-        const mine = i.userId === uid;
-        el.innerHTML += `
-        <div class="chat-row ${mine ? 'right' : 'left'}">
-            <div class="chat-card ${mine ? 'mine' : ''} ${isExpired ? 'expired-card' : ''}">
-                <span class="type">INTENT:</span>
-                <div class="route">${i.from} → ${i.to}</div>
-                <div class="meta">${isExpired ? 'Expired' : 'Leaving in: ' + getTimeLeft(i.expiresAt)}</div>
-                ${!mine && !isExpired ? `
-                <div class="actions">
-                    <button class="btn primary" onclick="handleReact('intent', '${i.id}')">React</button>
+                    <button class="btn primary" onclick="takeOrder('${r.id}')">Take Order</button>
                 </div>` : ""}
             </div>
         </div>`;
     });
+
+    intents.forEach(i => {
+        // Hide if: Private OR Expired OR (Is private and not mine)
+        const isExpired = i.expiresAt < Date.now();
+        if (i.visibility === "private" || isExpired) return;
+        if (i.userId !== uid && i.visibility === "private") return;
+
+        const mine = i.userId === uid;
+        el.innerHTML += `
+        <div class="chat-row ${mine ? 'right' : 'left'}">
+            <div class="chat-card ${mine ? 'mine' : ''}">
+                <span class="type">INTENT:</span>
+                <div class="route">${i.from} → ${i.to}</div>
+                <div class="meta">Leaving in: ${getTimeLeft(i.expiresAt)}</div>
+            </div>
+        </div>`;
+    });
+}
+
+
+/* =========================
+   REQUESTS
+========================= */
+function renderRequests() {
+    const el = $(".tab-content");
+    if (!el) return;
+    el.innerHTML = "";
+
+    // Show ONLY customer requests, NOT intents
+    requests
+        .filter(r => r.status === "pending")
+        .forEach(r => {
+            el.innerHTML += `
+            <div class="panel-card">
+                <div class="info">
+                    <div class="title">Customer Request</div>
+                    <div class="sub">${r.from} → ${r.to}</div>
+                </div>
+                <div class="actions">
+                    <button class="btn success" onclick="approveRequest('${r.id}')">Approve</button>
+                    <button class="btn danger" onclick="declineRequest('${r.id}')">Decline</button>
+                </div>
+            </div>`;
+        });
 }
 
 /* =========================
-   REACT TAB (The "Request" Grid)
+   MY INTENTS
 ========================= */
-async function renderRequests() {
+function renderMy() {
     const el = $(".tab-content");
+    if (!el) return;
     el.innerHTML = "";
 
-    // Show My Intent's Reactions (Grid Style)
-    const myActiveIntent = intents.find(i => i.userId === uid && i.expiresAt > Date.now());
-    
-    // Header for the grid
-    const gridDiv = document.createElement('div');
-    gridDiv.className = "react-grid-container";
-    
-    if (myActiveIntent) {
-        // Fetch reactions for this intent
-        const snap = await getDocs(query(collection(db, "reactions"), where("targetId", "==", myActiveIntent.id)));
-        const reactionCount = snap.size;
+    // Sort intents by time (newest first)
+    const myIntents = intents
+        .filter(i => i.userId === uid)
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-        el.innerHTML = `
-            <div class="panel-card" onclick="openReactionModal('${myActiveIntent.id}')" style="cursor:pointer; border: 1px solid var(--accent);">
-                <div class="info">
-                    <div class="title">Active Intent Reactions</div>
-                    <div class="sub">${myActiveIntent.from} → ${myActiveIntent.to}</div>
-                </div>
-                <div class="badge" style="background:var(--accent); padding:5px 10px; border-radius:50%;">${reactionCount}</div>
-            </div>
-        `;
-    } else {
-        el.innerHTML = `<div class="empty-state">No active intent. Create one to see reactions.</div>`;
+    if (myIntents.length === 0) {
+        el.innerHTML = `<div class="empty-state" style="text-align:center; padding: 20px;">You haven't posted any intents.</div>`;
+        return;
     }
+
+    myIntents.forEach(i => {
+        const isExpired = i.expiresAt < Date.now();
+        el.innerHTML += `
+        <div class="panel-card ${isExpired ? 'expired-card' : ''}">
+            <div class="info">
+                <div class="title">My Intent ${isExpired ? '(Expired)' : ''}</div>
+                <div class="sub">${i.from} → ${i.to} • ${getTimeLeft(i.expiresAt)}</div>
+            </div>
+            <div class="actions">
+                ${!isExpired ? `<button class="btn ghost" onclick="editIntent('${i.id}')">Edit</button>` : ''}
+                <button class="btn danger" onclick="deleteIntent('${i.id}')">Delete</button>
+            </div>
+        </div>`;
+    });
 }
+
+
 
 /* =========================
    ALERTS (TAB 0)
@@ -323,28 +346,32 @@ function renderAlerts() {
 ========================= */
 // Updated createIntent to handle SAVE vs CREATE
 async function createIntent() {
+    const visibility = $("#visibilityInput").value;
     const from = $("#formModal input[placeholder*='From']").value;
     const to = $("#formModal input[placeholder*='To']").value;
     const duration = parseInt($("#durationInput").value);
 
     if (!from || !to || !duration) return alert("Fill all fields");
-    
-    // Check for ANY unexpired intent
-    const activeIntent = intents.find(i => i.userId === uid && i.expiresAt > Date.now());
-    if (activeIntent) {
-        return alert("You already have an active intent. Delete it or wait for it to expire.");
-    }
-
     const expiresAt = Date.now() + (duration * 60 * 1000);
-    await addDoc(collection(db, "intents"), {
-        from, to, duration, expiresAt,
-        userId: uid,
-        visibility: "public", // Forced public
-        createdAt: serverTimestamp()
-    });
-    
+
+    if (editingIntentId) {
+        await updateDoc(doc(db, "intents", editingIntentId), {
+            from, to, duration, expiresAt, visibility
+        });
+        editingIntentId = null;
+    } else {
+        // Only block if an intent exists AND it has not expired yet
+        const existing = intents.find(i => i.userId === uid && i.expiresAt > Date.now());
+        if (existing) return alert("You have an active intent running. Wait for it to expire or delete it.");
+
+        await addDoc(collection(db, "intents"), {
+            from, to, duration, expiresAt, visibility,
+            userId: uid, status: "active", createdAt: serverTimestamp()
+        });
+    }
     closeForm();
 }
+
 
 /* =========================
    ACTIONS
@@ -382,42 +409,6 @@ window.takeOrder = async (id) => {
         merchantId: uid
     });
 };
-
-/* =========================
-   REACTION SYSTEM
-========================= */
-window.handleReact = async (type, targetId) => {
-    // 1. Check Limits (Rule: Max 7-8 active)
-    const myReactions = await getDocs(query(collection(db, "reactions"), where("userId", "==", uid)));
-    if (myReactions.size >= 8) return alert("You have too many active reactions. Wait for some to expire.");
-
-    // 2. Merchant Rule: Must have active session
-    if (userRole === "merchant") {
-        const userDoc = await getDoc(doc(db, "users", uid));
-        if (!userDoc.data().isActive) return alert("Please turn on a session in the 'Set Session' page first.");
-    }
-
-    // 3. Post Reaction
-    await addDoc(collection(db, "reactions"), {
-        targetId,
-        type, // 'intent' or 'request'
-        userId: uid,
-        timestamp: serverTimestamp(),
-        expiresAt: Date.now() + (13 * 60 * 60 * 1000) // 13hr limit
-    });
-    
-    alert("Reaction sent!");
-};
-
-window.openReactionModal = async (intentId) => {
-    const snap = await getDocs(query(collection(db, "reactions"), where("targetId", "==", intentId)));
-    // Build modal showing list of customers who reacted
-    // For each: Show Approve (Send Session Link) | Swipe (Delete reaction)
-};
-
-$("#boardSearch").addEventListener("input", () => {
-    renderLiveBoard();
-});
 
 /* =========================
    DRAWER + LOGOUT
