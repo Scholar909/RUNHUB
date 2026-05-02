@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/start/icon-512.png">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-<link rel="stylesheet" href="css/request.css?=v9">
+<link rel="stylesheet" href="css/request.css?=v8">
 </head>
 
 <body>
@@ -57,12 +57,13 @@
         </div>
     </div>
     
-      <div class="search-container" style="padding: 10px 6%; background: var(--bg-dark);">
+          <div class="search-container" style="padding: 10px 6%; background: var(--bg-dark);">
           <input type="text" id="boardSearch" placeholder="Search locations, items, or users..." 
                  style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--glass); color: white;">
       </div>
 
-    <section class="live-board">
+
+    <section class="live-board">Loading...
         </section>
     
     <div class="split-divider"></div>
@@ -70,7 +71,7 @@
     <section class="bottom-panel">
         <div class="tabs">
             <button class="tab active">Alerts</button>
-            <button class="tab">Intents</button>
+            <button class="tab">Reactions</button>
             <button class="tab">My Requests</button>
         </div>
         
@@ -78,18 +79,13 @@
             <button class="btn primary w-100" onclick="openForm()">+ Create Request</button>
         </div>
     
-        <div class="tab-content">
-            </div>
+        <div class="tab-content">Loading...</div>
     </section>
     
     <div id="formModal" class="form-modal">
-      
-      <div class="tabs">
-          <button class="tab active">Alerts</button>
-          <button class="tab">React</button> <button class="tab">My Requests</button>
-      </div>
         <div class="form-box">
             <h3>Create Request</h3>
+    
             <input type="text" id="fromInput" placeholder="From (e.g. Wuse, Wuse 2)">
             <input type="text" id="toInput" placeholder="To (e.g. Gwarinpa)">
             <input type="text" id="itemInput" placeholder="Item (e.g. Food, Drinks)">
@@ -118,7 +114,7 @@
 </div>
 
 <script src="/start/pwa-handler.js"></script>
-    <script src="js/request.js?=v21" type="module"></script>
+    <script src="js/request.js?=v19" type="module"></script>
     <script src="js/firebase-config.js?=v10" type="module"></script>
 
 </body>
