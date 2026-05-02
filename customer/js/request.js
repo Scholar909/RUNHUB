@@ -47,6 +47,8 @@ function initApp() {
     setupSearch();
     setupDurationEnforcement();
     
+    renderTabContent();
+    
     // Cleanup interval
     setInterval(cleanupExpiredData, 60000);
 }
