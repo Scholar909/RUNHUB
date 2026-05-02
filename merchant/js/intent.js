@@ -47,6 +47,8 @@ function initApp() {
     listenToReactions();
     setupSearch();
     
+    renderTabContent(); 
+    
     // Interval for 7-hour cleanup check
     setInterval(cleanupOldData, 60000); 
 }
@@ -61,6 +63,8 @@ function listenToBoard() {
     onSnapshot(q, (snapshot) => {
         allBoardItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderBoard();
+        
+        if (activeTab === "Reactions") renderTabContent();
     });
 }
 
