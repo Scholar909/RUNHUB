@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/start/icon-512.png">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundicons/3.0.0/foundation-icons.min.css">
-<link rel="stylesheet" href="css/intent.css?=v5">
+<link rel="stylesheet" href="css/intent.css?=v4">
 </head>
 
 <body>
@@ -56,21 +56,35 @@
     </div>
 </div>
 
-  <div class="search-container" style="padding: 10px 6%; background: var(--bg-dark);">
-      <input type="text" id="boardSearch" placeholder="Search locations, items, or users..." 
-             style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--glass); color: white;">
-  </div>
-  
-  <section class="live-board" id="liveBoard">
-      </section>
-  
-  <div class="split-divider"></div>
-  
-  <section class="bottom-panel">
-      <div class="tabs">
-          <button class="tab active">Alerts</button>
-          <button class="tab">React</button> <button class="tab">My Intents</button>
+      <div class="search-container" style="padding: 10px 6%; background: var(--bg-dark);">
+          <input type="text" id="boardSearch" placeholder="Search locations, items, or users..." 
+                 style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--glass); color: white;">
       </div>
+
+
+    <!-- 🔝 LIVE BOARD -->
+    <section class="live-board">Loading...</section>
+
+    <!-- DIVIDER -->
+    <div class="split-divider"></div>
+
+    <!-- 🔽 BOTTOM PANEL -->
+    <section class="bottom-panel">
+
+        <div class="tabs">
+            <button class="tab active">Alerts</button>
+            <button class="tab">Reactions</button>
+            <button class="tab">My Intents</button>
+        </div>
+
+        <!-- ADD BUTTON -->
+        <div id="addContainer" style="display:none; margin-bottom:10px;">
+            <button class="btn primary w-100" onclick="openForm()">+ Create Intent</button>
+        </div>
+
+        <div class="tab-content">Loading...</div>
+
+    </section>
 
     <!-- CREATE INTENT FORM -->
     <div id="formModal" class="form-modal">
@@ -105,6 +119,6 @@
     <!--<script src="/start/pwa-handler.js"></script> -->
         <!--<script src="js/firebase-config.js?=v15" type="module"></script> -->
     <!--<script src="js/location.js?=v26" type="module"></script> -->
-    <script src="js/intent.js?=v10" type="module"></script>
+    <script src="js/intent.js?=v9" type="module"></script>
 </body>
 </html>
