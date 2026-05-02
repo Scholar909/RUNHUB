@@ -401,17 +401,6 @@ body {
 .animate-flicker { animation: flicker 2s infinite ease-in-out; }
 @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-.react-grid-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-}
-
-.badge {
-    font-weight: bold;
-    color: white;
-}
-
 #boardSearch:focus {
     outline: none;
     border-color: var(--accent);
